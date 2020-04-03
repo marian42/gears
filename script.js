@@ -3,7 +3,7 @@ function getOnCircle(angle, radius) {
     return [Math.cos(angle) * radius, Math.sin(angle) * radius];
 }
 
-class GearSVG {
+class GearSVGCreator {
     constructor(n) {
         this.teeth = n;
         this.pathStrings = [];
@@ -179,7 +179,7 @@ class GearSVG {
         this.addPolygon(vertices);
     }
 
-    getSVG() {
+    createSVG() {
         const svgNamespace = "http://www.w3.org/2000/svg";
         var svg = document.createElementNS(svgNamespace, "svg");    
         var path = document.createElementNS(svgNamespace, "path");    
@@ -187,8 +187,8 @@ class GearSVG {
         path.setAttribute("d", this.pathStrings.join(' '));
     
         svg.appendChild(path);
-        svg.setAttribute("height", this.radiusOuter * 8);
-        svg.setAttribute("width", this.radiusOuter * 8);
+        svg.setAttribute("height", this.radiusOuter * 6);
+        svg.setAttribute("width", this.radiusOuter * 6);
         svg.setAttribute("viewBox", (-this.radiusOuter) + " " + (-this.radiusOuter) + " " + (2 * this.radiusOuter) + " " + (2 * this.radiusOuter));
         svg.setAttribute("class", "gear")
     
@@ -196,18 +196,23 @@ class GearSVG {
     }
 }
 
-function createGear(n) {
-    return new GearSVG(n).getSVG();
+const gearCache = {};
+
+function createGearSVG(n) {
+    if (!(n in gearCache)) {
+        gearCache[n] = new GearSVGCreator(n);
+    }
+    return gearCache[n].createSVG();
 }
 
 const gears = [8, 16, 24, 40, 12, 20, 36];
 
 for (var n of gears) {
-    document.body.appendChild(createGear(n));
+    document.body.appendChild(createGearSVG(n));
 }
 
 document.body.appendChild(document.createElement("br"));
 
 for (var n = 10; n < 32; n++) {
-    document.body.appendChild(createGear(n));
+    document.body.appendChild(createGearSVG(n));
 }
