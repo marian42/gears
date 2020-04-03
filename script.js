@@ -23,6 +23,7 @@ class GearSVG {
             case 20:
                 xExtension = 1.6;
                 yExtension = 1.6;
+                this.createCutout(9.3 / 2, this.radiusInner - 1.1);
                 break;
             case 36:
                 yExtension = 1.2;
@@ -39,7 +40,7 @@ class GearSVG {
                 break;
             case 24:
                 yExtension = 3.8;
-                extensionSize = 1.6
+                extensionSize = 1.6;
                 this.addCircle(-4, -4);
                 this.addCircle(-4, +4);
                 this.addCircle(+4, +4);
@@ -59,6 +60,10 @@ class GearSVG {
                 this.createAxleHole(+8, 0, 0, 4.4);
                 this.createAxleHole(-8, 0, 0, 4.4);
                 break;
+            default:
+                if (n >= 18) {
+                    this.createCutout(4.4, this.radiusInner - 1.1);
+                }
         }
         this.createAxleHole(0, 0, xExtension, yExtension, extensionSize);
     }
@@ -82,10 +87,12 @@ class GearSVG {
     }
 
     addPolygon(vertices) {    
-        this.pathStrings.push("M " + vertices[vertices.length - 1][0] + " " + vertices[vertices.length - 1][1]);
-        for (var vertex of vertices) {
+        this.pathStrings.push("M " + vertices[0][0] + " " + vertices[0][1]);
+        for (var i = 1; i < vertices.length; i++) {
+            const vertex = vertices[i];
             this.pathStrings.push("L " + vertex[0] + " " + vertex[1]);
         }
+        this.pathStrings.push("Z");
     }
 
     addCircle(x, y, diameter=5) {
@@ -93,6 +100,37 @@ class GearSVG {
         this.pathStrings.push("M " + (x - r) + ", " + y);
         this.pathStrings.push("a " + r + "," + r + " 0 1, 0 " + diameter + ",0");
         this.pathStrings.push("a " + r + "," + r + " 0 1, 0 " + (-diameter) + ",0");
+    }
+
+    createCutout(radiusInner, radiusOuter) {
+        const margin = 0.65;
+
+        const inner = Math.sqrt(Math.pow(radiusInner, 2.0) - Math.pow(margin, 2.0));
+        const outer = Math.sqrt(Math.pow(radiusOuter, 2.0) - Math.pow(margin, 2.0));
+
+        this.pathStrings.push("M " + margin + ", " + outer);
+        this.pathStrings.push("A " + radiusOuter + " " + radiusOuter + " 0 0 0 " + outer + ", " + margin);
+        this.pathStrings.push("L " + inner + ", " + margin);
+        this.pathStrings.push("A " + radiusInner + " " + radiusInner + " 0 0 1 " +  + margin + ", " + inner);
+        this.pathStrings.push("Z");
+
+        this.pathStrings.push("M " + -margin + ", " + -outer);
+        this.pathStrings.push("A " + radiusOuter + " " + radiusOuter + " 0 0 0 " + -outer + ", " + -margin);
+        this.pathStrings.push("L " + -inner + ", " + -margin);
+        this.pathStrings.push("A " + radiusInner + " " + radiusInner + " 0 0 1 " +  + -margin + ", " + -inner);
+        this.pathStrings.push("Z");
+
+        this.pathStrings.push("M" + margin + ", " + -inner);
+        this.pathStrings.push("A " + radiusInner + " " + radiusInner + " 0 0 1 " + inner + ", " + -margin);
+        this.pathStrings.push("L" + outer + ", " + -margin);
+        this.pathStrings.push("A " + radiusOuter + " " + radiusOuter + " 0 0 0 " + margin + ", " + -outer);
+        this.pathStrings.push("Z");
+
+        this.pathStrings.push("M" + -margin + ", " + inner);
+        this.pathStrings.push("A " + radiusInner + " " + radiusInner + " 0 0 1 " + -inner + ", " + margin);
+        this.pathStrings.push("L" + -outer + ", " + margin);
+        this.pathStrings.push("A " + radiusOuter + " " + radiusOuter + " 0 0 0 " + -margin + ", " + outer);
+        this.pathStrings.push("Z");
     }
 
     createAxleHole(x = 0, y = 0, xExtension=2, yExtension=0, extensionSize=0.5) {
@@ -138,8 +176,7 @@ class GearSVG {
             [x - a, y - a],
         ];
 
-        console.log(vertices.reverse());
-        this.addPolygon(vertices.reverse());
+        this.addPolygon(vertices);
     }
 
     getSVG() {
