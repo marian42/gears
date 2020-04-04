@@ -23,7 +23,7 @@ class GearSVGCreator {
             case 20:
                 xExtension = 1.6;
                 yExtension = 1.6;
-                this.createCutout(9.3 / 2, this.radiusInner - 1.1);
+                this.createCutout(9.3 / 2, this.radiusInner - 2);
                 break;
             case 36:
                 yExtension = 1.2;
@@ -62,7 +62,7 @@ class GearSVGCreator {
                 break;
             default:
                 if (n >= 18) {
-                    this.createCutout(4.4, this.radiusInner - 1.1);
+                    this.createCutout(4.4, this.radiusInner - 2);
                 }
         }
         this.createAxleHole(0, 0, xExtension, yExtension, extensionSize);
