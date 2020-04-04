@@ -3,6 +3,10 @@ function getOnCircle(angle, radius) {
     return [Math.cos(angle) * radius, Math.sin(angle) * radius];
 }
 
+function getRandomInt(min, max) {
+    return Math.floor(Math.random() * (max - min)) + min;
+}
+
 class GearSVGCreator {
     constructor(n) {
         this.teeth = n;
@@ -72,8 +76,8 @@ class GearSVGCreator {
     createTeeth() {
         var vertices = [];
     
-        for (var i = 0; i < n; i++) {
-            var fraction = 2 * Math.PI / n;
+        for (var i = 0; i < this.teeth; i++) {
+            var fraction = 2 * Math.PI / this.teeth;
             var angle = i * fraction;
     
             vertices.push(getOnCircle(angle - fraction * 0.29, this.radiusInner));
@@ -188,8 +192,8 @@ class GearSVGCreator {
         path.setAttribute("d", this.pathStrings.join(' '));
     
         svg.appendChild(path);
-        svg.setAttribute("height", this.radiusOuter * 6);
-        svg.setAttribute("width", this.radiusOuter * 6);
+        svg.setAttribute("height", this.radiusOuter * 5);
+        svg.setAttribute("width", this.radiusOuter * 5);
         svg.setAttribute("viewBox", (-this.radiusOuter) + " " + (-this.radiusOuter) + " " + (2 * this.radiusOuter) + " " + (2 * this.radiusOuter));
         svg.setAttribute("class", "gear")
     
@@ -206,14 +210,59 @@ function createGearSVG(n) {
     return gearCache[n].createSVG();
 }
 
-const gears = [8, 16, 24, 40, 12, 20, 36];
+function createConnectionDiv(teethA, teethB) {
+    var result = document.createElement("div");
+    result.setAttribute("class", "connection");
 
-for (var n of gears) {
-    document.body.appendChild(createGearSVG(n));
+    var table = document.createElement("table");
+    var row = document.createElement("tr");
+
+    var cell = document.createElement("td");
+    cell.appendChild(createGearSVG(teethA));
+    row.appendChild(cell);
+
+    cell = document.createElement("td");
+    cell.appendChild(createGearSVG(teethB));
+    row.appendChild(cell);
+
+    table.appendChild(row);
+
+    row = document.createElement("tr");
+
+    cell = document.createElement("td");
+    cell.setAttribute("class", "teeth");
+    cell.innerText = teethA;
+    row.appendChild(cell);
+
+    cell = document.createElement("td");
+    cell.innerText = teethB;
+    cell.setAttribute("class", "teeth");
+    row.appendChild(cell);
+
+    table.appendChild(row);
+    result.appendChild(table);
+
+    var distanceDiv = document.createElement("div");
+    const totalTeeth = teethA + teethB;
+    distanceDiv.innerText = (totalTeeth) / 16 + " units";
+    distanceDiv.classList.add("distance");
+    if (totalTeeth % 16 == 0) {
+        distanceDiv.classList.add("dst-good");
+    } else if (totalTeeth % 8 == 0) {
+        distanceDiv.classList.add("dst-ok");
+    } else {
+        distanceDiv.classList.add("dst-bad");
+    }
+    distanceDiv.title = "Distance between axes";
+    result.appendChild(distanceDiv);
+
+    return result;
 }
 
-document.body.appendChild(document.createElement("br"));
+const gears = [8, 16, 24, 40, 12, 20, 36];
 
-for (var n = 10; n <= 32; n++) {
-    document.body.appendChild(createGearSVG(n));
+for (var i = 0; i < 20; i++) {
+    var a = getRandomInt(8, 41);
+    var b = getRandomInt(8, 41);
+    document.body.appendChild(createConnectionDiv(a, b));
 }
