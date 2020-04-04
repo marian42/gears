@@ -12,16 +12,20 @@ class GearSVGCreator {
         this.teeth = n;
         this.pathStrings = [];
 
-        this.radiusPitch = n / 2;
-        this.radiusInner = this.radiusPitch - 1.2;
-        this.radiusOuter = this.radiusPitch + 0.85;
-        this.radiusIntermediate = this.radiusInner + 0.9;
+        this.radiusInner = n / 2 - 1.2;
+        this.radiusOuter = n / 2 + 0.85;
 
-        this.createTeeth();
+        if (n != 140) {
+            this.createTeeth(n);
+        } else {
+            this.radiusOuter += 14;
+        }
 
         var xExtension = 0;
         var yExtension = 0;
         var extensionSize = 0.5;
+
+        var hasAxleHole = true;
 
         switch (n) {
             case 20:
@@ -29,6 +33,14 @@ class GearSVGCreator {
                 yExtension = 1.6;
                 this.createCutout(9.3 / 2, this.radiusInner - 2);
                 break;
+            case 28:
+                yExtension = 1.2;
+                this.addCircle(-8, 0);
+                this.addCircle(+8, 0);
+                this.addCircle(0, 8);
+                this.addCircle(0, -8);
+                this.createCutout(6, this.radiusInner - 2, 4);
+                break
             case 36:
                 yExtension = 1.2;
                 this.addCircle(-8, 0);
@@ -36,6 +48,10 @@ class GearSVGCreator {
                 this.createAxleHole(0, 8, 0, 1.2);
                 this.createAxleHole(0, -8, 0, 1.2);
                 this.createCutout(12.5, this.radiusInner - 2)
+                break;
+            case 60:
+                hasAxleHole = false;
+                this.addCircle(0, 0, 25.4);
                 break;
             case 16:
                 this.addCircle(0, -4, 3.4);
@@ -65,27 +81,53 @@ class GearSVGCreator {
                 this.createAxleHole(+8, 0, 0, 4.4);
                 this.createAxleHole(-8, 0, 0, 4.4);
                 break;
+            case 56:
+                hasAxleHole = false;
+                this.createTeeth(24, true);
+                break;
+            case 140:
+                hasAxleHole = false;
+                this.pathStrings.push("M " + -this.radiusOuter + ", 0");
+                this.pathStrings.push("a " + this.radiusOuter + "," + this.radiusOuter + " 1 0, 1 " + (this.radiusOuter * 2) + ",0");
+                this.pathStrings.push("a " + this.radiusOuter + "," + this.radiusOuter + " 1 0, 1 " + (-this.radiusOuter * 2) + ",0");
+                this.createAxleHole(-8 * 10, 0, 0);
+                this.createAxleHole(+8 * 10, 0, 0);
+                this.createAxleHole(0, +8 * 10, 0);
+                this.createAxleHole(0, -8 * 10, 0);
+                this.createTeeth(n, true, true);
+                break;
             default:
                 if (n >= 18) {
                     this.createCutout(4.4, this.radiusInner - 2);
                 }
         }
-        this.createAxleHole(0, 0, xExtension, yExtension, extensionSize);
+        if (hasAxleHole) {
+            this.createAxleHole(0, 0, xExtension, yExtension, extensionSize);
+        }
     }
 
-    createTeeth() {
+    createTeeth(n, cut=false, invert=false) {
         var vertices = [];
+
+        var radiusPitch = n / 2;
+        var radiusInner = radiusPitch - 1.2 * (invert ? -1 : 1);
+        var radiusOuter = radiusPitch + 0.85 * (invert ? -1 : 1);
+        var radiusIntermediate = radiusInner + 0.9 * (invert ? -1 : 1);
     
-        for (var i = 0; i < this.teeth; i++) {
-            var fraction = 2 * Math.PI / this.teeth;
+        for (var i = 0; i < n; i++) {
+            var fraction = 2 * Math.PI / n;
             var angle = i * fraction;
     
-            vertices.push(getOnCircle(angle - fraction * 0.29, this.radiusInner));
-            vertices.push(getOnCircle(angle - fraction * 0.25, this.radiusIntermediate));
-            vertices.push(getOnCircle(angle - fraction * 0.11, this.radiusOuter));
-            vertices.push(getOnCircle(angle + fraction * 0.11, this.radiusOuter));
-            vertices.push(getOnCircle(angle + fraction * 0.25, this.radiusIntermediate));
-            vertices.push(getOnCircle(angle + fraction * 0.29, this.radiusInner));
+            vertices.push(getOnCircle(angle - fraction * 0.29, radiusInner));
+            vertices.push(getOnCircle(angle - fraction * 0.25, radiusIntermediate));
+            vertices.push(getOnCircle(angle - fraction * 0.11, radiusOuter));
+            vertices.push(getOnCircle(angle + fraction * 0.11, radiusOuter));
+            vertices.push(getOnCircle(angle + fraction * 0.25, radiusIntermediate));
+            vertices.push(getOnCircle(angle + fraction * 0.29, radiusInner));
+        }
+
+        if (cut) {
+            vertices.reverse();
         }
 
         this.addPolygon(vertices);
@@ -107,9 +149,7 @@ class GearSVGCreator {
         this.pathStrings.push("a " + r + "," + r + " 0 1, 0 " + (-diameter) + ",0");
     }
 
-    createCutout(radiusInner, radiusOuter) {
-        const margin = 0.8;
-
+    createCutout(radiusInner, radiusOuter, margin=0.8) {
         const inner = Math.sqrt(Math.pow(radiusInner, 2.0) - Math.pow(margin, 2.0));
         const outer = Math.sqrt(Math.pow(radiusOuter, 2.0) - Math.pow(margin, 2.0));
 
@@ -259,7 +299,18 @@ function createConnectionDiv(teethA, teethB) {
     return result;
 }
 
-const gears = [8, 16, 24, 40, 12, 20, 36];
+const gears = [8, 16, 24, 40, 12, 20, 28, 36];
+
+document.body.appendChild(createConnectionDiv(8, 16));
+document.body.appendChild(createConnectionDiv(8, 24));
+document.body.appendChild(createConnectionDiv(8, 40));
+document.body.appendChild(createConnectionDiv(8, 56));
+document.body.appendChild(createConnectionDiv(12, 20));
+document.body.appendChild(createConnectionDiv(12, 28));
+document.body.appendChild(createConnectionDiv(12, 36));
+document.body.appendChild(createConnectionDiv(12, 60));
+
+document.body.appendChild(document.createElement("br"));
 
 for (var i = 0; i < 20; i++) {
     var a = getRandomInt(8, 41);
