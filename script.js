@@ -31,6 +31,7 @@ class GearSVGCreator {
                 this.addCircle(+8, 0);
                 this.createAxleHole(0, 8, 0, 1.2);
                 this.createAxleHole(0, -8, 0, 1.2);
+                this.createCutout(12.5, this.radiusInner - 2)
                 break;
             case 16:
                 this.addCircle(0, -4, 3.4);
@@ -103,7 +104,7 @@ class GearSVGCreator {
     }
 
     createCutout(radiusInner, radiusOuter) {
-        const margin = 0.65;
+        const margin = 0.8;
 
         const inner = Math.sqrt(Math.pow(radiusInner, 2.0) - Math.pow(margin, 2.0));
         const outer = Math.sqrt(Math.pow(radiusOuter, 2.0) - Math.pow(margin, 2.0));
@@ -213,6 +214,6 @@ for (var n of gears) {
 
 document.body.appendChild(document.createElement("br"));
 
-for (var n = 10; n < 32; n++) {
+for (var n = 10; n <= 32; n++) {
     document.body.appendChild(createGearSVG(n));
 }
