@@ -39,3 +39,32 @@ body {
 .dst-bad {
     color: gray;
 }
+
+.fraction {
+    display: inline-block;
+    text-align: center;
+    padding: 0 8px;
+}
+
+.fraction .decimal {
+    margin-top: 12px;
+    font-size: 0.8em;
+    color: gray;
+}
+
+.fraction-container {
+    display: inline-block;
+}
+
+.nominator, .denominator {
+    font-size: 1.1em;
+}
+
+.nominator {
+    border-bottom: 1.5px solid rgb(122, 122, 122);
+}
+
+.integer {
+    font-size: 2em;
+    padding-bottom: 2px;
+}

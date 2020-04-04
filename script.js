@@ -250,70 +250,160 @@ function createGearSVG(n) {
     return gearCache[n].createSVG();
 }
 
-function createConnectionDiv(teethA, teethB) {
-    var result = document.createElement("div");
-    result.setAttribute("class", "connection");
-
-    var table = document.createElement("table");
-    var row = document.createElement("tr");
-
-    var cell = document.createElement("td");
-    cell.appendChild(createGearSVG(teethA));
-    row.appendChild(cell);
-
-    cell = document.createElement("td");
-    cell.appendChild(createGearSVG(teethB));
-    row.appendChild(cell);
-
-    table.appendChild(row);
-
-    row = document.createElement("tr");
-
-    cell = document.createElement("td");
-    cell.setAttribute("class", "teeth");
-    cell.innerText = teethA;
-    row.appendChild(cell);
-
-    cell = document.createElement("td");
-    cell.innerText = teethB;
-    cell.setAttribute("class", "teeth");
-    row.appendChild(cell);
-
-    table.appendChild(row);
-    result.appendChild(table);
-
-    var distanceDiv = document.createElement("div");
-    const totalTeeth = teethA + teethB;
-    distanceDiv.innerText = (totalTeeth) / 16 + " units";
-    distanceDiv.classList.add("distance");
-    if (totalTeeth % 16 == 0) {
-        distanceDiv.classList.add("dst-good");
-    } else if (totalTeeth % 8 == 0) {
-        distanceDiv.classList.add("dst-ok");
+function greatestCommonDenominator(a, b) {
+    if (b == 0) {
+        return a;
     } else {
-        distanceDiv.classList.add("dst-bad");
+        return greatestCommonDenominator(b, a % b);
     }
-    distanceDiv.title = "Distance between axes";
-    result.appendChild(distanceDiv);
+}
 
-    return result;
+class Fraction {
+    constructor(a, b=1, reduce=true) {
+        this.a = a;
+        this.b = b;
+
+        while (this.a % 1 != 0 | this.b % 1 != 0) {
+            this.a *= 10;
+            this.b *= 10;
+        }
+
+        if (reduce) {
+            var n = greatestCommonDenominator(a, b);
+            this.a /= n;
+            this.b /= n;
+        }
+    }
+
+    getDecimal(digits=null) {
+        if (digits === null) {
+            return this.a / this.b;
+        } else {
+            return Math.round(this.a / this.b * Math.pow(10, digits)) / Math.pow(10, digits);
+        }
+    }
+
+    extend(factor) {
+        return new Fraction(this.a * factor, this.b * factor, false);
+    }
+
+    multiply(fraction) {
+        return new Fraction(this.a * fraction.a, this.b * fraction.b);
+    }
+
+    toString() {
+        return this.a + " / " + this.b;
+    }
+
+    createDiv() {
+        var result = document.createElement("div");
+        result.classList.add("fraction");
+
+        if (this.b == 1) {
+            var integer = document.createElement("div");
+            integer.classList.add("integer");
+            integer.innerText = this.a;
+            result.appendChild(integer);
+        } else {
+            var container = document.createElement("div");
+            container.classList.add("fraction-container");
+            
+            var nominator = document.createElement("div");
+            nominator.classList.add("nominator");
+            nominator.innerText = this.a;
+            container.appendChild(nominator);
+
+            var denominator = document.createElement("div");
+            denominator.classList.add("denominator");
+            denominator.innerText = this.b;
+            container.appendChild(denominator);
+
+            result.appendChild(container);
+        }
+
+        var decimal = document.createElement("div");
+        decimal.classList.add("decimal");
+        decimal.innerText = this.getDecimal(5);
+        result.appendChild(decimal);
+        return result;
+    }
+}
+
+class Connection {
+    constructor(gear1, gear2) {
+        this.gear1 = gear1;
+        this.gear2 = gear2;
+        this.totalTeeth = gear1 + gear2;
+        this.fraction = new Fraction(gear1, gear2);
+    }
+
+    createDiv() {
+        var result = document.createElement("div");
+        result.setAttribute("class", "connection");
+    
+        var table = document.createElement("table");
+        var row = document.createElement("tr");
+    
+        var cell = document.createElement("td");
+        cell.appendChild(createGearSVG(this.gear1));
+        row.appendChild(cell);
+    
+        cell = document.createElement("td");
+        cell.appendChild(createGearSVG(this.gear2));
+        row.appendChild(cell);
+    
+        table.appendChild(row);
+    
+        row = document.createElement("tr");
+    
+        cell = document.createElement("td");
+        cell.setAttribute("class", "teeth");
+        cell.innerText = this.gear1;
+        row.appendChild(cell);
+    
+        cell = document.createElement("td");
+        cell.innerText = this.gear2;
+        cell.setAttribute("class", "teeth");
+        row.appendChild(cell);
+    
+        table.appendChild(row);
+        result.appendChild(table);
+    
+        var distanceDiv = document.createElement("div");
+        distanceDiv.innerText = (this.totalTeeth) / 16 + " units";
+        distanceDiv.classList.add("distance");
+        if (this.totalTeeth % 16 == 0) {
+            distanceDiv.classList.add("dst-good");
+        } else if (this.totalTeeth % 8 == 0) {
+            distanceDiv.classList.add("dst-ok");
+        } else {
+            distanceDiv.classList.add("dst-bad");
+        }
+        distanceDiv.title = "Distance between axes";
+        result.appendChild(distanceDiv);
+    
+        return result;
+    }
 }
 
 const gears = [8, 16, 24, 40, 12, 20, 28, 36];
 
-document.body.appendChild(createConnectionDiv(8, 16));
-document.body.appendChild(createConnectionDiv(8, 24));
-document.body.appendChild(createConnectionDiv(8, 40));
-document.body.appendChild(createConnectionDiv(8, 56));
-document.body.appendChild(createConnectionDiv(12, 20));
-document.body.appendChild(createConnectionDiv(12, 28));
-document.body.appendChild(createConnectionDiv(12, 36));
-document.body.appendChild(createConnectionDiv(12, 60));
+const connections = [
+    new Connection(8, 16),
+    new Connection(8, 24),
+    new Connection(8, 40),
+    new Connection(8, 56),
+    new Connection(12, 20),
+    new Connection(12, 28),
+    new Connection(12, 36),
+    new Connection(12, 60)
+]
 
-document.body.appendChild(document.createElement("br"));
+var ratio = new Fraction(1);
+document.body.appendChild(ratio.createDiv());
 
-for (var i = 0; i < 20; i++) {
-    var a = getRandomInt(8, 41);
-    var b = getRandomInt(8, 41);
-    document.body.appendChild(createConnectionDiv(a, b));
+for (var connection of connections) {
+    document.body.appendChild(connection.createDiv());
+    ratio = ratio.multiply(connection.fraction);
+    document.body.appendChild(ratio.createDiv());
 }
