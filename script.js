@@ -263,13 +263,17 @@ class Fraction {
         this.a = a;
         this.b = b;
 
-        while (this.a % 1 != 0 | this.b % 1 != 0) {
-            this.a *= 10;
-            this.b *= 10;
+        if (this.a % 1 > 1e-8 || this.b % 1 > 1e-8) {
+            while (this.a % 1 > 1e-6 || this.b % 1 > 1e-6) {
+                this.a *= 10;
+                this.b *= 10;
+            }
+            this.a = Math.round(this.a);
+            this.b = Math.round(this.b);
         }
 
         if (reduce) {
-            var n = greatestCommonDenominator(a, b);
+            var n = greatestCommonDenominator(this.a, this.b);
             this.a /= n;
             this.b /= n;
         }
