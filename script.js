@@ -155,9 +155,9 @@ class GearSVGCreator {
         vertices.push([-rxOuter, +ry]);
 
         for (var i = 0; i < 5; i++) {
-            vertices.push([+rxOuter, ry - i * yStep]);
+            vertices.push([+rxInner, ry - i * yStep]);
             vertices.push([+rxOuter, ry - i * yStep - yStep * 0.25]);
-            vertices.push([+rxInner, ry - i * yStep - yStep * 0.5]);
+            vertices.push([+rxOuter, ry - i * yStep - yStep * 0.5]);
             vertices.push([+rxInner, ry - i * yStep - yStep * 0.75]);
         }
         vertices.push([+rxInner, -ry]);
