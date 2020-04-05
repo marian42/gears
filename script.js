@@ -385,7 +385,7 @@ class Connection {
     constructor(gear1, gear2) {
         this.gear1 = gear1;
         this.gear2 = gear2;
-        this.totalTeeth = gear1 + gear2;
+        this.distance = (gear1 + gear2 + (gear1 == 1 || gear2 == 1 ? 7 : 0)) / 16;
         this.fraction = new Fraction(gear1, gear2);
     }
 
@@ -422,11 +422,11 @@ class Connection {
         result.appendChild(table);
     
         var distanceDiv = document.createElement("div");
-        distanceDiv.innerText = (this.totalTeeth) / 16 + " units";
+        distanceDiv.innerText = this.distance + " units";
         distanceDiv.classList.add("distance");
-        if (this.totalTeeth % 16 == 0) {
+        if (this.distance % 1 == 0) {
             distanceDiv.classList.add("dst-good");
-        } else if (this.totalTeeth % 8 == 0) {
+        } else if (this.distance % 0.5 == 0) {
             distanceDiv.classList.add("dst-ok");
         } else {
             distanceDiv.classList.add("dst-bad");
