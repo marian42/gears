@@ -405,7 +405,7 @@ class Connection {
 
 var resultDiv = document.getElementById("result");
 
-//const GEARS = [1, 8, 16, 24, 40, 56, 12, 20, 28, 36, 60];
+//const GEARS = [1, 8, 16, 24, 40, 56, 12, 20, 28, 36, 60, 140];
 const GEARS = [1, 8, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 36, 40, 56, 60];
 
 function printFactors(number) {
@@ -462,14 +462,20 @@ function findGears(target, excludedGears=[]) {
         if (factors.length > targetFactors) {
             continue;
         }
-        var maxOccurances = Math.floor(targetFactors[0] / factors[0]);
+        var maxOccurances = null;
         for (var i = 1; i < factors.length; i++) {
-            maxOccurances = Math.min(maxOccurances, Math.floor(targetFactors[i] / factors[i]));
+            if (factors[i] == 0) {
+                continue;
+            }
+            maxOccurancesThisFactor = Math.floor(targetFactors[i] / factors[i]);
+            if (maxOccurances === null || maxOccurancesThisFactor < maxOccurances) {
+                maxOccurances = maxOccurancesThisFactor;
+            }
             if (maxOccurances == 0) {
                 break;
             }
         }
-        if (maxOccurances > 0 && Number.isFinite(maxOccurances)) {
+        if (maxOccurances > 0) {
             gearTeeth.push(gear);
             gearMaxCounts.push(maxOccurances);
         }
