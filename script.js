@@ -494,11 +494,11 @@ function findGears(target, excludedGears=[]) {
             continue;
         }
         const factors = gearFactors[gear];
-        if (factors.length > targetFactors) {
+        if (factors.length > targetFactors.length) {
             continue;
         }
         var maxOccurances = null;
-        for (var i = 1; i < factors.length; i++) {
+        for (var i = 0; i < factors.length; i++) {
             if (factors[i] == 0) {
                 continue;
             }
