@@ -478,8 +478,6 @@ function findGears(target, excludedGears=[]) {
     var gearCounts = Array(gearTeeth.length).fill(0);
     var result = [];
 
-    var maxIter = 10000;
-
     while (true) {
         var teethProduct = getTeethProduct(gearTeeth, gearCounts);
         if (teethProduct == target) {
@@ -488,13 +486,7 @@ function findGears(target, excludedGears=[]) {
 
         gearCounts[0] += 1;
         var position = 0;
-        maxIter--;
         while (true) {
-            maxIter--;
-            if (maxIter == 0) {
-                console.log("error");
-                return null;
-            }
             if (gearCounts[position] <= gearMaxCounts[position]) {
                 break;
             }
@@ -512,15 +504,12 @@ function findSolutions(targetRatio) {
     var solutions = [];
     for (var extensionFactor = 1; extensionFactor < 1000; extensionFactor++) {
         var currentRatio = targetRatio.extend(extensionFactor);
-        //console.log(currentRatio);
 
         var solutionsPrimary = findGears(currentRatio.a);
 
         if (solutionsPrimary.length == 0) {
-            console.log(currentRatio + " - No solution");
             continue;
         }
-        console.log(currentRatio);
         for (var solutionPrimary of solutionsPrimary) {
             var solutionsSecondary = findGears(currentRatio.b, solutionPrimary);
             for (var solutionSecondary of solutionsSecondary) {
@@ -554,9 +543,14 @@ document.getElementById('calculate').addEventListener('click', function(event) {
     var input = document.getElementById('ratio').value;
     var targetRatio = parseFraction(input);
 
-    resultDiv.textContent = '';
     var solutions = findSolutions(targetRatio);
-    for (var solution of solutions) {
-        displayGearSequence(solution, resultDiv);
+
+    if (solutions.length == 0) {
+        resultDiv.textContent = "Nothing found."
+    } else {
+        resultDiv.textContent = '';
+        for (var solution of solutions) {
+            displayGearSequence(solution, resultDiv);
+        }
     }
 });
