@@ -448,13 +448,16 @@ function getResult(gearTeeth, gearCounts) {
     return result;
 }
 
-function findGears(target) {
+function findGears(target, excludedGears=[]) {
     const targetFactors = factorize(target);
 
     var gearTeeth = [];
     var gearMaxCounts = [];
 
     for (var gear of GEARS) {
+        if (excludedGears.includes(gear)) {
+            continue;
+        }
         const factors = gearFactors[gear];
         if (factors.length > targetFactors) {
             continue;
@@ -512,14 +515,14 @@ function findSolutions(targetRatio) {
         //console.log(currentRatio);
 
         var solutionsPrimary = findGears(currentRatio.a);
-        var solutionsSecondary = findGears(currentRatio.b);
 
-        if (solutionsPrimary.length == 0 || solutionsSecondary.length == 0) {
+        if (solutionsPrimary.length == 0) {
             console.log(currentRatio + " - No solution");
             continue;
         }
         console.log(currentRatio);
         for (var solutionPrimary of solutionsPrimary) {
+            var solutionsSecondary = findGears(currentRatio.b, solutionPrimary);
             for (var solutionSecondary of solutionsSecondary) {
                 var result = [];
                 for (var i = 0; i < Math.max(solutionPrimary.length, solutionSecondary.length); i++) {
