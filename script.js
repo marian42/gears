@@ -15,7 +15,7 @@ class GearSVGCreator {
         this.radiusInner = n / 2 - 1.2;
         this.radiusOuter = n / 2 + 0.85;
 
-        if (n != 140) {
+        if (n != 140 && n != 1) {
             this.createTeeth(n);
         } else {
             this.radiusOuter += 14;
@@ -28,6 +28,11 @@ class GearSVGCreator {
         var hasAxleHole = true;
 
         switch (n) {
+            case 1:
+                this.createWormGear();
+                hasAxleHole = false;
+                this.radiusOuter = 8;
+                break;
             case 20:
                 xExtension = 1.6;
                 yExtension = 1.6;
@@ -129,6 +134,33 @@ class GearSVGCreator {
         if (cut) {
             vertices.reverse();
         }
+
+        this.addPolygon(vertices);
+    }
+
+    createWormGear() {
+        const rxOuter = 4.9;
+        const rxInner = 3;
+        const ry = 7.9;
+        const yStep = ry * 2 / 5;
+
+        var vertices = [];
+
+        for (var i = 0; i < 5; i++) {
+            vertices.push([-rxOuter, -ry + i * yStep]);
+            vertices.push([-rxOuter, -ry + i * yStep + yStep * 0.25]);
+            vertices.push([-rxInner, -ry + i * yStep + yStep * 0.5]);
+            vertices.push([-rxInner, -ry + i * yStep + yStep * 0.75]);
+        }
+        vertices.push([-rxOuter, +ry]);
+
+        for (var i = 0; i < 5; i++) {
+            vertices.push([+rxOuter, ry - i * yStep]);
+            vertices.push([+rxOuter, ry - i * yStep - yStep * 0.25]);
+            vertices.push([+rxInner, ry - i * yStep - yStep * 0.5]);
+            vertices.push([+rxInner, ry - i * yStep - yStep * 0.75]);
+        }
+        vertices.push([+rxInner, -ry]);
 
         this.addPolygon(vertices);
     }
