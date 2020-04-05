@@ -7,6 +7,10 @@ body {
     fill: #888d91;
 }
 
+.gear.custom path {
+    fill: rgb(218, 63, 63);
+}
+
 .connection {
     border: 1px solid rgb(167, 167, 167);
     border-radius: 4px;
@@ -14,7 +18,7 @@ body {
     display: inline-block;
     margin: 8px;
     padding: 8px;
-    box-shadow: 0px 0px 6px 0px rgba(0,0,0,0.3);
+    box-shadow: 0px 0px 6px 0px rgba(0,0,0,0.25);
 }
 
 .connection table td {

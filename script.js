@@ -235,7 +235,10 @@ class GearSVGCreator {
         svg.setAttribute("height", this.radiusOuter * 5);
         svg.setAttribute("width", this.radiusOuter * 5);
         svg.setAttribute("viewBox", (-this.radiusOuter) + " " + (-this.radiusOuter) + " " + (2 * this.radiusOuter) + " " + (2 * this.radiusOuter));
-        svg.setAttribute("class", "gear")
+        svg.classList.add("gear");
+        if (!STANDARD_GEARS.includes(this.teeth)) {
+            svg.classList.add("custom");
+        }
     
         return svg;
     }
@@ -405,7 +408,7 @@ class Connection {
 
 var resultDiv = document.getElementById("result");
 
-//const GEARS = [1, 8, 16, 24, 40, 56, 12, 20, 28, 36, 60, 140];
+const STANDARD_GEARS = [1, 8, 16, 24, 40, 56, 12, 20, 28, 36, 60, 140];
 const GEARS = [1, 8, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 36, 40, 56, 60];
 
 function printFactors(number) {
