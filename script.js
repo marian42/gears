@@ -7,6 +7,9 @@ function getRandomInt(min, max) {
     return Math.floor(Math.random() * (max - min)) + min;
 }
 
+const SVG_NAMESPACE = "http://www.w3.org/2000/svg";
+const PIXELS_PER_MM = 2.5;
+
 class GearSVGCreator {
     constructor(n) {
         this.teeth = n;
@@ -15,7 +18,7 @@ class GearSVGCreator {
         this.radiusInner = n / 2 - 1.2;
         this.radiusOuter = n / 2 + 0.85;
 
-        if (n != 140 && n != 1) {
+        if (n != 140) {
             this.createTeeth(n);
         } else {
             this.radiusOuter += 14;
@@ -28,11 +31,6 @@ class GearSVGCreator {
         var hasAxleHole = true;
 
         switch (n) {
-            case 1:
-                this.createWormGear();
-                hasAxleHole = false;
-                this.radiusOuter = 8;
-                break;
             case 20:
                 xExtension = 1.6;
                 yExtension = 1.6;
@@ -138,33 +136,6 @@ class GearSVGCreator {
         this.addPolygon(vertices);
     }
 
-    createWormGear() {
-        const rxOuter = 4.9;
-        const rxInner = 3;
-        const ry = 7.9;
-        const yStep = ry * 2 / 5;
-
-        var vertices = [];
-
-        for (var i = 0; i < 5; i++) {
-            vertices.push([-rxOuter, -ry + i * yStep]);
-            vertices.push([-rxOuter, -ry + i * yStep + yStep * 0.25]);
-            vertices.push([-rxInner, -ry + i * yStep + yStep * 0.5]);
-            vertices.push([-rxInner, -ry + i * yStep + yStep * 0.75]);
-        }
-        vertices.push([-rxOuter, +ry]);
-
-        for (var i = 0; i < 5; i++) {
-            vertices.push([+rxInner, ry - i * yStep]);
-            vertices.push([+rxOuter, ry - i * yStep - yStep * 0.25]);
-            vertices.push([+rxOuter, ry - i * yStep - yStep * 0.5]);
-            vertices.push([+rxInner, ry - i * yStep - yStep * 0.75]);
-        }
-        vertices.push([+rxInner, -ry]);
-
-        this.addPolygon(vertices);
-    }
-
     addPolygon(vertices) {    
         this.pathStrings.push("M " + vertices[0][0] + " " + vertices[0][1]);
         for (var i = 1; i < vertices.length; i++) {
@@ -257,15 +228,14 @@ class GearSVGCreator {
     }
 
     createSVG() {
-        const svgNamespace = "http://www.w3.org/2000/svg";
-        var svg = document.createElementNS(svgNamespace, "svg");    
-        var path = document.createElementNS(svgNamespace, "path");    
+        var svg = document.createElementNS(SVG_NAMESPACE, "svg");    
+        var path = document.createElementNS(SVG_NAMESPACE, "path");    
     
         path.setAttribute("d", this.pathStrings.join(' '));
     
         svg.appendChild(path);
-        svg.setAttribute("height", this.radiusOuter * 5);
-        svg.setAttribute("width", this.radiusOuter * 5);
+        svg.setAttribute("height", this.radiusOuter * 2 * PIXELS_PER_MM);
+        svg.setAttribute("width", this.radiusOuter * 2 * PIXELS_PER_MM);
         svg.setAttribute("viewBox", (-this.radiusOuter) + " " + (-this.radiusOuter) + " " + (2 * this.radiusOuter) + " " + (2 * this.radiusOuter));
         svg.classList.add("gear");
         if (!STANDARD_GEARS.includes(this.teeth)) {
@@ -283,6 +253,56 @@ function createGearSVG(n) {
         gearCache[n] = new GearSVGCreator(n);
     }
     return gearCache[n].createSVG();
+}
+
+function createWormGearSVG(newStyle=false) {
+    const rxOuter = newStyle ? 7.4 : 4.9;
+    const rxInner = 3;
+    const ry = newStyle ? 4 : 7.9;
+    const stepCount = newStyle ? 2.5 : 5;
+    const yStep = ry * 2 / stepCount;
+
+    var vertices = [];
+
+    for (var i = 0; i < stepCount; i++) {
+        vertices.push([-rxOuter, -ry + i * yStep]);
+        vertices.push([-rxOuter, -ry + i * yStep + yStep * 0.25]);
+        vertices.push([-rxInner, -ry + i * yStep + yStep * 0.5]);
+        vertices.push([-rxInner, -ry + i * yStep + yStep * 0.75]);
+    }
+    if (newStyle) {
+        vertices.pop();
+    }
+    vertices.push([-rxOuter, +ry]);
+
+    for (var i = 0; i < stepCount; i++) {
+        vertices.push([newStyle ? rxOuter : rxInner, ry - i * yStep]);
+        vertices.push([+rxOuter, ry - i * yStep - yStep * 0.25]);
+        vertices.push([newStyle ? rxInner : rxOuter, ry - i * yStep - yStep * 0.5]);
+        vertices.push([+rxInner, ry - i * yStep - yStep * 0.75]);
+    }
+    if (newStyle) {
+        vertices.pop();
+    }
+    
+    vertices.push([+rxInner, -ry]);
+
+    var stringVertices = [];
+    for (var vertex of vertices) {
+        stringVertices.push(vertex[0] + "," + vertex[1]);
+    }
+
+    var svg = document.createElementNS(SVG_NAMESPACE, "svg");    
+    var polygon = document.createElementNS(SVG_NAMESPACE, "polygon");    
+
+    polygon.setAttribute("points", stringVertices.join(' '));
+
+    svg.appendChild(polygon);
+    svg.setAttribute("height", ry * 2 * PIXELS_PER_MM);
+    svg.setAttribute("width", rxOuter * 2 * PIXELS_PER_MM);
+    svg.setAttribute("viewBox", (-rxOuter) + " " + (-ry) + " " + (2 * rxOuter) + " " + (2 * ry));
+    svg.classList.add("gear");
+    return svg;
 }
 
 function greatestCommonDenominator(a, b) {
@@ -385,7 +405,13 @@ class Connection {
     constructor(gear1, gear2) {
         this.gear1 = gear1;
         this.gear2 = gear2;
-        this.distance = (gear1 + gear2 + (gear1 == 1 || gear2 == 1 ? 7 : 0)) / 16;
+        if (gear1 == 1 || gear2 == 1) {
+            this.useNewStyleWormGear = (gear1 + gear2 + 11) % 8 == 0;
+            this.distance = (gear1 + gear2 - 1 + (this.useNewStyleWormGear ? 12 : 8)) / 16;
+        } else {
+            this.distance = (gear1 + gear2) / 16;
+        }
+
         this.fraction = new Fraction(gear1, gear2);
     }
 
@@ -397,11 +423,19 @@ class Connection {
         var row = document.createElement("tr");
     
         var cell = document.createElement("td");
-        cell.appendChild(createGearSVG(this.gear1));
+        if (this.gear1 == 1) {
+            cell.appendChild(createWormGearSVG(this.useNewStyleWormGear));
+        } else {
+            cell.appendChild(createGearSVG(this.gear1));
+        }
         row.appendChild(cell);
     
         cell = document.createElement("td");
-        cell.appendChild(createGearSVG(this.gear2));
+        if (this.gear2 == 1) {
+            cell.appendChild(createWormGearSVG(this.useNewStyleWormGear));
+        } else {
+            cell.appendChild(createGearSVG(this.gear2));
+        }
         row.appendChild(cell);
     
         table.appendChild(row);
@@ -422,7 +456,7 @@ class Connection {
         result.appendChild(table);
     
         var distanceDiv = document.createElement("div");
-        distanceDiv.innerText = this.distance + " units";
+        distanceDiv.innerText = this.distance + (this.distance == 1 ? " unit" : " units");
         distanceDiv.classList.add("distance");
         if (this.distance % 1 == 0) {
             distanceDiv.classList.add("dst-good");
@@ -543,7 +577,7 @@ function findGears(target, excludedGears=[]) {
 
 function findSolutions(targetRatio) {
     var solutions = [];
-    for (var extensionFactor = 1; extensionFactor < 1000; extensionFactor++) {
+    for (var extensionFactor = 1; extensionFactor < 100; extensionFactor++) {
         var currentRatio = targetRatio.extend(extensionFactor);
 
         var solutionsPrimary = findGears(currentRatio.a);
