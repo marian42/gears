@@ -258,13 +258,17 @@ function greatestCommonDenominator(a, b) {
     }
 }
 
+function isApproximatelyInteger(number) {
+    return Math.abs(number - Math.round(number)) < 1e-8;
+}
+
 class Fraction {
     constructor(a, b=1, reduce=true) {
         this.a = a;
         this.b = b;
 
-        if (this.a % 1 > 1e-8 || this.b % 1 > 1e-8) {
-            while (this.a % 1 > 1e-6 || this.b % 1 > 1e-6) {
+        if (!isApproximatelyInteger(this.a) || !isApproximatelyInteger(this.b)) {
+            while (!isApproximatelyInteger(this.a) || !isApproximatelyInteger(this.b)) {
                 this.a *= 10;
                 this.b *= 10;
             }
@@ -333,6 +337,15 @@ class Fraction {
     }
 }
 
+function parseFraction(value) {
+    if (value.includes('/')) {
+        var parts = value.split('/');
+        return new Fraction(Number.parseFloat(parts[0].trim()), Number.parseFloat(parts[1].trim()));
+    } else {
+        return new Fraction(Number.parseFloat(value.trim()));
+    }
+}
+
 class Connection {
     constructor(gear1, gear2) {
         this.gear1 = gear1;
@@ -390,24 +403,157 @@ class Connection {
     }
 }
 
-const gears = [8, 16, 24, 40, 12, 20, 28, 36];
+var resultDiv = document.getElementById("result");
 
-const connections = [
-    new Connection(8, 16),
-    new Connection(8, 24),
-    new Connection(8, 40),
-    new Connection(8, 56),
-    new Connection(12, 20),
-    new Connection(12, 28),
-    new Connection(12, 36),
-    new Connection(12, 60)
-]
+//const GEARS = [1, 8, 16, 24, 40, 56, 12, 20, 28, 36, 60];
+const GEARS = [1, 8, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 36, 40, 56, 60];
 
-var ratio = new Fraction(1);
-document.body.appendChild(ratio.createDiv());
-
-for (var connection of connections) {
-    document.body.appendChild(connection.createDiv());
-    ratio = ratio.multiply(connection.fraction);
-    document.body.appendChild(ratio.createDiv());
+function printFactors(number) {
+    console.log(number + ": " + factorize(number).join(', '));
 }
+
+function factorize(number) {
+    var result = [];
+    for (var i = 2; i <= number; i++) {
+        var value = 0;
+        while (number % i == 0) {
+            value += 1;
+            number /= i;
+        }
+        result.push(value);
+    }
+    return result;
+}
+
+var gearFactors = {};
+for (var gear of GEARS) {
+    gearFactors[gear] = factorize(gear);
+}
+
+function getTeethProduct(gearTeeth, gearCounts) {
+    var result = 1;
+    for (var i = 0; i < gearTeeth.length; i++) {
+        result *= Math.pow(gearTeeth[i], gearCounts[i]);
+    }
+    return result;
+}
+
+function getResult(gearTeeth, gearCounts) {
+    var result = [];
+    for (var i = 0; i < gearTeeth.length; i++) {
+        for (var j = 0; j < gearCounts[i]; j++) {
+            result.push(gearTeeth[i]);
+        }
+    }
+    return result;
+}
+
+function findGears(target) {
+    const targetFactors = factorize(target);
+
+    var gearTeeth = [];
+    var gearMaxCounts = [];
+
+    for (var gear of GEARS) {
+        const factors = gearFactors[gear];
+        if (factors.length > targetFactors) {
+            continue;
+        }
+        var maxOccurances = Math.floor(targetFactors[0] / factors[0]);
+        for (var i = 1; i < factors.length; i++) {
+            maxOccurances = Math.min(maxOccurances, Math.floor(targetFactors[i] / factors[i]));
+            if (maxOccurances == 0) {
+                break;
+            }
+        }
+        if (maxOccurances > 0 && Number.isFinite(maxOccurances)) {
+            gearTeeth.push(gear);
+            gearMaxCounts.push(maxOccurances);
+        }
+    }
+
+    var gearCounts = Array(gearTeeth.length).fill(0);
+    var result = [];
+
+    var maxIter = 10000;
+
+    while (true) {
+        var teethProduct = getTeethProduct(gearTeeth, gearCounts);
+        if (teethProduct == target) {
+            result.push(getResult(gearTeeth, gearCounts));
+        }
+
+        gearCounts[0] += 1;
+        var position = 0;
+        maxIter--;
+        while (true) {
+            maxIter--;
+            if (maxIter == 0) {
+                console.log("error");
+                return null;
+            }
+            if (gearCounts[position] <= gearMaxCounts[position]) {
+                break;
+            }
+            gearCounts[position] = 0;
+            if (position == gearCounts.length - 1) {
+                return result;
+            }
+            position += 1;
+            gearCounts[position] += 1;
+        }
+    }
+}
+
+function findSolutions(targetRatio) {
+    var solutions = [];
+    for (var extensionFactor = 1; extensionFactor < 1000; extensionFactor++) {
+        var currentRatio = targetRatio.extend(extensionFactor);
+        //console.log(currentRatio);
+
+        var solutionsPrimary = findGears(currentRatio.a);
+        var solutionsSecondary = findGears(currentRatio.b);
+
+        if (solutionsPrimary.length == 0 || solutionsSecondary.length == 0) {
+            console.log(currentRatio + " - No solution");
+            continue;
+        }
+        console.log(currentRatio);
+        for (var solutionPrimary of solutionsPrimary) {
+            for (var solutionSecondary of solutionsSecondary) {
+                var result = [];
+                for (var i = 0; i < Math.max(solutionPrimary.length, solutionSecondary.length); i++) {
+                    result.push(new Connection(i < solutionPrimary.length ? solutionPrimary[i] : 1, i < solutionSecondary.length ? solutionSecondary[i] : 1))
+                }
+                solutions.push(result);
+            }
+        }
+    }
+    return solutions;
+}
+
+function displayGearSequence(sequence, container) {
+    var ratio = new Fraction(1);
+    var div = document.createElement("div");
+    div.classList.add("sequence");
+    div.appendChild(ratio.createDiv());
+    for (var connection of sequence) {
+        div.appendChild(connection.createDiv());
+        ratio = ratio.multiply(connection.fraction);
+        div.appendChild(ratio.createDiv());
+    }
+    container.appendChild(div);
+}
+
+document.getElementById('calculate').addEventListener('click', function(event) {
+    event.preventDefault();
+    
+    var input = document.getElementById('ratio').value;
+    var targetRatio = parseFraction(input);
+
+    resultDiv.textContent = '';
+    var solutions = findSolutions(targetRatio);
+    for (var solution of solutions) {
+        displayGearSequence(solution, resultDiv);
+    }
+});
