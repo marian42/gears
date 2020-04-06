@@ -1,3 +1,8 @@
+const SVG_NAMESPACE = "http://www.w3.org/2000/svg";
+const PIXELS_PER_MM = 2.5;
+
+const STANDARD_GEARS = [1, 8, 16, 24, 40, 56, 12, 20, 28, 36, 60, 140];
+const GEARS = [1, 8, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 36, 40, 56, 60];
 
 function getOnCircle(angle, radius) {
     return [Math.cos(angle) * radius, Math.sin(angle) * radius];
@@ -6,9 +11,6 @@ function getOnCircle(angle, radius) {
 function getRandomInt(min, max) {
     return Math.floor(Math.random() * (max - min)) + min;
 }
-
-const SVG_NAMESPACE = "http://www.w3.org/2000/svg";
-const PIXELS_PER_MM = 2.5;
 
 class GearSVGCreator {
     constructor(n) {
@@ -475,9 +477,6 @@ class Connection {
 
 var resultDiv = document.getElementById("result");
 
-const STANDARD_GEARS = [1, 8, 16, 24, 40, 56, 12, 20, 28, 36, 60, 140];
-const GEARS = [1, 8, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 36, 40, 56, 60];
-
 function printFactors(number) {
     console.log(number + ": " + factorize(number).join(', '));
 }
@@ -498,6 +497,48 @@ function factorize(number) {
 var gearFactors = {};
 for (var gear of GEARS) {
     gearFactors[gear] = factorize(gear);
+}
+
+var gearFactorsSet = new Set();
+for (var gear of GEARS) {
+    for (var i = 0; i < gearFactors[gear].length; i++) {
+        if (gearFactors[gear][i] > 0) {
+            gearFactorsSet.add(i + 2);
+        }
+    }
+}
+gearFactorsSet = Array.from(gearFactorsSet.values());
+
+// Returns an iterator over all numbers that can be made with the given factors
+function* getHammingSequence(bases) {
+    var queues = {};
+    for (var base of bases) {
+        queues[base] = [];
+    }
+    var nextResult = 1;
+    while (true) {
+        yield nextResult;
+ 
+        for (base in queues) {
+            queues[base].push(nextResult * base)
+        }
+
+        var smallestNextQueueItem = null;
+
+        for (base in queues) {
+            if (smallestNextQueueItem == null || queues[base][0] < smallestNextQueueItem) {
+                smallestNextQueueItem = queues[base][0];
+            }
+        }
+
+        nextResult = smallestNextQueueItem;
+ 
+        for (base in queues) {
+            if (queues[base][0] == nextResult) {
+                queues[base].shift();
+            }
+        }
+    }
 }
 
 function getTeethProduct(gearTeeth, gearCounts) {
@@ -661,8 +702,9 @@ function createSequence(gearsPrimary, gearsSecondary) {
 
 function findSolutions(targetRatio) {
     var solutions = [];
-    for (var extensionFactor = 1; extensionFactor < 100; extensionFactor++) {
-        var currentRatio = targetRatio.extend(extensionFactor);
+    var hammingIterator = getHammingSequence(gearFactorsSet);
+    for (var i = 0; i < 100; i++) {
+        var currentRatio = targetRatio.extend(hammingIterator.next().value);
 
         var solutionsPrimary = findGears(currentRatio.a);
 
