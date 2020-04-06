@@ -523,6 +523,7 @@ function findGears(target, excludedGears=[]) {
 
     var gearTeeth = [];
     var gearMaxCounts = [];
+    var availableFactors = new Set();
 
     for (var gear of GEARS) {
         if (excludedGears.includes(gear)) {
@@ -548,6 +549,18 @@ function findGears(target, excludedGears=[]) {
         if (maxOccurances > 0) {
             gearTeeth.push(gear);
             gearMaxCounts.push(maxOccurances);
+            for (var i = 0; i < factors.length; i++) {
+                if (factors[i] != 0) {
+                    availableFactors.add(i);
+                }
+            }
+        }
+    }
+
+    for (var i = 0; i < targetFactors.length; i++) {
+        if (targetFactors[i] != 0 && !availableFactors.has(i)) {
+            // The target number contains prime factors that are not in any of the available gears.
+            return [];
         }
     }
 
