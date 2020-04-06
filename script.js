@@ -413,6 +413,7 @@ class Connection {
         }
 
         this.fraction = new Fraction(gear1, gear2);
+        this.factor = this.fraction.getDecimal();
     }
 
     createDiv() {
@@ -575,6 +576,76 @@ function findGears(target, excludedGears=[]) {
     }
 }
 
+function createBins(items, itemToBin) {
+    var result = {};
+    for (var item of items) {
+        var bin = itemToBin(item);
+        if (!(bin in result)) {
+            result[bin] = [];
+        }
+        result[bin].push(item);
+    }
+    return result;
+}
+
+function createSequence(gearsPrimary, gearsSecondary) {
+    var connections = [];    
+
+    var binsPrimary = createBins(gearsPrimary, function (gear) { return gear % 16; });
+    var binsSecondary = createBins(gearsSecondary, function (gear) { return (16 - gear % 16) % 16; });
+    var remainderPrimary = [];
+    var remainderSecondary = [];
+
+    for (var i = 0; i < 16; i++) {
+        if (!(i in binsPrimary) && !(i in binsSecondary)) {
+            continue;
+        }
+        if (!(i in binsPrimary)) {
+            remainderSecondary = remainderSecondary.concat(binsSecondary[i]);
+        } else if (!(i in binsSecondary)) {
+            remainderPrimary = remainderPrimary.concat(binsPrimary[i]);
+        } else {
+            const n = Math.min(binsPrimary[i].length, binsSecondary[i].length);
+            for (var j = 0; j < n; j++) {
+                connections.push(new Connection(binsPrimary[i][j], binsSecondary[i][j]));
+            }
+            remainderPrimary = remainderPrimary.concat(binsPrimary[i].slice(n));
+            remainderSecondary = remainderSecondary.concat(binsSecondary[i].slice(n));
+        }
+    }
+
+    var binsPrimary = createBins(remainderPrimary, function (gear) { return gear % 8; });
+    var binsSecondary = createBins(remainderSecondary, function (gear) { return (8 - gear % 8) % 8; });
+    var remainderPrimary = [];
+    var remainderSecondary = [];
+
+    for (var i = 0; i < 8; i++) {
+        if (!(i in binsPrimary) && !(i in binsSecondary)) {
+            continue;
+        }
+        if (!(i in binsPrimary)) {
+            remainderSecondary = remainderSecondary.concat(binsSecondary[i]);
+        } else if (!(i in binsSecondary)) {
+            remainderPrimary = remainderPrimary.concat(binsPrimary[i]);
+        } else {
+            const n = Math.min(binsPrimary[i].length, binsSecondary[i].length);
+            for (var j = 0; j < n; j++) {
+                connections.push(new Connection(binsPrimary[i][j], binsSecondary[i][j]));
+            }
+            remainderPrimary = remainderPrimary.concat(binsPrimary[i].slice(n));
+            remainderSecondary = remainderSecondary.concat(binsSecondary[i].slice(n));
+        }
+    }
+
+    for (var i = 0; i < Math.max(remainderPrimary.length, remainderSecondary.length); i++) {
+        connections.push(new Connection(i < remainderPrimary.length ? remainderPrimary[i] : 1, i < remainderSecondary.length ? remainderSecondary[i] : 1))
+    }
+
+    connections.sort(function (a, b) { return Math.sign(a.factor - b.factor); });
+
+    return connections;
+}
+
 function findSolutions(targetRatio) {
     var solutions = [];
     for (var extensionFactor = 1; extensionFactor < 100; extensionFactor++) {
@@ -588,11 +659,7 @@ function findSolutions(targetRatio) {
         for (var solutionPrimary of solutionsPrimary) {
             var solutionsSecondary = findGears(currentRatio.b, solutionPrimary);
             for (var solutionSecondary of solutionsSecondary) {
-                var result = [];
-                for (var i = 0; i < Math.max(solutionPrimary.length, solutionSecondary.length); i++) {
-                    result.push(new Connection(i < solutionPrimary.length ? solutionPrimary[i] : 1, i < solutionSecondary.length ? solutionSecondary[i] : 1))
-                }
-                solutions.push(result);
+                solutions.push(createSequence(solutionPrimary, solutionSecondary));
             }
         }
     }
