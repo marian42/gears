@@ -182,3 +182,7 @@ label.radiolabel:last-of-type {
     border-bottom-right-radius: 5px;
     border-right-style: solid;
 }
+
+#result {
+    padding-top: 10px;
+}

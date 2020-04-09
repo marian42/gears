@@ -700,7 +700,7 @@ function createSequence(gearsPrimary, gearsSecondary) {
     return connections;
 }
 
-function findSolutions(targetRatio) {
+function findSolutions(targetRatio, distanceConstraint=null) {
     var solutions = [];
     var hammingIterator = getHammingSequence(gearFactorsSet);
     for (var i = 0; i < 100; i++) {
@@ -714,7 +714,22 @@ function findSolutions(targetRatio) {
         for (var solutionPrimary of solutionsPrimary) {
             var solutionsSecondary = findGears(currentRatio.b, solutionPrimary);
             for (var solutionSecondary of solutionsSecondary) {
-                solutions.push(createSequence(solutionPrimary, solutionSecondary));
+                var candidate = createSequence(solutionPrimary, solutionSecondary);
+
+
+                var violatesConstraint = false;
+                if (distanceConstraint !== null) {
+                    for (var connection of candidate) {
+                        if (connection.distance % distanceConstraint != 0) {
+                            violatesConstraint = true;
+                            break;
+                        }
+                    }
+                }
+
+                if (!violatesConstraint) {
+                    solutions.push(candidate);
+                }
             }
         }
     }
@@ -739,8 +754,14 @@ document.getElementById('calculate').addEventListener('click', function(event) {
     
     var input = document.getElementById('ratio').value;
     var targetRatio = parseFraction(input);
+    var distanceConstraint = null;
+    if (document.getElementById('full').checked) {
+        distanceConstraint = 1;
+    } else if (document.getElementById('half').checked) {
+        distanceConstraint = 0.5;
+    } 
 
-    var solutions = findSolutions(targetRatio);
+    var solutions = findSolutions(targetRatio, distanceConstraint);
 
     if (solutions.length == 0) {
         resultDiv.textContent = "Nothing found."
