@@ -475,8 +475,6 @@ class Connection {
     }
 }
 
-var resultDiv = document.getElementById("result");
-
 function printFactors(number) {
     console.log(number + ": " + factorize(number).join(', '));
 }
@@ -700,42 +698,6 @@ function createSequence(gearsPrimary, gearsSecondary) {
     return connections;
 }
 
-function findSolutions(targetRatio, distanceConstraint=null) {
-    var solutions = [];
-    var hammingIterator = getHammingSequence(gearFactorsSet);
-    for (var i = 0; i < 100; i++) {
-        var currentRatio = targetRatio.extend(hammingIterator.next().value);
-
-        var solutionsPrimary = findGears(currentRatio.a);
-
-        if (solutionsPrimary.length == 0) {
-            continue;
-        }
-        for (var solutionPrimary of solutionsPrimary) {
-            var solutionsSecondary = findGears(currentRatio.b, solutionPrimary);
-            for (var solutionSecondary of solutionsSecondary) {
-                var candidate = createSequence(solutionPrimary, solutionSecondary);
-
-
-                var violatesConstraint = false;
-                if (distanceConstraint !== null) {
-                    for (var connection of candidate) {
-                        if (connection.distance % distanceConstraint != 0) {
-                            violatesConstraint = true;
-                            break;
-                        }
-                    }
-                }
-
-                if (!violatesConstraint) {
-                    solutions.push(candidate);
-                }
-            }
-        }
-    }
-    return solutions;
-}
-
 function displayGearSequence(sequence, container) {
     var ratio = new Fraction(1);
     var div = document.createElement("div");
@@ -749,26 +711,94 @@ function displayGearSequence(sequence, container) {
     container.appendChild(div);
 }
 
-document.getElementById('calculate').addEventListener('click', function(event) {
-    event.preventDefault();
-    
-    var input = document.getElementById('ratio').value;
-    var targetRatio = parseFraction(input);
-    var distanceConstraint = null;
-    if (document.getElementById('full').checked) {
-        distanceConstraint = 1;
-    } else if (document.getElementById('half').checked) {
-        distanceConstraint = 0.5;
-    } 
+if (typeof document !== 'undefined') { // This is not run in worker threads
+    var resultDiv = document.getElementById("result");
 
-    var solutions = findSolutions(targetRatio, distanceConstraint);
+    var currentWorker = null;
 
-    if (solutions.length == 0) {
-        resultDiv.textContent = "Nothing found."
-    } else {
-        resultDiv.textContent = '';
-        for (var solution of solutions) {
-            displayGearSequence(solution, resultDiv);
+    var currentTaskId = 0;
+
+    function onReceiveWorkerMessage(event) {
+        if (event.data.type == 'solution' && event.data.id == currentTaskId) {
+            var sequence = createSequence(event.data.gearsPrimary, event.data.gearsSecondary);
+            displayGearSequence(sequence, resultDiv);
         }
     }
-});
+    
+    document.getElementById('calculate').addEventListener('click', function(event) {
+        event.preventDefault();
+        
+        var input = document.getElementById('ratio').value;
+        var targetRatio = parseFraction(input);
+        var distanceConstraint = null;
+        if (document.getElementById('full').checked) {
+            distanceConstraint = 1;
+        } else if (document.getElementById('half').checked) {
+            distanceConstraint = 0.5;
+        }
+
+        resultDiv.textContent = '';
+        currentTaskId++;
+
+        if (currentWorker != null) {
+            currentWorker.terminate();
+        }
+
+        currentWorker = new Worker("script.js");
+
+        currentWorker.onmessage = onReceiveWorkerMessage;
+
+        currentWorker.postMessage({
+            'type': 'start',
+            'targetRatio': targetRatio,
+            'distanceConstraint': distanceConstraint,
+            'id': currentTaskId
+        });
+    });
+}
+
+onmessage = function(event) {
+    if (event.data.type == "start") {
+        var targetRatio = new Fraction(event.data.targetRatio.a, event.data.targetRatio.b);
+        findSolutions(targetRatio, event.data.distanceConstraint, event.data.id);
+    }
+}
+
+function findSolutions(targetRatio, distanceConstraint, taskId) {
+    var hammingIterator = getHammingSequence(gearFactorsSet);
+    while (true) {
+        var currentRatio = targetRatio.extend(hammingIterator.next().value);
+
+        var solutionsPrimary = findGears(currentRatio.a);
+
+        if (solutionsPrimary.length == 0) {
+            continue;
+        }
+        for (var solutionPrimary of solutionsPrimary) {
+            var solutionsSecondary = findGears(currentRatio.b, solutionPrimary);
+            for (var solutionSecondary of solutionsSecondary) {
+                
+                var violatesConstraint = false;
+                if (distanceConstraint !== null) {
+                    var sequence = createSequence(solutionPrimary, solutionSecondary);
+                    for (var connection of sequence) {
+                        if (connection.distance % distanceConstraint != 0) {
+                            violatesConstraint = true;
+                            break;
+                        }
+                    }
+                }
+
+                if (!violatesConstraint) {
+                    postMessage({
+                        'id': taskId,
+                        'type': 'solution',
+                        'gearsPrimary': solutionPrimary,
+                        'gearsSecondary': solutionSecondary
+                    });
+                }
+            }
+        }
+    }
+    return solutions;
+}
