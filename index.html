@@ -15,9 +15,25 @@
     <h1>Lego Gear Ratio Calculator</h1>
 
     <form>
-        Target ratio: <input id="ratio" name="ratio" value="10/12"/> <button id="calculate">Go</button>
+        Target ratio: <input type="text" id="ratio" name="ratio" value="0.0343" placeholder="try 0.75 or 3/4"/>
+        
+        <div class="group">
+            <span class="editorhint">Gear distance:</span>
+            <input type="radio" id="full" name="distance" value="full">
+            <label class="radiolabel" for="full">Full</label>
+
+            <input type="radio" id="half" name="distance" value="half" checked="">
+            <label class="radiolabel" for="half">Half</label>
+
+            <input type="radio" id="any" name="distance" value="any">
+            <label class="radiolabel" for="any">Any</label>
+        </div>
+
+        <div>
+            <button id="calculate">Find exact matches</button>
+            <button id="calculate">Find approximate matches</button>
+        </div>
     </form>
-    <br>
     <div id="result">
 
     </div>
