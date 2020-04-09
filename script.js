@@ -724,6 +724,10 @@ if (typeof document !== 'undefined') { // This is not run in worker threads
             var sequence = createSequence(event.data.gearsPrimary, event.data.gearsSecondary);
             displayGearSequence(sequence, resultDiv);
         }
+        if (event.data.type == 'stop' && event.data.id == currentTaskId) {
+            searchingSpan.style.display = 'none';
+            currentWorker = null;
+        }
     }
     
     document.getElementById('calculate').addEventListener('click', function(event) {
@@ -779,6 +783,8 @@ onmessage = function(event) {
 
 function findSolutions(targetRatio, distanceConstraint, taskId) {
     var hammingIterator = getHammingSequence(gearFactorsSet);
+    var startTime = new Date().getTime();
+    var solutionsFound = 0;
     while (true) {
         var currentRatio = targetRatio.extend(hammingIterator.next().value);
 
@@ -809,9 +815,29 @@ function findSolutions(targetRatio, distanceConstraint, taskId) {
                         'gearsPrimary': solutionPrimary,
                         'gearsSecondary': solutionSecondary
                     });
+                    solutionsFound++;
+                }
+                if (solutionsFound >= 500) {
+                    postMessage({
+                        'id': taskId,
+                        'type': 'stop',
+                        'reason': 'solutions'
+                    });
+                    close();
+                    return;
                 }
             }
         }
+
+        if (new Date().getTime() - startTime > 60000) {
+            postMessage({
+                'id': taskId,
+                'type': 'stop',
+                'reason': 'time'
+            });
+            close();
+            return;
+        }        
     }
     return solutions;
 }
