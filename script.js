@@ -713,6 +713,7 @@ function displayGearSequence(sequence, container) {
 
 if (typeof document !== 'undefined') { // This is not run in worker threads
     var resultDiv = document.getElementById("result");
+    var searchingSpan = document.getElementById("searching");
 
     var currentWorker = null;
 
@@ -754,6 +755,18 @@ if (typeof document !== 'undefined') { // This is not run in worker threads
             'distanceConstraint': distanceConstraint,
             'id': currentTaskId
         });
+        searchingSpan.style.display = "inline";
+    });
+
+    document.getElementById('stop').addEventListener('click', function(event) {
+        event.preventDefault();
+
+        if (currentWorker != null) {
+            currentWorker.terminate();
+            currentWorker = null;
+        }
+
+        searchingSpan.style.display = "none";
     });
 }
 

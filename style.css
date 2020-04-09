@@ -73,7 +73,7 @@ body {
     padding-bottom: 10px;
 }
 
-.sequence {
+.sequence:not(:last-of-type) {
     border-bottom: 1px solid rgb(192, 192, 192);
 }
 
@@ -103,7 +103,7 @@ input[type=text]:focus {
     box-shadow: 0px 0px 6px 0px rgba(15, 74, 201, 0.25);
 }
 
-form div:not(:last-of-type) {
+form>div:not(:last-of-type) {
     margin: 10px 0;
 }
 
@@ -126,9 +126,10 @@ button {
     border-radius: 4px;
     user-select: none;
     margin-right: 10px;
+    outline: none;
 }
 
-button:hover, button:focus {
+button:active {
     color: #fff;
     background-color: #51a351;
     text-decoration: none;
@@ -139,7 +140,6 @@ button:hover, button:focus {
 
 label.radiolabel {
     display: inline-block;
-    padding: 8px 20px;
     line-height: 20px;
     border: 1px solid var(--radiolabel);
     text-align: center;
@@ -149,7 +149,7 @@ label.radiolabel {
     color: rgb(95, 95, 95);
     user-select: none;
     font-size: 14px;
-    padding: 4px 12px;
+    padding: 4px 24px;
 }
 
 label.radiolabel:active {
@@ -185,4 +185,60 @@ label.radiolabel:last-of-type {
 
 #result {
     padding-top: 10px;
+}
+
+.spinner {
+    display: inline-block;
+    position: relative;
+    width: 30px;
+    height: 16px;
+    margin: 0px;
+}
+.spinner div {
+    box-sizing: border-box;
+    display: block;
+    position: absolute;
+    width: 20px;
+    height: 20px;
+    margin: 2px;
+    border: 2px solid rgb(156, 156, 156);
+    border-radius: 50%;
+    animation: spinner 1.2s cubic-bezier(0.5, 0, 0.5, 1) infinite;
+    border-color: rgb(156, 156, 156) transparent transparent transparent;
+}
+.spinner div:nth-child(1) {
+    animation-delay: -0.45s;
+}
+.spinner div:nth-child(2) {
+    animation-delay: -0.3s;
+}
+.spinner div:nth-child(3) {
+    animation-delay: -0.15s;
+}
+@keyframes spinner {
+    0% {
+        transform: rotate(0deg);
+    }
+    100% {
+        transform: rotate(360deg);
+    }
+}
+
+#searching {
+    vertical-align: middle;
+    display: none;
+}
+#searching>span{
+    margin-right:10px;
+}
+
+button.white {
+    color: inherit;
+    background-color: #f1f1f1;
+    background-image: linear-gradient(to bottom,#ececec,#d6d6d6);
+    border: 1px solid #929292;
+}
+
+button.white:active {
+    background-color: #dadada;
 }
