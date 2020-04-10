@@ -2,7 +2,6 @@ const SVG_NAMESPACE = "http://www.w3.org/2000/svg";
 const PIXELS_PER_MM = 2.5;
 
 const STANDARD_GEARS = [1, 8, 16, 24, 40, 56, 12, 20, 28, 36, 60, 140];
-const GEARS = [1, 8, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 36, 40, 56, 60];
 
 function getOnCircle(angle, radius) {
     return [Math.cos(angle) * radius, Math.sin(angle) * radius];
@@ -492,20 +491,7 @@ function factorize(number) {
     return result;
 }
 
-var gearFactors = {};
-for (var gear of GEARS) {
-    gearFactors[gear] = factorize(gear);
-}
 
-var gearFactorsSet = new Set();
-for (var gear of GEARS) {
-    for (var i = 0; i < gearFactors[gear].length; i++) {
-        if (gearFactors[gear][i] > 0) {
-            gearFactorsSet.add(i + 2);
-        }
-    }
-}
-gearFactorsSet = Array.from(gearFactorsSet.values());
 
 // Returns an iterator over all numbers that can be made with the given factors
 function* getHammingSequence(bases) {
@@ -557,17 +543,14 @@ function getResult(gearTeeth, gearCounts) {
     return result;
 }
 
-function findGears(target, excludedGears=[]) {
+function findGears(target, availableGears, gearFactors) {
     const targetFactors = factorize(target);
 
     var gearTeeth = [];
     var gearMaxCounts = [];
     var availableFactors = new Set();
 
-    for (var gear of GEARS) {
-        if (excludedGears.includes(gear)) {
-            continue;
-        }
+    for (var gear of availableGears) {
         const factors = gearFactors[gear];
         if (factors.length > targetFactors.length) {
             continue;
@@ -711,6 +694,32 @@ function displayGearSequence(sequence, container) {
     container.appendChild(div);
 }
 
+function getAvailableGears() {
+    var result = [];
+
+    if (document.getElementById('standardgearscheckbox').checked) {
+        for (var gearString of document.getElementById('standardgearslist').value.split(',')) {
+            gearString = gearString.trim();
+            var teethCount = parseInt(gearString);
+            if (!isNaN(teethCount) && !result.includes(teethCount)) {
+                result.push(teethCount);
+            }
+        }
+    }
+
+    if (document.getElementById('customgearscheckbox').checked) {
+        for (var gearString of document.getElementById('customgearslist').value.split(',')) {
+            gearString = gearString.trim();
+            var teethCount = parseInt(gearString);
+            if (!isNaN(teethCount) && !result.includes(teethCount)) {
+                result.push(teethCount);
+            }
+        }
+    }
+
+    return result;
+}
+
 if (typeof document !== 'undefined') { // This is not run in worker threads
     var resultDiv = document.getElementById("result");
     var searchingSpan = document.getElementById("searching");
@@ -756,6 +765,7 @@ if (typeof document !== 'undefined') { // This is not run in worker threads
         currentWorker.postMessage({
             'type': 'start',
             'targetRatio': targetRatio,
+            'gears': getAvailableGears(),
             'distanceConstraint': distanceConstraint,
             'id': currentTaskId
         });
@@ -776,32 +786,49 @@ if (typeof document !== 'undefined') { // This is not run in worker threads
 
 onmessage = function(event) {
     if (event.data.type == "start") {
-        var targetRatio = new Fraction(event.data.targetRatio.a, event.data.targetRatio.b);
-        findSolutions(targetRatio, event.data.distanceConstraint, event.data.id);
+        event.data.targetRatio = new Fraction(event.data.targetRatio.a, event.data.targetRatio.b);
+        findSolutions(event.data);
     }
 }
 
-function findSolutions(targetRatio, distanceConstraint, taskId) {
-    var hammingIterator = getHammingSequence(gearFactorsSet);
+function getGearFactorsSet(gears, gearFactors) {
+    var gearFactorsSet = new Set();
+    for (var gear of gears) {
+        for (var i = 0; i < gearFactors[gear].length; i++) {
+            if (gearFactors[gear][i] > 0) {
+                gearFactorsSet.add(i + 2);
+            }
+        }
+    }
+    return gearFactorsSet.values();
+}
+
+function findSolutions(parameters) {
+    var gearFactors = {};
+    for (var gear of parameters.gears) {
+        gearFactors[gear] = factorize(gear);
+    }    
+
+    var hammingIterator = getHammingSequence(getGearFactorsSet(parameters.gears, gearFactors));
     var startTime = new Date().getTime();
     var solutionsFound = 0;
     while (true) {
-        var currentRatio = targetRatio.extend(hammingIterator.next().value);
+        var currentRatio = parameters.targetRatio.extend(hammingIterator.next().value);
 
-        var solutionsPrimary = findGears(currentRatio.a);
+        var solutionsPrimary = findGears(currentRatio.a, parameters.gears, gearFactors);
 
         if (solutionsPrimary.length == 0) {
             continue;
         }
         for (var solutionPrimary of solutionsPrimary) {
-            var solutionsSecondary = findGears(currentRatio.b, solutionPrimary);
+            var solutionsSecondary = findGears(currentRatio.b, parameters.gears.filter(gear => !solutionPrimary.includes(gear)), gearFactors);
             for (var solutionSecondary of solutionsSecondary) {
                 
                 var violatesConstraint = false;
-                if (distanceConstraint !== null) {
+                if (parameters.distanceConstraint !== null) {
                     var sequence = createSequence(solutionPrimary, solutionSecondary);
                     for (var connection of sequence) {
-                        if (connection.distance % distanceConstraint != 0) {
+                        if (connection.distance % parameters.distanceConstraint != 0) {
                             violatesConstraint = true;
                             break;
                         }
@@ -810,7 +837,7 @@ function findSolutions(targetRatio, distanceConstraint, taskId) {
 
                 if (!violatesConstraint) {
                     postMessage({
-                        'id': taskId,
+                        'id': parameters.id,
                         'type': 'solution',
                         'gearsPrimary': solutionPrimary,
                         'gearsSecondary': solutionSecondary
@@ -819,7 +846,7 @@ function findSolutions(targetRatio, distanceConstraint, taskId) {
                 }
                 if (solutionsFound >= 500) {
                     postMessage({
-                        'id': taskId,
+                        'id': parameters.id,
                         'type': 'stop',
                         'reason': 'solutions'
                     });
@@ -831,7 +858,7 @@ function findSolutions(targetRatio, distanceConstraint, taskId) {
 
         if (new Date().getTime() - startTime > 60000) {
             postMessage({
-                'id': taskId,
+                'id': parameters.id,
                 'type': 'stop',
                 'reason': 'time'
             });

@@ -138,16 +138,19 @@ button:active {
     outline: none;
 }
 
+label {
+    user-select: none;
+    line-height: 20px;
+}
+
 label.radiolabel {
     display: inline-block;
-    line-height: 20px;
     border: 1px solid var(--radiolabel);
     text-align: center;
     background-color: rgb(255, 255, 255);
     border-right-style: none;
     margin-right: -6px;
     color: rgb(95, 95, 95);
-    user-select: none;
     font-size: 14px;
     padding: 4px 24px;
 }
@@ -241,4 +244,14 @@ button.white {
 
 button.white:active {
     background-color: #dadada;
+}
+
+input.gearlist {
+    width: 500px;
+}
+
+input[type=checkbox] {
+    vertical-align: middle;
+    position: relative;
+    bottom: 1px;
 }

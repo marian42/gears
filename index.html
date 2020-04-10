@@ -30,6 +30,34 @@
         </div>
 
         <div>
+            <label class="checkboxlabel" for="standardgearscheckbox">
+                <input type="checkbox" id="standardgearscheckbox" name="standardgears" checked="">
+                Include standard gears:
+                <input 
+                    type="text"
+                    id="standardgearslist"
+                    class="gearlist"
+                    name="standardgearslist"
+                    value="1, 8, 16, 24, 40, 56, 12, 20, 28, 36, 60, 140"
+                    placeholder="comma separated list of teeth counts of available gears"/>
+            </label>
+        </div>
+
+        <div>
+            <label class="checkboxlabel" for="customgearscheckbox">
+                <input type="checkbox" id="customgearscheckbox" name="customgears" checked="">
+                Include <a href="https://www.thingiverse.com/thing:4258996">custom gears</a>:
+                <input 
+                    type="text"
+                    id="customgearslist"
+                    class="gearlist custom"
+                    name="customgearslist"
+                    value="10, 11, 13, 14, 15, 17, 18, 19, 21, 22, 23, 25, 26, 27, 29, 30, 31, 32"
+                    placeholder="comma separated list of teeth counts of available gears"/>
+            </label>
+        </div>
+
+        <div>
             <button id="calculate">Find exact matches</button>
             <button id="calculate">Find approximate matches</button>
             <span id="searching">
