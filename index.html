@@ -58,8 +58,19 @@
         </div>
 
         <div>
-            <button id="calculate-exact">Find exact matches</button>
-            <button id="calculate-approximate">Find approximate matches</button>
+            <label class="checkboxlabel" for="approximate">
+                <input type="checkbox" id="approximate" name="approximate" checked="">
+                Include approximate solutions within &#177;
+                <input 
+                    type="text"
+                    id="error"
+                    name="error"
+                    value="0.01"/>
+            </label>
+        </div>
+
+        <div>
+            <button id="calculate">Search</button>
             <span id="searching">
                 <div class="spinner"><div></div><div></div><div></div><div></div></div>
                 <span>Searching...</span>

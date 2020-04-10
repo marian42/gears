@@ -743,7 +743,7 @@ if (typeof document !== 'undefined') { // This is not run in worker threads
         }
     }
     
-    document.getElementById('calculate-exact').addEventListener('click', function(event) {
+    document.getElementById('calculate').addEventListener('click', function(event) {
         event.preventDefault();
         
         var input = document.getElementById('ratio').value;
@@ -754,6 +754,8 @@ if (typeof document !== 'undefined') { // This is not run in worker threads
         } else if (document.getElementById('half').checked) {
             distanceConstraint = 0.5;
         }
+        var approxiamte = document.getElementById('approximate').checked;
+        var error = parseFloat(document.getElementById('error').value);
 
         resultDiv.textContent = '';
         currentTaskId++;
@@ -768,42 +770,8 @@ if (typeof document !== 'undefined') { // This is not run in worker threads
 
         currentWorker.postMessage({
             'type': 'start',
-            'exact': true,
-            'targetRatio': targetRatio,
-            'gears': getAvailableGears(),
-            'distanceConstraint': distanceConstraint,
-            'id': currentTaskId
-        });
-        searchingSpan.style.display = "inline";
-    });
-
-    document.getElementById('calculate-approximate').addEventListener('click', function(event) {
-        event.preventDefault();
-        
-        var input = document.getElementById('ratio').value;
-        var targetRatio = parseFraction(input);
-        var distanceConstraint = null;
-        if (document.getElementById('full').checked) {
-            distanceConstraint = 1;
-        } else if (document.getElementById('half').checked) {
-            distanceConstraint = 0.5;
-        }
-
-        resultDiv.textContent = '';
-        currentTaskId++;
-
-        if (currentWorker != null) {
-            currentWorker.terminate();
-        }
-
-        currentWorker = new Worker("script.js");
-
-        currentWorker.onmessage = onReceiveWorkerMessage;
-
-        currentWorker.postMessage({
-            'type': 'start',
-            'exact': false,
-            'error': 0.03,
+            'exact': !approxiamte,
+            'error': error,
             'targetRatio': targetRatio,
             'gears': getAvailableGears(),
             'distanceConstraint': distanceConstraint,
