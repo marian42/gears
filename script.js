@@ -736,6 +736,10 @@ if (typeof document !== 'undefined') { // This is not run in worker threads
         if (event.data.type == 'stop' && event.data.id == currentTaskId) {
             searchingSpan.style.display = 'none';
             currentWorker = null;
+
+            if (event.data.reason == 'missingfactors') {
+                resultDiv.innerText = 'No exact solution is available because these gears are missing:\n' + event.data.missingFactors.join(', ');
+            }
         }
     }
     
@@ -800,7 +804,24 @@ function getGearFactorsSet(gears, gearFactors) {
             }
         }
     }
-    return gearFactorsSet.values();
+    return Array.from(gearFactorsSet.values());
+}
+
+function getMissingPrimeFactors(targetRatio, availableFactors) {
+    var result = [];
+    var numeratorFactors = factorize(targetRatio.a);
+    for (var i = 0; i < numeratorFactors.length; i++) {
+        if (numeratorFactors[i] > 0 && !availableFactors.includes(i + 2)) {
+            result.push(i + 2);
+        }
+    }
+    var denominatorFactors = factorize(targetRatio.b);
+    for (var i = 0; i < denominatorFactors.length; i++) {
+        if (denominatorFactors[i] > 0 && !availableFactors.includes(i + 2)) {
+            result.push(i + 2);
+        }
+    }
+    return result;
 }
 
 function findSolutions(parameters) {
@@ -810,7 +831,21 @@ function findSolutions(parameters) {
     }
     var wormGearAvailable = parameters.gears.includes(1);
 
-    var hammingIterator = getHammingSequence(getGearFactorsSet(parameters.gears, gearFactors));
+    var availableFactors = getGearFactorsSet(parameters.gears, gearFactors);
+
+    var missingFactors = getMissingPrimeFactors(parameters.targetRatio, availableFactors);
+    if (missingFactors.length != 0) {
+        postMessage({
+            'id': parameters.id,
+            'type': 'stop',
+            'reason': 'missingfactors',
+            'missingFactors': missingFactors
+        });
+        close();
+        return;
+    }
+
+    var hammingIterator = getHammingSequence(availableFactors);
     var startTime = new Date().getTime();
     var solutionsFound = 0;
     while (true) {
@@ -868,7 +903,7 @@ function findSolutions(parameters) {
             });
             close();
             return;
-        }        
+        }
     }
     return solutions;
 }
