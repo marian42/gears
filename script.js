@@ -807,7 +807,8 @@ function findSolutions(parameters) {
     var gearFactors = {};
     for (var gear of parameters.gears) {
         gearFactors[gear] = factorize(gear);
-    }    
+    }
+    var wormGearAvailable = parameters.gears.includes(1);
 
     var hammingIterator = getHammingSequence(getGearFactorsSet(parameters.gears, gearFactors));
     var startTime = new Date().getTime();
@@ -823,6 +824,9 @@ function findSolutions(parameters) {
         for (var solutionPrimary of solutionsPrimary) {
             var solutionsSecondary = findGears(currentRatio.b, parameters.gears.filter(gear => !solutionPrimary.includes(gear)), gearFactors);
             for (var solutionSecondary of solutionsSecondary) {
+                if (!wormGearAvailable && solutionSecondary.length != solutionPrimary.length) {
+                    continue;
+                }
                 
                 var violatesConstraint = false;
                 if (parameters.distanceConstraint !== null) {
