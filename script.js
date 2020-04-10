@@ -691,6 +691,15 @@ function displayGearSequence(sequence, container) {
         ratio = ratio.multiply(connection.fraction);
         div.appendChild(ratio.createDiv());
     }
+
+    if (!currentTask.exact) {
+        var infoDiv = document.createElement("div");
+        var error = Math.abs(ratio.getDecimal() / currentTask.targetRatio.getDecimal() - 1);
+        infoDiv.innerText = 'Error: ' + error.toPrecision(3);
+        infoDiv.classList.add("info");
+        div.appendChild(infoDiv);
+    }
+
     container.appendChild(div);
 }
 
@@ -727,6 +736,7 @@ if (typeof document !== 'undefined') { // This is not run in worker threads
     var currentWorker = null;
 
     var currentTaskId = 0;
+    var currentTask = null;
 
     function onReceiveWorkerMessage(event) {
         if (event.data.type == 'solution' && event.data.id == currentTaskId) {
@@ -768,7 +778,7 @@ if (typeof document !== 'undefined') { // This is not run in worker threads
 
         currentWorker.onmessage = onReceiveWorkerMessage;
 
-        currentWorker.postMessage({
+        currentTask = {
             'type': 'start',
             'exact': !approxiamte,
             'error': error,
@@ -776,7 +786,9 @@ if (typeof document !== 'undefined') { // This is not run in worker threads
             'gears': getAvailableGears(),
             'distanceConstraint': distanceConstraint,
             'id': currentTaskId
-        });
+        };
+        
+        currentWorker.postMessage(currentTask);
         searchingSpan.style.display = "inline";
     });
 

@@ -17,7 +17,6 @@ body {
     border-radius: 4px;
     background-color: rgb(250, 250, 250);
     display: inline-block;
-    margin: 8px auto;
     padding: 8px;
     box-shadow: 0px 0px 6px 0px rgba(0,0,0,0.25);
 }
@@ -73,8 +72,16 @@ body {
     padding-bottom: 10px;
 }
 
+.sequence {
+    padding: 10px 0;
+}
+
 .sequence:not(:last-of-type) {
     border-bottom: 1px solid rgb(192, 192, 192);
+}
+
+.sequence .info {
+    padding-top: 8px;
 }
 
 form {
