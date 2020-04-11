@@ -890,7 +890,7 @@ function* findSolutionsApproximate(parameters) {
         }
         
         for (var solutionPrimary of solutionsPrimary) {
-            var remainingGears = gearsWithoutWorm.filter(gear => !solutionsPrimary.includes(gear));
+            var remainingGears = gearsWithoutWorm.filter(gear => !solutionPrimary.includes(gear));
 
             for (var secondaryValue = denominatorMin; secondaryValue <= denominatorMax; secondaryValue++) {
                 var solutionsSecondary = findGears(secondaryValue, remainingGears, parameters.gearFactors);
