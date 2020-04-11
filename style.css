@@ -114,10 +114,6 @@ form>div:not(:last-of-type) {
     margin: 10px 0;
 }
 
-:root {
-    --radiolabel: rgb(155, 155, 155);
-}
-
 button {
     color: #fff;
     text-shadow: 0 -1px 0 rgba(0,0,0,.25);
@@ -152,30 +148,36 @@ label {
 
 label.radiolabel {
     display: inline-block;
-    border: 1px solid var(--radiolabel);
+    border: 1px solid rgb(201, 201, 201);
     text-align: center;
     background-color: rgb(255, 255, 255);
-    border-right-style: none;
-    margin-right: -6px;
-    color: rgb(95, 95, 95);
+    margin-right: -5px;
+    color: rgb(114, 114, 114);
     font-size: 14px;
     padding: 4px 24px;
 }
 
+.radiolabel:hover {
+    border-color: rgb(177, 177, 177);
+    color: rgb(80, 80, 80);
+    background-color: rgb(233, 233, 233);
+}
+
 label.radiolabel:active {
-    box-shadow: inset 2px 2px 6px 0px rgba(0,0,0,0.35);
+    border-color: rgb(170, 170, 170);
 }
 
 input[type=radio]:checked + label.radiolabel {
-    background-color: var(--radiolabel);
-    color: white;
-    text-shadow: 0 -1px 0 rgba(0,0,0,.25);
+    background-color: rgb(212, 212, 212);
+    color: rgb(80, 80, 80);
+    border-color: rgb(124, 124, 124);
 }
 
-.radiolabel:hover, input[type=radio]:checked + label.radiolabel:hover {
-    background-color: rgb(182, 182, 182);
-    color: white;
-    text-shadow: 0 -1px 0 rgba(0,0,0,.25);
+input[type=radio]:checked + label.radiolabel:hover, label.radiolabel:active {
+    background-color: rgb(196, 196, 196);
+    color: rgb(61, 61, 61);
+    border-color: rgb(124, 124, 124);
+    border-style: solid;
 }
 
 .group input[type=radio] {
@@ -190,7 +192,11 @@ label.radiolabel:first-of-type {
 label.radiolabel:last-of-type {
     border-top-right-radius: 5px;
     border-bottom-right-radius: 5px;
-    border-right-style: solid;
+}
+
+input[type=radio]:checked + label.radiolabel + input[type=radio]+label.radiolabel,
+label.radiolabel:active + input[type=radio] + label.radiolabel {
+    border-left-color: rgb(124, 124, 124);
 }
 
 #result {
