@@ -622,7 +622,7 @@ function createBins(items, itemToBin) {
 }
 
 function createSequence(gearsPrimary, gearsSecondary) {
-    var connections = [];    
+    var connections = [];
 
     var binsPrimary = createBins(gearsPrimary, function (gear) { return gear % 16; });
     var binsSecondary = createBins(gearsSecondary, function (gear) { return (16 - gear % 16) % 16; });
@@ -925,7 +925,7 @@ function* findSolutionsExact(parameters) {
         for (var solutionPrimary of solutionsPrimary) {
             var solutionsSecondary = findGears(currentRatio.b, parameters.gears.filter(gear => !solutionPrimary.includes(gear)), parameters.gearFactors);
             for (var solutionSecondary of solutionsSecondary) {
-                yield [solutionsPrimary, solutionSecondary];
+                yield [solutionPrimary, solutionSecondary];
             }
         }
 
