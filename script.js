@@ -1,3 +1,5 @@
+"use strict";
+
 const SVG_NAMESPACE = "http://www.w3.org/2000/svg";
 const PIXELS_PER_MM = 2.5;
 
@@ -558,7 +560,7 @@ function findGears(target, availableGears, gearFactors) {
             if (factors[i] == 0) {
                 continue;
             }
-            maxOccurancesThisFactor = Math.floor(targetFactors[i] / factors[i]);
+            var maxOccurancesThisFactor = Math.floor(targetFactors[i] / factors[i]);
             if (maxOccurances === null || maxOccurancesThisFactor < maxOccurances) {
                 maxOccurances = maxOccurancesThisFactor;
             }
