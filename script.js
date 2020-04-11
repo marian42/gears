@@ -491,8 +491,6 @@ function factorize(number) {
     return result;
 }
 
-
-
 // Returns an iterator over all numbers that can be made with the given factors
 function* getHammingSequence(bases) {
     var queues = {};
@@ -681,26 +679,93 @@ function createSequence(gearsPrimary, gearsSecondary) {
     return connections;
 }
 
-function displayGearSequence(sequence, container) {
-    var ratio = new Fraction(1);
-    var div = document.createElement("div");
-    div.classList.add("sequence");
-    div.appendChild(ratio.createDiv());
-    for (var connection of sequence) {
-        div.appendChild(connection.createDiv());
-        ratio = ratio.multiply(connection.fraction);
-        div.appendChild(ratio.createDiv());
+class Solution {
+    constructor(sequence) {
+        this.connections = sequence;
+        var currentFraction = new Fraction(1);
+        this.fractions = [currentFraction];
+        for (var connection of this.connections) {
+            currentFraction = currentFraction.multiply(connection.fraction);
+            this.fractions.push(currentFraction);
+        }
+        this.ratio = currentFraction;
+        if (!currentTask.exact) {
+            this.error = Math.abs(this.ratio.getDecimal() / currentTask.targetRatio.getDecimal() - 1);
+        }
     }
 
-    if (!currentTask.exact) {
-        var infoDiv = document.createElement("div");
-        var error = Math.abs(ratio.getDecimal() / currentTask.targetRatio.getDecimal() - 1);
-        infoDiv.innerText = 'Error: ' + error.toPrecision(3);
-        infoDiv.classList.add("info");
-        div.appendChild(infoDiv);
+    createDiv() {
+        var div = document.createElement("div");
+        div.classList.add("sequence");
+        div.appendChild(this.fractions[0].createDiv());
+
+        for (var i = 0; i < this.connections.length; i++) {
+            div.appendChild(this.connections[i].createDiv());
+            div.appendChild(this.fractions[i + 1].createDiv());
+        }
+
+        if (!currentTask.exact) {
+            var infoDiv = document.createElement("div");
+            infoDiv.innerText = 'Error: ' + this.error.toPrecision(3);
+            infoDiv.classList.add("info");
+            div.appendChild(infoDiv);
+        }
+        this.domObject = div;
+        return div;
+    }
+}
+
+class SolutionList {
+    constructor(container) {
+        this.container = container;
+        this.container.textContent = '';
+        this.solutions = {};
+        this.sizeContainers = {};
     }
 
-    container.appendChild(div);
+    add(solution) {
+        var count = solution.connections.length;
+        if (!(count in this.solutions)) {
+            var sizeContainer = document.createElement('div');
+            var headline = document.createElement('h2');
+            headline.innerText = 'Solutions with ' + count + (count > 1 ? ' connections' : ' connection');
+            sizeContainer.appendChild(headline);
+
+            var done = false;
+            for (var i = count -1; i > 0; i--) {
+                if (i in this.sizeContainers) {
+                    this.container.insertBefore(sizeContainer, this.sizeContainers[i].nextSibling);
+                    done = true;
+                    break;
+                }
+            }
+            if (!done) {
+                this.container.insertBefore(sizeContainer, this.container.firstChild);
+            }
+
+            this.sizeContainers[count] = sizeContainer;
+            this.solutions[count] = [];
+        }
+
+        if (currentTask.exact) {
+            this.sizeContainers[count].appendChild(solution.createDiv());
+            this.solutions[count].push(solution);
+        } else {
+            var inserted = false;
+            for (var i = 0; i < this.solutions[count].length; i++) {
+                if (this.solutions[count][i].error > solution.error) {
+                    this.sizeContainers[count].insertBefore(solution.createDiv(), this.solutions[count][i].domObject);
+                    this.solutions[count].splice(i, 0, solution);
+                    inserted = true;
+                    break;
+                }
+            }
+            if (!inserted) {
+                this.sizeContainers[count].appendChild(solution.createDiv());
+                this.solutions[count].push(solution);
+            }
+        }
+    }
 }
 
 function getAvailableGears() {
@@ -741,7 +806,7 @@ if (typeof document !== 'undefined') { // This is not run in worker threads
     function onReceiveWorkerMessage(event) {
         if (event.data.type == 'solution' && event.data.id == currentTaskId) {
             var sequence = createSequence(event.data.gearsPrimary, event.data.gearsSecondary);
-            displayGearSequence(sequence, resultDiv);
+            currentTask.solutionList.add(new Solution(sequence))
         }
         if (event.data.type == 'stop' && event.data.id == currentTaskId) {
             searchingSpan.style.display = 'none';
@@ -767,7 +832,6 @@ if (typeof document !== 'undefined') { // This is not run in worker threads
         var approxiamte = document.getElementById('approximate').checked;
         var error = parseFloat(document.getElementById('error').value);
 
-        resultDiv.textContent = '';
         currentTaskId++;
 
         if (currentWorker != null) {
@@ -790,6 +854,7 @@ if (typeof document !== 'undefined') { // This is not run in worker threads
         
         currentWorker.postMessage(currentTask);
         searchingSpan.style.display = "inline";
+        currentTask.solutionList = new SolutionList(resultDiv);
     });
 
     document.getElementById('stop').addEventListener('click', function(event) {
