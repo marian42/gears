@@ -476,10 +476,6 @@ class Connection {
     }
 }
 
-function printFactors(number) {
-    console.log(number + ": " + factorize(number).join(', '));
-}
-
 function factorize(number) {
     var result = [];
     for (var i = 2; i <= number; i++) {
@@ -623,13 +619,62 @@ function createBins(items, itemToBin) {
     return result;
 }
 
-function createSequence(gearsPrimary, gearsSecondary) {
-    var connections = [];
+function getIndexOfBestMatch(gear, sequence) {
+    for (var i = 0; i < sequence.length; i++) {
+        if ((gear + sequence[i]) % 16 == 0) {
+            return i;
+        }
+    }
+    for (var i = 0; i < sequence.length; i++) {
+        if ((gear + sequence[i]) % 8 == 0) {
+            return i;
+        }
+    }
+    for (var i = 0; i < sequence.length; i++) {
+        if (sequence[i] % 8 != 0 && (sequence[i] + 12) % 8 != 0) {
+            return i;
+        }
+    }
+    return 0;
+}
+
+function createSequence(gearsPrimary, gearsSecondary, parameters) {
+    var sequenceStart = [];
+    for (var i = 0; i < parameters.startSequence.length - 1; i += 2) {
+        sequenceStart.push(new Connection(parameters.startSequence[i], parameters.startSequence[i + 1]));
+    }
+    if (parameters.startSequence.length % 2 == 1) {
+        var lastStartSequenceGear = parameters.startSequence[parameters.startSequence.length - 1];
+        if (gearsSecondary.length == 0) {
+            sequenceStart.push(new Connection(lastStartSequenceGear, 1));
+        } else {
+            var index = getIndexOfBestMatch(lastStartSequenceGear, gearsSecondary);
+            sequenceStart.push(new Connection(lastStartSequenceGear, gearsSecondary[index]));
+            gearsSecondary = gearsSecondary.slice();
+            gearsSecondary.splice(index, 1);
+        }
+    }
+    var sequenceEnd = [];
+    if (parameters.endSequence.length % 2 == 1) {
+        var firstEndSequenceGear = parameters.endSequence[0];
+        if (gearsPrimary.length == 0) {
+            sequenceStart.push(new Connection(1, firstEndSequenceGear));
+        } else {
+            var index = getIndexOfBestMatch(firstEndSequenceGear, gearsPrimary);
+            sequenceEnd.push(new Connection(gearsPrimary[index], firstEndSequenceGear));
+            gearsPrimary = gearsPrimary.slice();
+            gearsPrimary.splice(index, 1);
+        }
+    }
+    for (var i = parameters.endSequence.length % 2; i < parameters.endSequence.length; i += 2) {
+        sequenceEnd.push(new Connection(parameters.endSequence[i], parameters.endSequence[i + 1]));
+    }
 
     var binsPrimary = createBins(gearsPrimary, function (gear) { return gear % 16; });
     var binsSecondary = createBins(gearsSecondary, function (gear) { return (16 - gear % 16) % 16; });
     var remainderPrimary = [];
     var remainderSecondary = [];
+    var connections = [];
 
     for (var i = 0; i < 16; i++) {
         if (!(i in binsPrimary) && !(i in binsSecondary)) {
@@ -678,7 +723,7 @@ function createSequence(gearsPrimary, gearsSecondary) {
 
     connections.sort(function (a, b) { return Math.sign(a.factor - b.factor); });
 
-    return connections;
+    return sequenceStart.concat(connections, sequenceEnd);
 }
 
 class Solution {
@@ -770,27 +815,27 @@ class SolutionList {
     }
 }
 
+function parseGearList(value, distinct=false) {
+    var result = [];
+    for (var gearString of value.split(',')) {
+        gearString = gearString.trim();
+        var teethCount = parseInt(gearString);
+        if (!isNaN(teethCount) && (!distinct || !result.includes(teethCount))) {
+            result.push(teethCount);
+        }
+    }
+    return result;
+}
+
 function getAvailableGears() {
     var result = [];
 
     if (document.getElementById('standardgearscheckbox').checked) {
-        for (var gearString of document.getElementById('standardgearslist').value.split(',')) {
-            gearString = gearString.trim();
-            var teethCount = parseInt(gearString);
-            if (!isNaN(teethCount) && !result.includes(teethCount)) {
-                result.push(teethCount);
-            }
-        }
+        result = result.concat(parseGearList(document.getElementById('standardgearslist').value, true));
     }
 
     if (document.getElementById('customgearscheckbox').checked) {
-        for (var gearString of document.getElementById('customgearslist').value.split(',')) {
-            gearString = gearString.trim();
-            var teethCount = parseInt(gearString);
-            if (!isNaN(teethCount) && !result.includes(teethCount)) {
-                result.push(teethCount);
-            }
-        }
+        result = result.concat(parseGearList(document.getElementById('customgearslist').value, true));
     }
 
     return result;
@@ -807,7 +852,7 @@ if (typeof document !== 'undefined') { // This is not run in worker threads
 
     function onReceiveWorkerMessage(event) {
         if (event.data.type == 'solution' && event.data.id == currentTaskId) {
-            var sequence = createSequence(event.data.gearsPrimary, event.data.gearsSecondary);
+            var sequence = createSequence(event.data.gearsPrimary, event.data.gearsSecondary, currentTask);
             currentTask.solutionList.add(new Solution(sequence))
         }
         if (event.data.type == 'stop' && event.data.id == currentTaskId) {
@@ -819,12 +864,41 @@ if (typeof document !== 'undefined') { // This is not run in worker threads
             }
         }
     }
+
+    function readFixedSequenceGears(currentTask) {
+        currentTask.startSequence = parseGearList(document.getElementById('fixedStart').value);
+        currentTask.endSequence = parseGearList(document.getElementById('fixedEnd').value);
+
+        currentTask.fixedPrimary = [];
+        currentTask.fixedSecondary = [];
+        currentTask.fixedPrimaryFactor = 1;
+        currentTask.fixedSecondaryFactor = 1;
+        for (var i = 0; i < currentTask.startSequence.length; i++) {
+            if (i % 2 == 0) {
+                currentTask.fixedPrimary.push(currentTask.startSequence[i]);
+                currentTask.fixedPrimaryFactor *= currentTask.startSequence[i];
+            } else {
+                currentTask.fixedSecondary.push(currentTask.startSequence[i]);
+                currentTask.fixedSecondaryFactor *= currentTask.startSequence[i];
+            }
+        }
+        for (var i = 0; i < currentTask.endSequence.length; i++) {
+            if ((currentTask.endSequence.length - 1 - i) % 2 == 1) {
+                currentTask.fixedPrimary.push(currentTask.endSequence[i]);
+                currentTask.fixedPrimaryFactor *= currentTask.endSequence[i];
+            } else {
+                currentTask.fixedSecondary.push(currentTask.endSequence[i]);
+                currentTask.fixedSecondaryFactor *= currentTask.endSequence[i];
+            }
+        }
+
+        currentTask.searchRatio = currentTask.targetRatio.multiply(new Fraction(currentTask.fixedSecondaryFactor, currentTask.fixedPrimaryFactor));
+    }
     
     document.getElementById('calculate').addEventListener('click', function(event) {
         event.preventDefault();
         
-        var input = document.getElementById('ratio').value;
-        var targetRatio = parseFraction(input);
+        var targetRatio = parseFraction(document.getElementById('ratio').value);
         var distanceConstraint = null;
         if (document.getElementById('full').checked) {
             distanceConstraint = 1;
@@ -853,7 +927,9 @@ if (typeof document !== 'undefined') { // This is not run in worker threads
             'distanceConstraint': distanceConstraint,
             'id': currentTaskId
         };
-        
+
+        readFixedSequenceGears(currentTask);
+
         currentWorker.postMessage(currentTask);
         searchingSpan.style.display = "inline";
         currentTask.solutionList = new SolutionList(resultDiv);
@@ -903,7 +979,10 @@ function getMissingPrimeFactors(targetRatio, availableFactors) {
 function* findSolutionsExact(parameters) {    
     var availableFactors = getGearFactorsSet(parameters.gears, parameters.gearFactors);
 
-    var missingFactors = getMissingPrimeFactors(parameters.targetRatio, availableFactors);
+    var availableGearsPrimary = parameters.gears.filter(gear => !parameters.fixedSecondary.includes(gear));
+    var availableGearsSecondary = parameters.gears.filter(gear => !parameters.fixedPrimary.includes(gear));
+
+    var missingFactors = getMissingPrimeFactors(parameters.searchRatio, availableFactors);
     if (missingFactors.length != 0) {
         postMessage({
             'id': parameters.id,
@@ -917,15 +996,15 @@ function* findSolutionsExact(parameters) {
 
     var hammingIterator = getHammingSequence(availableFactors);
     while (true) {
-        var currentRatio = parameters.targetRatio.extend(hammingIterator.next().value);
+        var currentRatio = parameters.searchRatio.extend(hammingIterator.next().value);
 
-        var solutionsPrimary = findGears(currentRatio.a, parameters.gears, parameters.gearFactors);
+        var solutionsPrimary = findGears(currentRatio.a, availableGearsPrimary, parameters.gearFactors);
 
         if (solutionsPrimary.length == 0) {
             continue;
         }
         for (var solutionPrimary of solutionsPrimary) {
-            var solutionsSecondary = findGears(currentRatio.b, parameters.gears.filter(gear => !solutionPrimary.includes(gear)), parameters.gearFactors);
+            var solutionsSecondary = findGears(currentRatio.b, availableGearsSecondary.filter(gear => !solutionPrimary.includes(gear)), parameters.gearFactors);
             for (var solutionSecondary of solutionsSecondary) {
                 yield [solutionPrimary, solutionSecondary];
             }
@@ -936,14 +1015,15 @@ function* findSolutionsExact(parameters) {
 }
 
 function* findSolutionsApproximate(parameters) {
-    var targetRatio = parameters.targetRatio.getDecimal();
+    var targetRatio = parameters.searchRatio.getDecimal();
     
-    var gearsWithoutWorm = parameters.gears.filter(gear => gear != 1);
+    var availableGearsPrimary = parameters.gears.filter(gear => gear != 1 && !parameters.fixedSecondary.includes(gear));
+    var availableGearsSecondary = parameters.gears.filter(gear => gear != 1 && !parameters.fixedPrimary.includes(gear));
     
-    var hammingIterator = getHammingSequence(gearsWithoutWorm);
+    var hammingIterator = getHammingSequence(availableGearsPrimary);
     while (true) {
         var primaryValue = hammingIterator.next().value;
-        var solutionsPrimary = findGears(primaryValue, gearsWithoutWorm, parameters.gearFactors);
+        var solutionsPrimary = findGears(primaryValue, availableGearsPrimary, parameters.gearFactors);
 
         if (solutionsPrimary.length == 0) {
             continue;
@@ -957,7 +1037,7 @@ function* findSolutionsApproximate(parameters) {
         }
         
         for (var solutionPrimary of solutionsPrimary) {
-            var remainingGears = gearsWithoutWorm.filter(gear => !solutionPrimary.includes(gear));
+            var remainingGears = availableGearsSecondary.filter(gear => !solutionPrimary.includes(gear));
 
             for (var secondaryValue = denominatorMin; secondaryValue <= denominatorMax; secondaryValue++) {
                 var solutionsSecondary = findGears(secondaryValue, remainingGears, parameters.gearFactors);
@@ -971,7 +1051,8 @@ function* findSolutionsApproximate(parameters) {
 
 onmessage = function(event) {
     var parameters = event.data;
-    parameters.targetRatio = new Fraction(event.data.targetRatio.a, event.data.targetRatio.b);
+    parameters.targetRatio = new Fraction(parameters.targetRatio.a, parameters.targetRatio.b);
+    parameters.searchRatio = new Fraction(parameters.searchRatio.a, parameters.searchRatio.b);
 
     parameters.gearFactors = {};
     for (var gear of parameters.gears) {
@@ -1003,13 +1084,13 @@ onmessage = function(event) {
         var solutionPrimary = candidate[0];
         var solutionSecondary = candidate[1];
 
-        if (!wormGearAvailable && solutionSecondary.length != solutionPrimary.length) {
+        if (!wormGearAvailable && solutionSecondary.length + parameters.fixedPrimary.length != solutionPrimary.length + parameters.fixedSecondary.length) {
             continue;
         }
 
         var violatesConstraint = false;
         if (parameters.distanceConstraint !== null) {
-            var sequence = createSequence(solutionPrimary, solutionSecondary);
+            var sequence = createSequence(solutionPrimary, solutionSecondary, parameters);
             for (var connection of sequence) {
                 if (connection.distance % parameters.distanceConstraint != 0) {
                     violatesConstraint = true;
