@@ -12,10 +12,10 @@
 </head>
 
 <body>
-    <h1>Lego Gear Ratio Calculator</h1>
+    <a href="?" class="headline"><h1>Lego Gear Ratio Calculator</h1></a>
 
     <form>
-        Target ratio: <input type="text" id="ratio" name="ratio" value="0.0343" placeholder="try 0.75 or 3/4"/>
+        Target ratio: <input type="text" id="ratio" name="ratio" value="3/4" placeholder="try 0.75 or 3/4"/>
         
         <div class="group">
             <span class="editorhint">Gear distance:</span>
@@ -45,7 +45,7 @@
 
         <div>
             <label class="checkboxlabel" for="customgearscheckbox">
-                <input type="checkbox" id="customgearscheckbox" name="customgears" checked="">
+                <input type="checkbox" id="customgearscheckbox" name="customgears">
                 Include <a href="https://www.thingiverse.com/thing:4258996">custom gears</a>:
                 <input 
                     type="text"
@@ -69,23 +69,26 @@
             </label>
         </div>
 
-        <div>
-            Fixed start gear sequence:
-            <input 
-                type="text"
-                id="fixedStart"
-                name="fixedStart"
-                value=""/>
-        </div>
+        <details>
+            <summary>Advanced options</summary>
+            <div>
+                Fixed start gear sequence:
+                <input 
+                    type="text"
+                    id="fixedStart"
+                    name="fixedStart"
+                    value=""/>
+            </div>
 
-        <div>
-            Fixed end gear sequence:
-            <input 
-                type="text"
-                id="fixedEnd"
-                name="fixedEnd"
-                value=""/>
-        </div>
+            <div>
+                Fixed end gear sequence:
+                <input 
+                    type="text"
+                    id="fixedEnd"
+                    name="fixedEnd"
+                    value=""/>
+            </div>
+        </details>
 
         <div>
             <button id="calculate">Search</button>
