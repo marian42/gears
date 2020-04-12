@@ -462,18 +462,25 @@ class Connection {
         table.appendChild(row);
         result.appendChild(table);
     
-        var distanceDiv = document.createElement("div");
-        distanceDiv.innerText = this.distance + (this.distance == 1 ? " unit" : " units");
-        distanceDiv.classList.add("distance");
+        var distanceSpan = document.createElement("span");
+        distanceSpan.innerText = this.distance + (this.distance == 1 ? " unit" : " units");
+        distanceSpan.classList.add("distance");
         if (this.distance % 1 == 0) {
-            distanceDiv.classList.add("dst-good");
+            distanceSpan.classList.add("dst-good");
         } else if (this.distance % 0.5 == 0) {
-            distanceDiv.classList.add("dst-ok");
+            distanceSpan.classList.add("dst-ok");
         } else {
-            distanceDiv.classList.add("dst-bad");
+            distanceSpan.classList.add("dst-bad");
         }
-        distanceDiv.title = "Distance between axes";
-        result.appendChild(distanceDiv);
+        distanceSpan.title = "Distance between axes";
+        result.appendChild(distanceSpan);
+        if ((this.gear1 - 4) % 8 == 0 && (this.gear2 - 4) % 8 == 0) {
+            var perpendicular = document.createElement("span");
+            perpendicular.innerText = ' or perpendicular';
+            perpendicular.title = 'The gears can be placed on perpendicular axles.';
+            result.appendChild(perpendicular);
+        
+        }
     
         return result;
     }
