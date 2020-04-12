@@ -1084,7 +1084,7 @@ onmessage = function(event) {
         var solutionPrimary = candidate[0];
         var solutionSecondary = candidate[1];
 
-        if (!wormGearAvailable && solutionSecondary.length + parameters.fixedPrimary.length != solutionPrimary.length + parameters.fixedSecondary.length) {
+        if (!wormGearAvailable && solutionPrimary.length + parameters.fixedPrimary.length != solutionSecondary.length + parameters.fixedSecondary.length) {
             continue;
         }
 
