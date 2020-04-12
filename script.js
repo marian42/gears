@@ -5,6 +5,9 @@ const PIXELS_PER_MM = 2.5;
 
 const STANDARD_GEARS = [1, 8, 16, 24, 40, 56, 12, 20, 28, 36, 60, 140];
 
+const DEFAULT_GEARS_STANDARD = '1,8,16,24,40,56,12,20,28,36,60,140';
+const DEFAULT_GEARS_CUSTOM = '10,11,13,14,15,17,18,19,21,22,23,25,26,27,29,30,31,32';
+
 function getOnCircle(angle, radius) {
     return [Math.cos(angle) * radius, Math.sin(angle) * radius];
 }
@@ -894,10 +897,8 @@ if (typeof document !== 'undefined') { // This is not run in worker threads
 
         currentTask.searchRatio = currentTask.targetRatio.multiply(new Fraction(currentTask.fixedSecondaryFactor, currentTask.fixedPrimaryFactor));
     }
-    
-    document.getElementById('calculate').addEventListener('click', function(event) {
-        event.preventDefault();
-        
+
+    function startSearch() {
         var targetRatio = parseFraction(document.getElementById('ratio').value);
         var distanceConstraint = null;
         if (document.getElementById('full').checked) {
@@ -933,18 +934,144 @@ if (typeof document !== 'undefined') { // This is not run in worker threads
         currentWorker.postMessage(currentTask);
         searchingSpan.style.display = "inline";
         currentTask.solutionList = new SolutionList(resultDiv);
-    });
+    }
 
-    document.getElementById('stop').addEventListener('click', function(event) {
-        event.preventDefault();
-
+    function stopSearch() {
         if (currentWorker != null) {
             currentWorker.terminate();
             currentWorker = null;
         }
 
         searchingSpan.style.display = "none";
+    }
+    
+    document.getElementById('calculate').addEventListener('click', function(event) {
+        event.preventDefault();
+        
+        startSearch();
+
+        window.history.pushState({}, "", getUrlParameters());
     });
+
+    document.getElementById('stop').addEventListener('click', function(event) {
+        event.preventDefault();
+        stopSearch();        
+    });
+
+    function getUrlParameters() {
+        var form = document.querySelector('form');
+        var elements = {};
+    
+        var items = [];
+        
+        for (var element of form.elements) {
+            elements[element.name] = element;
+            if (element.type == 'radio' && element.checked) {
+                items.push('dst=' + element.value);
+            }
+        }
+    
+        items.push('targetratio=' + encodeURI(elements['ratio'].value));
+        if (elements['standardgears'].checked) {
+            var value = elements['standardgearslist'].value.replace(/ /g, '');
+            if (value == DEFAULT_GEARS_STANDARD) {
+                value = 'default';
+            }
+            items.push('gears=' + encodeURI(value));
+        }
+    
+        if (elements['customgears'].checked) {
+            var value = elements['customgearslist'].value.replace(/ /g, '');
+            if (value == DEFAULT_GEARS_CUSTOM) {
+                value = 'default';
+            }
+            items.push('customgears=' + encodeURI(value));
+        }
+    
+        if (elements['approximate'].checked) {
+            items.push('error=' + encodeURI(elements['error'].value));
+        }
+    
+        if (elements['fixedStart'].value != '') {
+            items.push('start=' + encodeURI(elements['fixedStart'].value));
+        }
+    
+        if (elements['fixedEnd'].value != '') {
+            items.push('end=' + encodeURI(elements['fixedEnd'].value));
+        }
+    
+        return '?' + items.join('&');
+    }
+    
+    function loadUrlParameters(runSearch=true) {
+        var parameters = {};
+        window.location.href.replace(/[?&]+([^=&]+)=([^&]*)/gi, function(m,key,value) {
+            parameters[key] = value;
+        });
+    
+        if ("targetratio" in parameters) {
+            var form = document.querySelector('form');
+            var elements = {};
+            
+            for (var element of form.elements) {
+                elements[element.name] = element;
+            }
+            
+            elements['ratio'].value = parameters['targetratio'];
+    
+            if ('dst' in parameters) {
+                document.getElementById(parameters['dst']).checked = true;
+            }
+    
+            elements['standardgears'].checked = 'gears' in parameters;
+            if ('gears' in parameters) {
+                if (parameters['gears'] == 'default') {
+                    elements['standardgearslist'].value = DEFAULT_GEARS_STANDARD.replace(/,/g, ', ');
+                } else {
+                    elements['standardgearslist'].value = parameters['gears'].replace(/,/g, ', ');
+                }
+            }
+    
+            elements['customgears'].checked = 'customgears' in parameters;
+            if ('customgears' in parameters) {
+                if (parameters['customgears'] == 'default') {
+                    elements['customgearslist'].value = DEFAULT_GEARS_CUSTOM.replace(/,/g, ', ');
+                } else {
+                    elements['standarcustomgearslistdgearslist'].value = parameters['customgears'].replace(/,/g, ', ');
+                }
+            }
+    
+            elements['approximate'].checked = 'error' in parameters;
+            if ('error' in parameters) {
+                elements['error'].value = parameters['error'];
+            }
+    
+            if ('start' in parameters) {
+                elements['fixedStart'].value = parameters['start'];
+            } else {
+                elements['fixedStart'].value = '';
+            }
+    
+            if ('end' in parameters) {
+                elements['fixedEnd'].value = parameters['end'];
+            } else {
+                elements['fixedEnd'].value = '';
+            }
+    
+            if (runSearch) {
+                startSearch();
+            } else {
+                resultDiv.innerText = '';
+            }
+        }
+    }
+    
+    loadUrlParameters();
+
+    window.onpopstate = function(event) {
+        loadUrlParameters(false);
+        stopSearch();
+    }
 }
 
 function getGearFactorsSet(gears, gearFactors) {
