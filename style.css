@@ -22,8 +22,17 @@ body {
     margin-top: 10px;
 }
 
+.connection table {
+    margin-right: -8px;
+}
+
 .connection table td {
     text-align: center;
+}
+
+.connection table td:last-of-type {
+    position: relative;
+    left: -8px;
 }
 
 .teeth {
