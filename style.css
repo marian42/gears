@@ -293,3 +293,31 @@ a.headline {
     text-decoration: none;
     color: inherit;
 }
+
+svg.gear {
+    animation-name: spin;
+    animation-timing-function: linear;
+    animation-iteration-count: infinite;
+    animation-fill-mode: forwards;
+}
+
+@keyframes spin {
+    from {
+        transform:rotate(0deg); 
+    }
+    to {
+        transform:rotate(360deg); 
+    }
+}
+
+.result-meta {
+    padding: 10px 0;
+}
+
+.result-meta label {
+    float: right;
+}
+
+.result-meta label input[type="text"] {
+    width: 40px;
+}

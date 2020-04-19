@@ -422,7 +422,7 @@ class Connection {
         this.factor = this.fraction.getDecimal();
     }
 
-    createDiv() {
+    createDiv(animate=true, animationDuration=4, reverse=false) {
         var result = document.createElement("div");
         result.setAttribute("class", "connection");
     
@@ -433,7 +433,11 @@ class Connection {
         if (this.gear1 == 1) {
             cell.appendChild(createWormGearSVG(this.useNewStyleWormGear));
         } else {
-            cell.appendChild(createGearSVG(this.gear1));
+            this.svg1 = createGearSVG(this.gear1);
+            if (reverse) {
+                this.svg1.style.animationDirection = 'reverse';
+            }
+            cell.appendChild(this.svg1);
         }
         row.appendChild(cell);
     
@@ -441,7 +445,14 @@ class Connection {
         if (this.gear2 == 1) {
             cell.appendChild(createWormGearSVG(this.useNewStyleWormGear));
         } else {
-            cell.appendChild(createGearSVG(this.gear2));
+            this.svg2 = createGearSVG(this.gear2);
+            if (!reverse) {
+                this.svg2.style.animationDirection = 'reverse';
+            }
+            if (this.gear2 % 2 == 0) {
+                this.svg2.firstChild.style.transform = 'rotate(' + (180 / this.gear2) + 'deg)';
+            }
+            cell.appendChild(this.svg2);
         }
         row.appendChild(cell);
     
@@ -481,8 +492,19 @@ class Connection {
             result.appendChild(perpendicular);
         
         }
-    
+        this.updateAnimation(animate, animationDuration);
         return result;
+    }
+
+    updateAnimation(enabled, duration) {
+        if (this.gear1 != 1) {
+            this.svg1.style.animationDuration = duration + "s";
+            this.svg1.style.animationPlayState = enabled ? 'running' : 'paused';
+        }
+        if (this.gear2 != 1) {
+            this.svg2.style.animationDuration = (duration / this.factor) + "s";
+            this.svg2.style.animationPlayState = enabled ? 'running' : 'paused';
+        }
     }
 }
 
@@ -757,7 +779,7 @@ class Solution {
         div.appendChild(this.fractions[0].createDiv());
 
         for (var i = 0; i < this.connections.length; i++) {
-            div.appendChild(this.connections[i].createDiv());
+            div.appendChild(this.connections[i].createDiv(animationSettings.enabled, animationSettings.duration / this.fractions[i].getDecimal(), i % 2 == 1));
             div.appendChild(this.fractions[i + 1].createDiv());
         }
 
@@ -769,6 +791,12 @@ class Solution {
         }
         this.domObject = div;
         return div;
+    }
+
+    updateAnimation() {
+        for (var i = 0; i < this.connections.length; i++) {
+            this.connections[i].updateAnimation(animationSettings.enabled, animationSettings.duration / this.fractions[i].getDecimal());
+        }
     }
 }
 
@@ -823,6 +851,14 @@ class SolutionList {
             }
         }
     }
+
+    updateAnimation() {
+        for (var count in this.solutions) {
+            for (var solution of this.solutions[count]) {
+                solution.updateAnimation();
+            }
+        }
+    }
 }
 
 function parseGearList(value, distinct=false) {
@@ -860,10 +896,12 @@ if (typeof document !== 'undefined') { // This is not run in worker threads
     var currentTaskId = 0;
     var currentTask = null;
 
+    var animationSettings = {};
+
     function onReceiveWorkerMessage(event) {
         if (event.data.type == 'solution' && event.data.id == currentTaskId) {
             var sequence = createSequence(event.data.gearsPrimary, event.data.gearsSecondary, currentTask);
-            currentTask.solutionList.add(new Solution(sequence))
+            currentTask.solutionList.add(new Solution(sequence));
         }
         if (event.data.type == 'stop' && event.data.id == currentTaskId) {
             searchingSpan.style.display = 'none';
@@ -1072,6 +1110,21 @@ if (typeof document !== 'undefined') { // This is not run in worker threads
             }
         }
     }
+
+    function updateAnimation() {
+        console.log("update animation")
+        animationSettings.enabled = document.getElementById('animate').checked;
+        animationSettings.duration = 60 / parseFloat(document.getElementById('animate-rpm').value);
+
+        if (currentTask != null) {
+            currentTask.solutionList.updateAnimation();
+        }
+    }
+
+    updateAnimation();
+
+    document.getElementById('animate').addEventListener('change', updateAnimation);
+    document.getElementById('animate-rpm').addEventListener('change', updateAnimation);
     
     loadUrlParameters();
 
