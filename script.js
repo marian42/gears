@@ -264,29 +264,33 @@ function createGearSVG(n) {
 function createWormGearSVG(newStyle=false) {
     const rxOuter = newStyle ? 7.4 : 4.9;
     const rxInner = 3;
-    const ry = newStyle ? 4 : 7.9;
-    const stepCount = newStyle ? 2.5 : 5;
-    const yStep = ry * 2 / stepCount;
+    const ry = newStyle ? 4 : 8;
+    const stepCount = newStyle ? 4.8 : 7;
+    const yStep = 3.2;
 
     var vertices = [];
 
+    var teethOffset = newStyle ? -0.34 : -0.125;
     for (var i = 0; i < stepCount; i++) {
-        vertices.push([-rxOuter, -ry + i * yStep]);
-        vertices.push([-rxOuter, -ry + i * yStep + yStep * 0.25]);
-        vertices.push([-rxInner, -ry + i * yStep + yStep * 0.5]);
-        vertices.push([-rxInner, -ry + i * yStep + yStep * 0.75]);
+        vertices.push([-rxOuter, -ry + i * yStep + yStep * (0.0 + teethOffset)]);
+        vertices.push([-rxOuter, -ry + i * yStep + yStep * (0.25 + teethOffset)]);
+        vertices.push([-rxInner, -ry + i * yStep + yStep * (0.5 + teethOffset)]);
+        vertices.push([-rxInner, -ry + i * yStep + yStep * (0.75 + teethOffset)]);
     }
     if (newStyle) {
         vertices.pop();
     }
-    vertices.push([-rxOuter, +ry]);
+    vertices.push([-rxOuter, -ry + stepCount * yStep]);
+    vertices.push([rxInner, -ry + stepCount * yStep]);
 
     for (var i = 0; i < stepCount; i++) {
-        vertices.push([newStyle ? rxOuter : rxInner, ry - i * yStep]);
-        vertices.push([+rxOuter, ry - i * yStep - yStep * 0.25]);
-        vertices.push([newStyle ? rxInner : rxOuter, ry - i * yStep - yStep * 0.5]);
-        vertices.push([+rxInner, ry - i * yStep - yStep * 0.75]);
+        vertices.push([rxInner, -ry + (stepCount - i) * yStep - yStep * 0.125]);
+        vertices.push([+rxOuter, -ry + (stepCount - i) * yStep - yStep * 0.375]);
+        vertices.push([rxOuter, -ry + (stepCount - i) * yStep - yStep * 0.625]);
+        vertices.push([+rxInner, -ry + (stepCount - i) * yStep - yStep * 0.875]);
     }
+
+    vertices.push([rxInner, -ry]);
     if (newStyle) {
         vertices.pop();
     }
@@ -307,7 +311,7 @@ function createWormGearSVG(newStyle=false) {
     svg.setAttribute("height", ry * 2 * PIXELS_PER_MM);
     svg.setAttribute("width", rxOuter * 2 * PIXELS_PER_MM);
     svg.setAttribute("viewBox", (-rxOuter) + " " + (-ry) + " " + (2 * rxOuter) + " " + (2 * ry));
-    svg.classList.add("gear");
+    svg.classList.add("worm");
     return svg;
 }
 
@@ -431,11 +435,12 @@ class Connection {
     
         var cell = document.createElement("td");
         if (this.gear1 == 1) {
-            cell.appendChild(createWormGearSVG(this.useNewStyleWormGear));
+            this.svg1 = createWormGearSVG(this.useNewStyleWormGear);
+            cell.appendChild(this.svg1);
         } else {
             this.svg1 = createGearSVG(this.gear1);
             if (reverse) {
-                this.svg1.style.animationDirection = 'reverse';
+                this.svg1.firstChild.style.animationDirection = 'reverse';
             }
             cell.appendChild(this.svg1);
         }
@@ -443,14 +448,15 @@ class Connection {
     
         cell = document.createElement("td");
         if (this.gear2 == 1) {
-            cell.appendChild(createWormGearSVG(this.useNewStyleWormGear));
+            this.svg2 = createWormGearSVG(this.useNewStyleWormGear);
+            cell.appendChild(this.svg2);
         } else {
             this.svg2 = createGearSVG(this.gear2);
             if (!reverse) {
-                this.svg2.style.animationDirection = 'reverse';
+                this.svg2.firstChild.style.animationDirection = 'reverse';
             }
             if (this.gear2 % 2 == 0) {
-                this.svg2.firstChild.style.transform = 'rotate(' + (180 / this.gear2) + 'deg)';
+                this.svg2.style.transform = 'rotate(' + (180 / this.gear2) + 'deg)';
             }
             cell.appendChild(this.svg2);
         }
@@ -497,14 +503,11 @@ class Connection {
     }
 
     updateAnimation(enabled, duration) {
-        if (this.gear1 != 1) {
-            this.svg1.style.animationDuration = duration + "s";
-            this.svg1.style.animationPlayState = enabled ? 'running' : 'paused';
-        }
-        if (this.gear2 != 1) {
-            this.svg2.style.animationDuration = (duration / this.factor) + "s";
-            this.svg2.style.animationPlayState = enabled ? 'running' : 'paused';
-        }
+        this.svg1.firstChild.style.animationDuration = duration + "s";
+        this.svg1.firstChild.style.animationPlayState = enabled ? 'running' : 'paused';
+        
+        this.svg2.firstChild.style.animationDuration = (duration / this.factor) + "s";
+        this.svg2.firstChild.style.animationPlayState = enabled ? 'running' : 'paused';
     }
 }
 

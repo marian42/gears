@@ -4,7 +4,7 @@ body {
     color: rgb(63, 63, 63);
 }
 
-.gear path, .gear polygon {
+.gear path, .worm polygon {
     fill: #888d91;
 }
 
@@ -303,11 +303,19 @@ a.headline {
     color: inherit;
 }
 
-svg.gear {
-    animation-name: spin;
+svg.gear path, svg.worm polygon {
     animation-timing-function: linear;
     animation-iteration-count: infinite;
     animation-fill-mode: forwards;
+}
+
+svg.gear path {
+    animation-name: spin;
+}
+
+svg.worm polygon {
+    animation-name: wind;
+    animation-direction: reverse;
 }
 
 @keyframes spin {
@@ -316,6 +324,15 @@ svg.gear {
     }
     to {
         transform:rotate(360deg); 
+    }
+}
+
+@keyframes wind {
+    from {
+        transform: translate(0, 0);
+    }
+    to {
+        transform: translate(0, -3.25px);
     }
 }
 
