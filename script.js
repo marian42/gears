@@ -974,7 +974,9 @@ if (typeof document !== 'undefined') { // This is not run in worker threads
             'targetRatio': targetRatio,
             'gears': getAvailableGears(),
             'distanceConstraint': distanceConstraint,
-            'id': currentTaskId
+            'id': currentTaskId,
+            'maxNumberOfResults': parseInt(document.getElementById('limitCount').value),
+            'searchTime': parseInt(document.getElementById('limitTime').value)
         };
 
         readFixedSequenceGears(currentTask);
@@ -1257,7 +1259,7 @@ onmessage = function(event) {
     while (true) {
         var candidate = iterator.next().value;
 
-        if (new Date().getTime() - startTime > 60000) {
+        if (new Date().getTime() - startTime > parameters.searchTime * 1000) {
             postMessage({
                 'id': parameters.id,
                 'type': 'stop',
@@ -1299,7 +1301,7 @@ onmessage = function(event) {
             solutionsFound++;
         }
 
-        if (solutionsFound >= 500) {
+        if (solutionsFound >= parameters.maxNumberOfResults) {
             postMessage({
                 'id': parameters.id,
                 'type': 'stop',
