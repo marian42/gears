@@ -1063,6 +1063,14 @@ if (typeof document !== 'undefined') { // This is not run in worker threads
         if (elements['fixedEnd'].value != '') {
             items.push('end=' + encodeURI(elements['fixedEnd'].value));
         }
+
+        if (elements['limitCount'].value != '100') {
+            items.push('count=' + encodeURI(elements['limitCount'].value));
+        }
+
+        if (elements['limitTime'].value != '30') {
+            items.push('time=' + encodeURI(elements['limitTime'].value));
+        }
     
         return '?' + items.join('&');
     }
@@ -1122,6 +1130,18 @@ if (typeof document !== 'undefined') { // This is not run in worker threads
                 elements['fixedEnd'].value = '';
             }
     
+            if ('count' in parameters) {
+                elements['limitCount'].value = parameters['count'];
+            } else {
+                elements['limitCount'].value = '100';
+            }
+    
+            if ('time' in parameters) {
+                elements['limitTime'].value = parameters['time'];
+            } else {
+                elements['limitTime'].value = '30';
+            }
+    
             if (runSearch) {
                 startSearch();
             } else {
@@ -1131,7 +1151,6 @@ if (typeof document !== 'undefined') { // This is not run in worker threads
     }
 
     function updateAnimation() {
-        console.log("update animation")
         animationSettings.enabled = document.getElementById('animate').checked;
         animationSettings.duration = 60 / parseFloat(document.getElementById('animate-rpm').value);
 
