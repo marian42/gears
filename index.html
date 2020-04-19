@@ -16,6 +16,18 @@
 
     <form>
         Target ratio: <input type="text" id="ratio" name="ratio" value="3/4" placeholder="try 0.75 or 3/4"/>
+
+        <div>
+            <label class="checkboxlabel" for="approximate">
+                <input type="checkbox" id="approximate" name="approximate" checked="">
+                Include approximate solutions within &#177;
+                <input 
+                    type="text"
+                    id="error"
+                    name="error"
+                    value="0.01"/>
+            </label>
+        </div>
         
         <div class="group">
             <span class="editorhint">Gear distance:</span>
@@ -43,34 +55,22 @@
             </label>
         </div>
 
-        <div>
-            <label class="checkboxlabel" for="customgearscheckbox">
-                <input type="checkbox" id="customgearscheckbox" name="customgears">
-                Include <a href="https://www.thingiverse.com/thing:4258996">custom gears</a>:
-                <input 
-                    type="text"
-                    id="customgearslist"
-                    class="gearlist custom"
-                    name="customgearslist"
-                    value="10, 11, 13, 14, 15, 17, 18, 19, 21, 22, 23, 25, 26, 27, 29, 30, 31, 32"
-                    placeholder="comma separated list of teeth counts of available gears"/>
-            </label>
-        </div>
-
-        <div>
-            <label class="checkboxlabel" for="approximate">
-                <input type="checkbox" id="approximate" name="approximate" checked="">
-                Include approximate solutions within &#177;
-                <input 
-                    type="text"
-                    id="error"
-                    name="error"
-                    value="0.01"/>
-            </label>
-        </div>
-
         <details>
             <summary>Advanced options</summary>
+            <div>
+                <label class="checkboxlabel" for="customgearscheckbox">
+                    <input type="checkbox" id="customgearscheckbox" name="customgears">
+                    Include <a href="https://www.thingiverse.com/thing:4258996">custom gears</a>:
+                    <input 
+                        type="text"
+                        id="customgearslist"
+                        class="gearlist custom"
+                        name="customgearslist"
+                        value="10, 11, 13, 14, 15, 17, 18, 19, 21, 22, 23, 25, 26, 27, 29, 30, 31, 32"
+                        placeholder="comma separated list of teeth counts of available gears"/>
+                </label>
+            </div>
+
             <div>
                 Fixed start gear sequence:
                 <input 
