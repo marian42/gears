@@ -809,6 +809,7 @@ class SolutionList {
         this.container.textContent = '';
         this.solutions = {};
         this.sizeContainers = {};
+        this.totalSolutions = 0;
     }
 
     add(solution) {
@@ -853,6 +854,7 @@ class SolutionList {
                 this.solutions[count].push(solution);
             }
         }
+        this.totalSolutions++;
     }
 
     updateAnimation() {
@@ -905,6 +907,10 @@ if (typeof document !== 'undefined') { // This is not run in worker threads
         if (event.data.type == 'solution' && event.data.id == currentTaskId) {
             var sequence = createSequence(event.data.gearsPrimary, event.data.gearsSecondary, currentTask);
             currentTask.solutionList.add(new Solution(sequence));
+
+            if (currentTask.solutionList.totalSolutions >= currentTask.maxNumberOfResults) {
+                stopSearch();
+            }
         }
         if (event.data.type == 'stop' && event.data.id == currentTaskId) {
             searchingSpan.style.display = 'none';
@@ -946,6 +952,15 @@ if (typeof document !== 'undefined') { // This is not run in worker threads
         currentTask.searchRatio = currentTask.targetRatio.multiply(new Fraction(currentTask.fixedSecondaryFactor, currentTask.fixedPrimaryFactor));
     }
 
+    function handleTaskTimeout() {
+        var taskId = currentTaskId;
+        setTimeout(function() {
+            if (currentTask.id == taskId && currentWorker != null) {
+                stopSearch();
+            }
+        }, parseInt(document.getElementById('limitTime').value) * 1000);
+    }
+
     function startSearch() {
         var targetRatio = parseFraction(document.getElementById('ratio').value);
         var distanceConstraint = null;
@@ -968,15 +983,13 @@ if (typeof document !== 'undefined') { // This is not run in worker threads
         currentWorker.onmessage = onReceiveWorkerMessage;
 
         currentTask = {
-            'type': 'start',
             'exact': !approxiamte,
             'error': error,
             'targetRatio': targetRatio,
             'gears': getAvailableGears(),
             'distanceConstraint': distanceConstraint,
             'id': currentTaskId,
-            'maxNumberOfResults': parseInt(document.getElementById('limitCount').value),
-            'searchTime': parseInt(document.getElementById('limitTime').value)
+            'maxNumberOfResults': parseInt(document.getElementById('limitCount').value)
         };
 
         readFixedSequenceGears(currentTask);
@@ -984,6 +997,7 @@ if (typeof document !== 'undefined') { // This is not run in worker threads
         currentWorker.postMessage(currentTask);
         searchingSpan.style.display = "inline";
         currentTask.solutionList = new SolutionList(resultDiv);
+        handleTaskTimeout();
     }
 
     function stopSearch() {
@@ -1201,8 +1215,6 @@ function* findSolutionsExact(parameters) {
                 yield [solutionPrimary, solutionSecondary];
             }
         }
-
-        yield null; // ensuring time constraint is checked from time to time
     }
 }
 
@@ -1254,24 +1266,8 @@ onmessage = function(event) {
 
     var iterator = parameters.exact ? findSolutionsExact(parameters) : findSolutionsApproximate(parameters);
 
-    var solutionsFound = 0;
-    var startTime = new Date().getTime();
     while (true) {
         var candidate = iterator.next().value;
-
-        if (new Date().getTime() - startTime > parameters.searchTime * 1000) {
-            postMessage({
-                'id': parameters.id,
-                'type': 'stop',
-                'reason': 'time'
-            });
-            close();
-            return;
-        }
-
-        if (candidate == null) {
-            continue;
-        }
 
         var solutionPrimary = candidate[0];
         var solutionSecondary = candidate[1];
@@ -1298,17 +1294,6 @@ onmessage = function(event) {
                 'gearsPrimary': solutionPrimary,
                 'gearsSecondary': solutionSecondary
             });
-            solutionsFound++;
-        }
-
-        if (solutionsFound >= parameters.maxNumberOfResults) {
-            postMessage({
-                'id': parameters.id,
-                'type': 'stop',
-                'reason': 'solutions'
-            });
-            close();
-            return;
         }
     }
 }
