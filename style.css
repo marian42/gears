@@ -23,7 +23,7 @@ body {
 }
 
 .connection table {
-    margin-right: -8px;
+    margin-right: -6px;
 }
 
 .connection table td {
@@ -32,7 +32,7 @@ body {
 
 .connection table td:last-of-type {
     position: relative;
-    left: -8px;
+    left: -6px;
 }
 
 .teeth {
