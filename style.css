@@ -315,7 +315,6 @@ svg.gear path {
 
 svg.worm polygon {
     animation-name: wind;
-    animation-direction: reverse;
 }
 
 @keyframes spin {

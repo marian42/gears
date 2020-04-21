@@ -437,6 +437,9 @@ class Connection {
         if (this.gear1 == 1) {
             this.svg1 = createWormGearSVG(this.useNewStyleWormGear);
             cell.appendChild(this.svg1);
+            if (!reverse) {
+                this.svg1.firstChild.style.animationDirection = 'reverse';
+            }
         } else {
             this.svg1 = createGearSVG(this.gear1);
             if (reverse) {
@@ -452,13 +455,13 @@ class Connection {
             cell.appendChild(this.svg2);
         } else {
             this.svg2 = createGearSVG(this.gear2);
-            if (!reverse) {
-                this.svg2.firstChild.style.animationDirection = 'reverse';
-            }
             if (this.gear2 % 2 == 0) {
                 this.svg2.style.transform = 'rotate(' + (180 / this.gear2) + 'deg)';
             }
             cell.appendChild(this.svg2);
+        }
+        if (!reverse) {
+            this.svg2.firstChild.style.animationDirection = 'reverse';
         }
         row.appendChild(cell);
     
