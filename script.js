@@ -810,6 +810,7 @@ class SolutionList {
         this.solutions = {};
         this.sizeContainers = {};
         this.totalSolutions = 0;
+        this.smallestError = null;
     }
 
     add(solution) {
@@ -818,6 +819,7 @@ class SolutionList {
             var sizeContainer = document.createElement('div');
             var headline = document.createElement('h2');
             headline.innerText = 'Solutions with ' + count + (count > 1 ? ' connections' : ' connection');
+            headline.name = count;
             sizeContainer.appendChild(headline);
 
             var done = false;
@@ -855,6 +857,11 @@ class SolutionList {
             }
         }
         this.totalSolutions++;
+        document.getElementById('resultcount').innerText = this.totalSolutions;
+        if (!currentTask.exact &&(this.smallestError == null || solution.error < this.smallestError)) {
+            this.smallestError = solution.error;
+            document.getElementById('smallest-error').innerText = this.smallestError.toPrecision(3);
+        }
     }
 
     updateAnimation() {
@@ -998,6 +1005,11 @@ if (typeof document !== 'undefined') { // This is not run in worker threads
         searchingSpan.style.display = "inline";
         currentTask.solutionList = new SolutionList(resultDiv);
         handleTaskTimeout();
+
+        document.getElementById('resultcount').innerText = 0;
+        document.getElementById('result-meta').style.display = 'block';
+        document.getElementById('smallest-error-container').style.display = currentTask.exact ? 'none' : 'inline';
+        document.getElementById('smallest-error').innerText = '';
     }
 
     function stopSearch() {

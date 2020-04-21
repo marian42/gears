@@ -336,14 +336,23 @@ svg.worm polygon {
     }
 }
 
-.result-meta {
+#result-meta {
     padding: 10px 0;
+    line-height: 20px;
+    vertical-align: middle;
+    text-align: start;
+    display: none;
 }
 
-.result-meta label {
+#result-meta>span {
+    float: left;
+    padding: 5px 0;
+}
+
+#result-meta label {
     float: right;
 }
 
-.result-meta label input[type="text"] {
+#result-meta label input[type="text"] {
     width: 40px;
 }
