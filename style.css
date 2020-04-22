@@ -355,3 +355,62 @@ svg.worm polygon {
 #result-meta label input[type="text"] {
     width: 40px;
 }
+
+.tabs-divider {
+    margin-bottom: 10px;
+    padding-bottom: 5px;
+    border-bottom: 1px solid rgb(202, 202, 202);
+
+    display: none;
+}
+
+input.tab:active ~ .tabs-divider {
+    border-bottom-color: rgb(124, 124, 124);
+}
+
+input.tab {
+    display: none;
+}
+
+label.tab {
+    padding: 8px 16px;
+    border-left: 1px solid rgb(202, 202, 202);
+    border-right: 1px solid rgb(202, 202, 202);
+    border-top: 1px solid rgb(202, 202, 202);
+    border-top-left-radius: 4px;
+    border-top-right-radius: 4px;
+    color: gray;
+    margin-left: 2px;
+
+    display: none;
+}
+
+input.tab:hover:not(:checked):not(:active) + label {
+    background-color: rgb(240, 240, 240);
+}
+
+input.tab:checked + label, input.tab:active + label {
+    color: black;
+    border-bottom: 1px solid white;
+}
+
+input.tab:active + label {
+    border-color: rgb(124, 124, 124);
+    border-bottom-color: white;
+}
+
+.tab-content {
+    display: none;
+}
+
+#tab-search:checked ~ #content-search {
+    display: block;
+}
+
+#tab-edit:checked ~ #content-edit {
+    display: block;
+}
+
+#tab-about:checked ~ #content-about {
+    display: block;
+}
