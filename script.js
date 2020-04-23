@@ -448,7 +448,7 @@ class Connection {
             cell.appendChild(this.svg1);
         }
         row.appendChild(cell);
-    
+        
         cell = document.createElement("td");
         if (this.gear2 == 1) {
             this.svg2 = createWormGearSVG(this.useNewStyleWormGear);
@@ -902,6 +902,117 @@ function getAvailableGears() {
     return result;
 }
 
+
+
+class SequenceEditor {
+    constructor(element) {
+        console.log(element);
+        this.container = element;
+
+        this.startFraction = new Fraction(1);
+        this.startFractionContainer = document.createElement('span');
+        this.container.appendChild(this.startFractionContainer);
+
+        this.connectionContainer = document.createElement('span');
+        this.container.appendChild(this.connectionContainer);
+
+        this.resultFraction = new Fraction(1);
+        this.resultFractionContainer = document.createElement('span');
+        this.container.appendChild(this.resultFractionContainer);
+        
+        this.addButtonContainer = document.createElement('span');
+        this.addButtonContainer.classList.add('add-container');
+        this.container.appendChild(this.addButtonContainer);
+        this.addButton = document.createElement('span');
+        this.addButton.classList.add('add-gear');
+        this.addButton.innerText = '+';
+        this.addButtonContainer.appendChild(this.addButton);
+
+        this.gearSelector = document.createElement('div');
+        this.gearSelector.classList.add('gear-selector');
+        this.gearSelector.style.display = 'none';
+        this.gearInput = document.createElement('input');
+        this.gearInput.type = 'text';
+        this.gearInput.placeholder = 'number of teeth';
+        this.gearSelector.appendChild(this.gearInput);
+        this.addButtonContainer.appendChild(this.gearSelector);
+        this.gearPreviewContainer = document.createElement('div');
+        this.gearSelector.appendChild(this.gearPreviewContainer);
+        
+        this.danglingGear = null;
+        this.connections = [];
+
+        this.updateDom();
+
+        var sequenceEditor = this
+        this.addButton.addEventListener('click', function(event) {
+            sequenceEditor.gearSelector.style.display = 'block';
+            sequenceEditor.gearInput.value = '';
+            sequenceEditor.gearInput.focus();
+            sequenceEditor.gearPreviewContainer.innerText = '';
+        });
+
+        this.gearSelector.addEventListener('focusout', function(event) {
+            sequenceEditor.gearSelector.style.display = 'none';
+        });
+
+        this.gearInput.addEventListener('keyup', function(event) {
+            sequenceEditor.gearPreviewContainer.innerText = '';
+            var gear = parseFloat(sequenceEditor.gearInput.value);
+            if (Number.isInteger(gear)) {
+
+                if (gear == 1) {
+                    sequenceEditor.gearPreviewContainer.appendChild(createWormGearSVG());
+                } else if (gear > 7 && gear < 200) {
+                    sequenceEditor.gearPreviewContainer.appendChild(createGearSVG(gear));
+                }
+            }
+        });
+
+        this.gearInput.addEventListener('keydown', function(event) {
+            sequenceEditor.gearPreviewContainer.innerText = '';
+            var gear = parseFloat(sequenceEditor.gearInput.value);
+            if (event.keyCode == 13 && Number.isInteger(gear) && (gear == 1 || gear >= 8)) {
+                sequenceEditor.addGear(gear);
+            }
+        });
+    }
+
+    updateDom() {
+        this.startFractionContainer.innerText = '';
+        this.startFractionContainer.appendChild(this.startFraction.createDiv());
+        this.resultFractionContainer.innerText = '';
+        if (this.connections.length >= 1) {
+            this.resultFractionContainer.appendChild(this.resultFraction.createDiv());
+        }
+    }
+
+    addGear(gear) {
+        this.gearSelector.style.display = 'none';
+
+        if (this.danglingGear == null) {
+            this.danglingGear = gear;
+            var div = new Connection(gear, 1).createDiv(false, 4, false);
+            div.classList.add('hide-second');
+            
+            if (this.connections.length >= 1) {
+                this.connectionContainer.appendChild(this.resultFraction.createDiv());
+            }            
+            this.connectionContainer.appendChild(div);
+        } else {
+            var connection = new Connection(this.danglingGear, gear);
+            this.danglingGear = null;
+            this.connections.push(connection);
+
+            this.connectionContainer.removeChild(this.connectionContainer.lastChild);
+            this.connectionContainer.appendChild(connection.createDiv(false, 4, this.connections.length % 2 == 0));
+
+            this.resultFraction = this.resultFraction.multiply(connection.fraction);
+            this.updateDom();
+        }
+    }
+}
+
 if (typeof document !== 'undefined') { // This is not run in worker threads
     var resultDiv = document.getElementById("result");
     var searchingSpan = document.getElementById("searching");
@@ -1036,6 +1147,8 @@ if (typeof document !== 'undefined') { // This is not run in worker threads
         event.preventDefault();
         stopSearch();        
     });
+
+    var sequenceEditor = new SequenceEditor(document.getElementById('sequence-editor'));
 
     function getUrlParameters() {
         var form = document.querySelector('form');
