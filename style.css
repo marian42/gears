@@ -441,14 +441,14 @@ input.tab:active + label {
 }
 
 .gear-selector {
-    font-size: 16px;
+    font-size: 14px;
     position: absolute;
     text-align: left;
     background-color: white;
     border: 1px solid rgb(202, 202, 202);
     border-radius: 4px;
-    padding: 10px; 
-    min-width: 400px;
+    padding: 10px;
+    min-width: 450px;
     left: 30px;
     top: 30px;
     box-shadow: 0px 0px 6px 0px rgba(0,0,0,0.25);
@@ -458,6 +458,7 @@ input.tab:active + label {
     width: 100%;
     box-sizing: border-box;
     margin-bottom: 10px;
+    font-size: 1.4em;
 }
 
 .connection.hide-second td:last-of-type {
@@ -465,9 +466,36 @@ input.tab:active + label {
 }
 
 .connection.hide-second .distance {
-    display: none;
+    visibility: hidden;
 }
 
 .connection.hide-second table {
     margin-right: 0;
+}
+
+.catalog {
+    margin: -4px;
+    max-height: 325px;
+    overflow-y: scroll;
+}
+
+.catalog-gear {
+    border: 1px solid rgb(202, 202, 202);;
+    display: inline-block;
+    padding: 10px;
+    margin: 4px;
+    text-align: center;
+    user-select: none;
+    cursor: pointer;
+    border-radius: 4px;
+}
+
+.catalog-gear:hover {
+    background-color: rgb(245, 245, 245);
+    border-color: rgb(167, 167, 167);
+}
+
+.catalog-gear:active {
+    background-color: rgb(223, 223, 223);
+    border-color: rgb(133, 133, 133);
 }

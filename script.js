@@ -906,7 +906,6 @@ function getAvailableGears() {
 
 class SequenceEditor {
     constructor(element) {
-        console.log(element);
         this.container = element;
 
         this.startFraction = new Fraction(1);
@@ -930,6 +929,7 @@ class SequenceEditor {
 
         this.gearSelector = document.createElement('div');
         this.gearSelector.classList.add('gear-selector');
+        this.gearSelector.setAttribute('tabindex', 0);
         this.gearSelector.style.display = 'none';
         this.gearInput = document.createElement('input');
         this.gearInput.type = 'text';
@@ -937,7 +937,13 @@ class SequenceEditor {
         this.gearSelector.appendChild(this.gearInput);
         this.addButtonContainer.appendChild(this.gearSelector);
         this.gearPreviewContainer = document.createElement('div');
+        this.gearPreviewContainer.classList.add('catalog-gear');
+        this.gearPreviewContainer.style.display = 'none';
         this.gearSelector.appendChild(this.gearPreviewContainer);
+        this.gearCatalog = document.createElement('div');
+        this.gearCatalog.classList.add('catalog');
+        this.gearSelector.appendChild(this.gearCatalog);
+        this.prepareGearCatalog();
         
         this.danglingGear = null;
         this.connections = [];
@@ -949,18 +955,28 @@ class SequenceEditor {
             sequenceEditor.gearSelector.style.display = 'block';
             sequenceEditor.gearInput.value = '';
             sequenceEditor.gearInput.focus();
-            sequenceEditor.gearPreviewContainer.innerText = '';
+            sequenceEditor.gearPreviewContainer.style.display = 'none';
+            sequenceEditor.gearCatalog.style.display = 'block';
         });
 
         this.gearSelector.addEventListener('focusout', function(event) {
-            sequenceEditor.gearSelector.style.display = 'none';
+            setTimeout(function() {
+                var comaprePosition = sequenceEditor.gearSelector.compareDocumentPosition(document.activeElement);
+                if (comaprePosition != 0 && comaprePosition != 20) {
+                    sequenceEditor.gearSelector.style.display = 'none';
+                }
+            }, 0);
         });
 
         this.gearInput.addEventListener('keyup', function(event) {
-            sequenceEditor.gearPreviewContainer.innerText = '';
             var gear = parseFloat(sequenceEditor.gearInput.value);
-            if (Number.isInteger(gear)) {
+            var showPreview = Number.isInteger(gear) && (gear == 1 || gear >= 8);
 
+            sequenceEditor.gearPreviewContainer.style.display = showPreview ? 'block' : 'none';
+            sequenceEditor.gearCatalog.style.display =  showPreview ? 'none' : 'block';
+
+            if (showPreview) {
+                sequenceEditor.gearPreviewContainer.innerText = '';
                 if (gear == 1) {
                     sequenceEditor.gearPreviewContainer.appendChild(createWormGearSVG());
                 } else if (gear > 7 && gear < 200) {
@@ -973,6 +989,13 @@ class SequenceEditor {
             sequenceEditor.gearPreviewContainer.innerText = '';
             var gear = parseFloat(sequenceEditor.gearInput.value);
             if (event.keyCode == 13 && Number.isInteger(gear) && (gear == 1 || gear >= 8)) {
+                sequenceEditor.addGear(gear);
+            }
+        });
+
+        this.gearPreviewContainer.addEventListener('click', function(event) {
+            var gear = parseFloat(sequenceEditor.gearInput.value);
+            if (Number.isInteger(gear) && (gear == 1 || gear >= 8)) {
                 sequenceEditor.addGear(gear);
             }
         });
@@ -1009,6 +1032,29 @@ class SequenceEditor {
 
             this.resultFraction = this.resultFraction.multiply(connection.fraction);
             this.updateDom();
+        }
+    }
+
+    prepareGearCatalog() {
+        var sequenceEditor = this;
+        for (const gear of [1, 8, 16, 24, 40, 12, 20, 28, 36, 56, 60]) {
+            var span = document.createElement('span');
+            span.classList.add('catalog-gear');
+            if (gear == 1) {
+                span.appendChild(createWormGearSVG());
+            } else {
+                span.appendChild(createGearSVG(gear));
+            }
+            var teethDiv = document.createElement('div');
+            teethDiv.classList.add('teeth');
+            teethDiv.innerText = gear;
+            span.appendChild(teethDiv);
+            
+            span.addEventListener('click', function (event) {
+                sequenceEditor.addGear(gear);
+            });
+
+            this.gearCatalog.appendChild(span);
         }
     }
 }
