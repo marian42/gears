@@ -499,3 +499,7 @@ input.tab:active + label {
     background-color: rgb(223, 223, 223);
     border-color: rgb(133, 133, 133);
 }
+
+.info a {
+    color: inherit;
+}

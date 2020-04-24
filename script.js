@@ -789,12 +789,19 @@ class Solution {
             div.appendChild(this.fractions[i + 1].createDiv());
         }
 
+        var infoDiv = document.createElement("div");
+        infoDiv.classList.add("info");
+        div.appendChild(infoDiv);
         if (!currentTask.exact) {
-            var infoDiv = document.createElement("div");
-            infoDiv.innerText = 'Error: ' + this.error.toPrecision(3);
-            infoDiv.classList.add("info");
-            div.appendChild(infoDiv);
+            var errorSpan = document.createElement('span');
+            errorSpan.innerText = 'Error: ' + this.error.toPrecision(3) + ' ';
+            infoDiv.appendChild(errorSpan);
         }
+        var permalink = document.createElement('a');
+        permalink.innerText = 'Permalink';
+        permalink.title = 'Permanent link to this solution';
+        permalink.href = this.getPermalink();
+        infoDiv.appendChild(permalink);
         this.domObject = div;
         return div;
     }
@@ -803,6 +810,15 @@ class Solution {
         for (var i = 0; i < this.connections.length; i++) {
             this.connections[i].updateAnimation(animationSettings.enabled, animationSettings.duration / this.fractions[i].getDecimal());
         }
+    }
+
+    getPermalink() {
+        var gears = [];
+        for (var connection of this.connections) {
+            gears.push(connection.gear1);
+            gears.push(connection.gear2);
+        }
+        return '?seq=' + gears.join(',');
     }
 }
 
