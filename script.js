@@ -908,14 +908,12 @@ class SequenceEditor {
     constructor(element) {
         this.container = element;
 
-        this.startFraction = new Fraction(1);
         this.startFractionContainer = document.createElement('span');
         this.container.appendChild(this.startFractionContainer);
 
         this.connectionContainer = document.createElement('span');
         this.container.appendChild(this.connectionContainer);
 
-        this.resultFraction = new Fraction(1);
         this.resultFractionContainer = document.createElement('span');
         this.container.appendChild(this.resultFractionContainer);
         
@@ -943,12 +941,9 @@ class SequenceEditor {
         this.gearCatalog = document.createElement('div');
         this.gearCatalog.classList.add('catalog');
         this.gearSelector.appendChild(this.gearCatalog);
-        this.prepareGearCatalog();
-        
-        this.danglingGear = null;
-        this.connections = [];
 
-        this.updateDom();
+        this.clear();
+        this.prepareGearCatalog();
 
         var sequenceEditor = this
         this.addButton.addEventListener('click', function(event) {
@@ -1055,6 +1050,22 @@ class SequenceEditor {
             });
 
             this.gearCatalog.appendChild(span);
+        }
+    }
+
+    clear() {
+        this.startFraction = new Fraction(1);
+        this.resultFraction = new Fraction(1);
+        this.danglingGear = null;
+        this.connections = [];
+        this.updateDom();
+        this.connectionContainer.innerText = '';
+    }
+
+    setSequence(gears) {
+        this.clear();
+        for (var gear of gears) {
+            this.addGear(gear);
         }
     }
 }
@@ -1195,6 +1206,9 @@ if (typeof document !== 'undefined') { // This is not run in worker threads
     });
 
     var sequenceEditor = new SequenceEditor(document.getElementById('sequence-editor'));
+    document.getElementById('clear-sequence').addEventListener('click', function(event) {
+        sequenceEditor.clear();
+    })
 
     function getUrlParameters() {
         var form = document.querySelector('form');
