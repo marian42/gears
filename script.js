@@ -1268,6 +1268,23 @@ if (typeof document !== 'undefined') { // This is not run in worker threads
         window.location.href.replace(/[?&]+([^=&]+)=([^&]*)/gi, function(m,key,value) {
             parameters[key] = value;
         });
+
+        if ("seq" in parameters) {
+            var gearStrings = parameters["seq"].split(',');
+            var gears = [];
+            for (var gearString of gearStrings) {
+                var gear = parseInt(gearString.trim());
+                if (Number.isInteger(gear)) {
+                    gears.push(gear);
+                }
+            }
+            console.log(gears);
+            if (gears.length > 0) {
+                sequenceEditor.setSequence(gears);
+                document.getElementById('tab-edit').checked = true;
+                return;
+            }
+        }
     
         if ("targetratio" in parameters) {
             var form = document.querySelector('form');
