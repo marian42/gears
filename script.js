@@ -1287,6 +1287,7 @@ if (typeof document !== 'undefined') { // This is not run in worker threads
         }
     
         if ("targetratio" in parameters) {
+            document.getElementById('tab-search').checked = true;
             var form = document.querySelector('form');
             var elements = {};
             
