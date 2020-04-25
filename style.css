@@ -427,7 +427,6 @@ input.tab:active + label {
     margin: 10px;
     width: 60px;
     height: 60px;
-    line-height: 60px;
     text-align: center;
     user-select: none;
     cursor: pointer;
