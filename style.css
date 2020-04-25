@@ -335,25 +335,32 @@ svg.worm polygon {
     }
 }
 
-#result-meta {
+.topbar {
     padding: 10px 0;
     line-height: 20px;
     vertical-align: middle;
     text-align: start;
-    display: none;
 }
 
-#result-meta>span {
+.topbar>span {
     float: left;
     padding: 5px 0;
 }
 
-#result-meta label {
+.topbar label {
     float: right;
 }
 
-#result-meta label input[type="text"] {
+.topbar label input[type="text"] {
     width: 40px;
+}
+
+#content-search .topbar {
+    display: none;
+}
+
+#content-edit .topbar {
+    padding-top: 0;
 }
 
 .tabs-divider {
@@ -507,5 +514,9 @@ input.tab:active + label {
 }
 
 .info a {
+    color: inherit;
+}
+
+.permalink {
     color: inherit;
 }

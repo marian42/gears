@@ -957,6 +957,8 @@ class SequenceEditor {
         this.gearCatalog = document.createElement('div');
         this.gearCatalog.classList.add('catalog');
         this.gearSelector.appendChild(this.gearCatalog);
+        
+        this.permalink = document.getElementById('editor-permalink');
 
         this.clear();
         this.prepareGearCatalog();
@@ -1046,6 +1048,20 @@ class SequenceEditor {
             this.resultFraction = this.resultFraction.multiply(connection.fraction);
             this.updateDom();
         }
+
+        this.updatePermalink();
+    }
+
+    updatePermalink() {
+        var gears = [];
+        for (var connection of this.connections) {
+            gears.push(connection.gear1);
+            gears.push(connection.gear2);
+        }
+        if (this.danglingGear != null) {
+            gears.push(this.danglingGear);
+        }
+        this.permalink.href = '?seq=' + gears.join(',');
     }
 
     prepareGearCatalog() {
@@ -1078,6 +1094,7 @@ class SequenceEditor {
         this.connections = [];
         this.updateDom();
         this.connectionContainer.innerText = '';
+        this.updatePermalink();
     }
 
     setSequence(gears) {

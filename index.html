@@ -138,7 +138,7 @@
             </div>
         </form>
 
-        <div id="result-meta">
+        <div id="result-meta" class="topbar">
             <span>
                 Results: <span id="resultcount">0</span>
 
@@ -165,7 +165,10 @@
     </div>
 
     <div class="tab-content" id="content-edit">
-        <button id="clear-sequence" class="button white">Clear sequence</button>
+        <div id="result-meta" class="topbar">
+            <button id="clear-sequence" class="button white">Clear sequence</button>
+            <a href='' class="permalink" id="editor-permalink">Permalink</a>
+        </div>
         <div id="sequence-editor" class="sequence"></div>
     </div>
 
