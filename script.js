@@ -1272,7 +1272,7 @@ if (typeof document !== 'undefined') { // This is not run in worker threads
             items.push('end=' + encodeURI(elements['fixedEnd'].value));
         }
 
-        if (elements['limitCount'].value != '100') {
+        if (elements['limitCount'].value != '30') {
             items.push('count=' + encodeURI(elements['limitCount'].value));
         }
 
@@ -1359,7 +1359,7 @@ if (typeof document !== 'undefined') { // This is not run in worker threads
             if ('count' in parameters) {
                 elements['limitCount'].value = parameters['count'];
             } else {
-                elements['limitCount'].value = '100';
+                elements['limitCount'].value = '30';
             }
     
             if ('time' in parameters) {
