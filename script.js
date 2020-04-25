@@ -1113,7 +1113,9 @@ if (typeof document !== 'undefined') { // This is not run in worker threads
             currentWorker = null;
 
             if (event.data.reason == 'missingfactors') {
-                resultDiv.innerText = 'No exact solution is available because these gears are missing:\n' + event.data.missingFactors.join(', ');
+                resultDiv.innerText = '\nNo exact solution is available because these gears are missing:\n\n'
+                + event.data.missingFactors.join('\n')
+                + '\n\nConsider searching for approximate results.';
             }
         }
     }
