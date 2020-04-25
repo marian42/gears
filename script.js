@@ -990,7 +990,7 @@ class SequenceEditor {
                 sequenceEditor.gearPreviewContainer.innerText = '';
                 if (gear == 1) {
                     sequenceEditor.gearPreviewContainer.appendChild(createWormGearSVG());
-                } else if (gear > 7 && gear < 200) {
+                } else if (gear > 7 && gear <= 170) {
                     sequenceEditor.gearPreviewContainer.appendChild(createGearSVG(gear));
                 }
             }
