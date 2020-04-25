@@ -936,7 +936,7 @@ class SequenceEditor {
         this.addButtonContainer = document.createElement('span');
         this.addButtonContainer.classList.add('add-container');
         this.container.appendChild(this.addButtonContainer);
-        this.addButton = document.createElement('span');
+        this.addButton = document.createElement('button');
         this.addButton.classList.add('add-gear');
         this.addButton.innerText = '+';
         this.addButtonContainer.appendChild(this.addButton);
@@ -1001,6 +1001,8 @@ class SequenceEditor {
             var gear = parseFloat(sequenceEditor.gearInput.value);
             if (event.keyCode == 13 && Number.isInteger(gear) && (gear == 1 || gear >= 8)) {
                 sequenceEditor.addGear(gear);
+                sequenceEditor.addButton.focus();
+                event.preventDefault();
             }
         });
 

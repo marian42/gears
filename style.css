@@ -136,7 +136,7 @@ summary {
     cursor: default;
 }
 
-button {
+.button {
     color: #fff;
     background-color: #5bb75b;
     background-image: linear-gradient(to bottom,#62c462,#51a351);
@@ -153,7 +153,7 @@ button {
     outline: none;
 }
 
-button:active {
+.button:active {
     color: #fff;
     background-color: #51a351;
     text-decoration: none;
@@ -162,7 +162,7 @@ button:active {
     outline: none;
 }
 
-button:hover {
+.button:hover {
     box-shadow: 0px 0px 6px 0px #51a351a1;
 }
 
@@ -273,18 +273,18 @@ label.radiolabel:active + input[type=radio] + label.radiolabel {
     margin-right:10px;
 }
 
-button.white {
+.button.white {
     color: inherit;
     background-color: #f1f1f1;
     background-image: linear-gradient(to bottom,#ececec,#d6d6d6);
     border: 1px solid #929292;
 }
 
-button.white:active {
+.button.white:active {
     background-color: #dadada;
 }
 
-button.white:hover {
+.button.white:hover {
     box-shadow: 0px 0px 6px 0px #868686a1;
 }
 
@@ -413,6 +413,7 @@ input.tab:active + label {
 
 .add-gear {
     display: inline-block;
+    background-color: white;
     border: 1px solid rgb(202, 202, 202);
     border-radius: 100px;
     font-size: 3em;
@@ -423,6 +424,7 @@ input.tab:active + label {
     text-align: center;
     user-select: none;
     cursor: pointer;
+    outline: none;
 }
 
 .add-gear:hover {
