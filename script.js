@@ -1060,7 +1060,7 @@ class SequenceEditor {
         this.updatePermalink();
     }
 
-    updatePermalink() {
+    getGears() {
         var gears = [];
         for (var connection of this.connections) {
             gears.push(connection.gear1);
@@ -1069,7 +1069,11 @@ class SequenceEditor {
         if (this.danglingGear != null) {
             gears.push(this.danglingGear);
         }
-        this.permalink.href = '?seq=' + gears.join(',');
+        return gears;
+    }
+
+    updatePermalink() {        
+        this.permalink.href = '?seq=' + this.getGears().join(',');
     }
 
     prepareGearCatalog() {
@@ -1120,6 +1124,10 @@ class SequenceEditor {
             connection.updateAnimation(this.animationEnabled, this.animationDuration / fraction.getDecimal());
             fraction = fraction.multiply(connection.fraction);
         }
+    }
+
+    reverse() {
+        this.setSequence(this.getGears().reverse());
     }
 }
 
@@ -1263,6 +1271,9 @@ if (typeof document !== 'undefined') { // This is not run in worker threads
     var sequenceEditor = new SequenceEditor(document.getElementById('sequence-editor'));
     document.getElementById('clear-sequence').addEventListener('click', function(event) {
         sequenceEditor.clear();
+    });
+    document.getElementById('reverse').addEventListener('click', function(event) {
+        sequenceEditor.reverse();
     })
 
     function getUrlParameters() {
