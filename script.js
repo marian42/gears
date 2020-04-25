@@ -959,8 +959,12 @@ class SequenceEditor {
         this.gearSelector.appendChild(this.gearCatalog);
         
         this.permalink = document.getElementById('editor-permalink');
+        this.animateCheckbox = document.getElementById('editor-animate');
+        this.animateRpmInput = document.getElementById('editor-animate-rpm');
 
         this.clear();
+        this.updateAnimation();
+
         this.prepareGearCatalog();
 
         var sequenceEditor = this
@@ -1014,6 +1018,10 @@ class SequenceEditor {
                 sequenceEditor.addGear(gear);
             }
         });
+
+        this.animateCheckbox.addEventListener('change', function() { sequenceEditor.updateAnimation(); });
+        this.animateRpmInput.addEventListener('change', function() { sequenceEditor.updateAnimation(); });
+        this.animateRpmInput.addEventListener('keyup', function() { sequenceEditor.updateAnimation(); });
     }
 
     updateDom() {
@@ -1030,7 +1038,7 @@ class SequenceEditor {
 
         if (this.danglingGear == null) {
             this.danglingGear = gear;
-            var div = new Connection(gear, 1).createDiv(false, 4, false);
+            var div = new Connection(gear, 1).createDiv(this.animationEnabled, this.animationDuration / this.resultFraction.getDecimal(), this.connections.length % 2 == 1);
             div.classList.add('hide-second');
             
             if (this.connections.length >= 1) {
@@ -1040,11 +1048,11 @@ class SequenceEditor {
         } else {
             var connection = new Connection(this.danglingGear, gear);
             this.danglingGear = null;
-            this.connections.push(connection);
 
             this.connectionContainer.removeChild(this.connectionContainer.lastChild);
-            this.connectionContainer.appendChild(connection.createDiv(false, 4, this.connections.length % 2 == 0));
+            this.connectionContainer.appendChild(connection.createDiv(this.animationEnabled, this.animationDuration / this.resultFraction.getDecimal(), this.connections.length % 2 == 1));
 
+            this.connections.push(connection);
             this.resultFraction = this.resultFraction.multiply(connection.fraction);
             this.updateDom();
         }
@@ -1101,6 +1109,16 @@ class SequenceEditor {
         this.clear();
         for (var gear of gears) {
             this.addGear(gear);
+        }
+    }
+
+    updateAnimation() {
+        var fraction = this.startFraction;
+        this.animationEnabled = this.animateCheckbox.checked;
+        this.animationDuration = 60 / parseFloat(this.animateRpmInput.value);
+        for (var connection of this.connections) {
+            connection.updateAnimation(this.animationEnabled, this.animationDuration / fraction.getDecimal());
+            fraction = fraction.multiply(connection.fraction);
         }
     }
 }
