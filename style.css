@@ -364,14 +364,10 @@ svg.worm polygon {
 }
 
 .tabs-divider {
-    margin-top: 1px;
+    margin-left: 510px;
     margin-bottom: 10px;
-    padding-bottom: 5px;
+    margin-top: -1px;
     border-bottom: 1px solid rgb(202, 202, 202);
-}
-
-input.tab:active ~ .tabs-divider {
-    border-bottom-color: rgb(124, 124, 124);
 }
 
 input.tab {
@@ -379,12 +375,33 @@ input.tab {
 }
 
 label.tab {
-    padding: 8px 16px;
+    position: relative;
+    display: inline-block;
+    text-align: center;
+    margin-left: 6px;
+    padding: 6px 0;
+    margin-top: -7px;
     border: 1px solid rgb(202, 202, 202);
     border-top-left-radius: 4px;
     border-top-right-radius: 4px;
     color: gray;
-    margin-left: 2px;
+    width: 160px;
+}
+
+label.tab::before {
+    content: '';
+    display: inline-block;
+    position: absolute;
+    width: 11px;
+    height: 2px;
+    left: -11px;
+    bottom: -1px;
+    border-bottom: 1px solid rgb(202, 202, 202);
+}
+
+label.tab:first-of-type::before {
+    width: 7px;
+    left: -7px;
 }
 
 input.tab:hover:not(:checked):not(:active) + label {
@@ -393,7 +410,7 @@ input.tab:hover:not(:checked):not(:active) + label {
 
 input.tab:checked + label, input.tab:active + label {
     color: black;
-    border-bottom: 1px solid white;
+    border-bottom: none;
 }
 
 input.tab:active + label {
