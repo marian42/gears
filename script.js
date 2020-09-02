@@ -1244,7 +1244,7 @@ if (typeof document !== 'undefined') { // This is not run in worker threads
             'distanceConstraint': distanceConstraint,
             'id': currentTaskId,
             'maxNumberOfResults': parseInt(document.getElementById('limitCount').value),
-            'excludePairsWithFixedGears': false
+            'excludePairsWithFixedGears': document.getElementById('exlude-pairs-with-fixed-gears').checked
         };
 
         readFixedSequenceGears(currentTask);
@@ -1330,6 +1330,10 @@ if (typeof document !== 'undefined') { // This is not run in worker threads
     
         if (elements['fixedEnd'].value != '') {
             items.push('end=' + encodeURI(elements['fixedEnd'].value));
+        }
+
+        if (elements['exlude-pairs-with-fixed-gears'].checked != '') {
+            items.push('epwfg=' + encodeURI(elements['exlude-pairs-with-fixed-gears'].checked));
         }
 
         if (elements['limitCount'].value != '30') {
@@ -1418,6 +1422,13 @@ if (typeof document !== 'undefined') { // This is not run in worker threads
                 advancedOptionsUsed = true;
             } else {
                 elements['fixedEnd'].value = '';
+            }
+
+            if ('epwfg' in parameters) {
+                elements['exlude-pairs-with-fixed-gears'].checked = parameters['epwfg'] == 'true';
+                advancedOptionsUsed = true;
+            } else {
+                elements['exlude-pairs-with-fixed-gears'].checked = false;
             }
     
             if ('count' in parameters) {
