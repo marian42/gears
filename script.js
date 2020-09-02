@@ -1553,11 +1553,11 @@ function* findSolutionsApproximate(parameters) {
     var targetRatio = parameters.searchRatio.getDecimal();
     
     if (parameters.excludePairsWithFixedGears) {
-        var availableGearsPrimary = parameters.gears.filter(gear => !parameters.fixedSecondary.includes(gear));
-        var availableGearsSecondary = parameters.gears.filter(gear => !parameters.fixedPrimary.includes(gear));
+        var availableGearsPrimary = parameters.gears.filter(gear => gear != 1 && !parameters.fixedSecondary.includes(gear));
+        var availableGearsSecondary = parameters.gears.filter(gear => gear != 1 && !parameters.fixedPrimary.includes(gear));
     } else {
-        var availableGearsPrimary = parameters.gears;
-        var availableGearsSecondary = parameters.gears;    
+        var availableGearsPrimary = parameters.gears.filter(gear => gear != 1);
+        var availableGearsSecondary = availableGearsPrimary;
     }
     
     var hammingIterator = getHammingSequence(availableGearsPrimary);
