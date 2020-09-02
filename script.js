@@ -1332,7 +1332,7 @@ if (typeof document !== 'undefined') { // This is not run in worker threads
     function loadUrlParameters(runSearch=true) {
         var parameters = {};
         window.location.href.replace(/[?&]+([^=&]+)=([^&]*)/gi, function(m,key,value) {
-            parameters[key] = value;
+            parameters[key] = decodeURI(value);
         });
 
         if ("seq" in parameters) {
