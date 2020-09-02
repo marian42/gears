@@ -31,23 +31,25 @@
 
     <div class="tab-content" id="content-search">
         <form>
-            Target ratio:&nbsp;
+            <span class="description">Target ratio:</span>
             <input type="text" id="ratio" name="ratio" value="3/4" placeholder="try 0.75 or 3/4"/>
             
             <div>
-                <label class="checkboxlabel" for="approximate">
-                    <input type="checkbox" id="approximate" name="approximate">
-                    Include approximate solutions within &#177;&nbsp;
-                    <input 
-                        type="text"
-                        id="error"
-                        name="error"
-                        value="0.01"/>
-                </label>
+                <span class="description">
+                    <label class="checkboxlabel" for="approximate">
+                        <input type="checkbox" id="approximate" name="approximate">
+                        Include approximate solutions within &#177;&nbsp;
+                    </label>
+                </span>
+                <input 
+                    type="text"
+                    id="error"
+                    name="error"
+                    value="0.01"/>
             </div>
             
             <div class="group">
-                <span class="editorhint">Gear distance:&nbsp;</span>
+                <span class="description">Gear distance:</span>
                 <input type="radio" id="full" name="distance" value="full">
                 <label class="radiolabel" for="full">Full</label>
 
@@ -59,37 +61,43 @@
             </div>
 
             <div>
-                <label class="checkboxlabel" for="standardgearscheckbox">
+                <span class="description">
                     <input type="checkbox" id="standardgearscheckbox" name="standardgears" checked="">
-                    Include standard gears:&nbsp;
-                    <input 
-                        type="text"
-                        id="standardgearslist"
-                        class="gearlist"
-                        name="standardgearslist"
-                        value="1, 8, 16, 24, 40, 56, 12, 20, 28, 36, 60, 140"
-                        placeholder="comma separated list of teeth counts of available gears"/>
-                </label>
+                    <label class="checkboxlabel" for="standardgearscheckbox">
+                        Include standard gears:
+                    </label>
+                </span>
+                    
+                <input 
+                    type="text"
+                    id="standardgearslist"
+                    class="gearlist"
+                    name="standardgearslist"
+                    value="1, 8, 16, 24, 40, 56, 12, 20, 28, 36, 60, 140"
+                    placeholder="comma separated list of teeth counts of available gears"/>
             </div>
 
             <details id="advanced-options">
                 <summary>Advanced options</summary>
+
                 <div>
-                    <label class="checkboxlabel" for="customgearscheckbox">
-                        <input type="checkbox" id="customgearscheckbox" name="customgears">
-                        Include <a href="https://www.thingiverse.com/thing:4258996">custom gears</a>:&nbsp;
-                        <input 
-                            type="text"
-                            id="customgearslist"
-                            class="gearlist custom"
-                            name="customgearslist"
-                            value="10, 11, 13, 14, 15, 17, 18, 19, 21, 22, 23, 25, 26, 27, 29, 30, 31, 32"
-                            placeholder="comma separated list of teeth counts of available gears"/>
-                    </label>
+                    <span class="description">
+                        <label class="checkboxlabel" for="customgearscheckbox">
+                            <input type="checkbox" id="customgearscheckbox" name="customgears">
+                            Include <a href="https://www.thingiverse.com/thing:4258996">custom gears</a>:
+                        </label>
+                    </span>
+                    <input 
+                        type="text"
+                        id="customgearslist"
+                        class="gearlist custom"
+                        name="customgearslist"
+                        value="10, 11, 13, 14, 15, 17, 18, 19, 21, 22, 23, 25, 26, 27, 29, 30, 31, 32"
+                        placeholder="comma separated list of teeth counts of available gears"/>
                 </div>
 
                 <div>
-                    Fixed start gear sequence:&nbsp;
+                    <span class="description">Fixed start gear sequence:</span>
                     <input 
                         type="text"
                         id="fixedStart"
@@ -99,7 +107,7 @@
                 </div>
 
                 <div>
-                    Fixed end gear sequence:&nbsp;
+                    <span class="description">Fixed end gear sequence:</span>
                     <input 
                         type="text"
                         id="fixedEnd"
