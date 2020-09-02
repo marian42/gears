@@ -121,6 +121,12 @@ input[type=text]:focus, input[type=number]:focus {
     box-shadow: 0px 0px 6px 0px rgba(15, 74, 201, 0.25);
 }
 
+input[type=text]#ratio {
+    padding: 10px;
+    width: 240px;
+    font-size: 1.2em;
+}
+
 form>div:not(:last-of-type), form>details>div:not(:last-of-type) {
     margin: 10px 0;
 }
