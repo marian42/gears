@@ -787,6 +787,19 @@ class Solution {
         for (var i = 0; i < this.connections.length; i++) {
             div.appendChild(this.connections[i].createDiv(animationSettings.enabled, animationSettings.duration / this.fractions[i].getDecimal(), i % 2 == 1));
             div.appendChild(this.fractions[i + 1].createDiv());
+
+            if (i * 2 < currentTask.startSequence.length) {
+                this.connections[i].svg1.classList.add("fixed");
+            }
+            if (i * 2 + 1 < currentTask.startSequence.length) {
+                this.connections[i].svg2.classList.add("fixed");
+            }
+            if (i * 2 >= this.connections.length * 2 - currentTask.endSequence.length) {
+                this.connections[i].svg1.classList.add("fixed");
+            }
+            if (i * 2 + 1 >= this.connections.length * 2 - currentTask.endSequence.length) {
+                this.connections[i].svg2.classList.add("fixed");
+            }
         }
 
         var infoDiv = document.createElement("div");

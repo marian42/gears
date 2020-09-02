@@ -12,6 +12,14 @@ body {
     fill: rgb(218, 63, 63);
 }
 
+.gear.fixed path, .worm.fixed polygon {
+    fill: rgb(66, 71, 77);
+}
+
+.gear.custom.fixed path {
+    fill: rgb(92, 59, 76);
+}
+
 .connection {
     border: 1px solid rgb(167, 167, 167);
     border-radius: 4px;
