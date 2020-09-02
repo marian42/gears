@@ -1335,6 +1335,8 @@ if (typeof document !== 'undefined') { // This is not run in worker threads
             parameters[key] = decodeURI(value);
         });
 
+        var advancedOptionsUsed = false;
+
         if ("seq" in parameters) {
             var gearStrings = parameters["seq"].split(',');
             var gears = [];
@@ -1344,7 +1346,6 @@ if (typeof document !== 'undefined') { // This is not run in worker threads
                     gears.push(gear);
                 }
             }
-            console.log(gears);
             if (gears.length > 0) {
                 sequenceEditor.setSequence(gears);
                 document.getElementById('tab-edit').checked = true;
@@ -1383,6 +1384,7 @@ if (typeof document !== 'undefined') { // This is not run in worker threads
                 } else {
                     elements['standarcustomgearslistdgearslist'].value = parameters['customgears'].replace(/,/g, ', ');
                 }
+                advancedOptionsUsed = true;
             }
     
             elements['approximate'].checked = 'error' in parameters;
@@ -1392,26 +1394,34 @@ if (typeof document !== 'undefined') { // This is not run in worker threads
     
             if ('start' in parameters) {
                 elements['fixedStart'].value = parameters['start'];
+                advancedOptionsUsed = true;
             } else {
                 elements['fixedStart'].value = '';
             }
     
             if ('end' in parameters) {
                 elements['fixedEnd'].value = parameters['end'];
+                advancedOptionsUsed = true;
             } else {
                 elements['fixedEnd'].value = '';
             }
     
             if ('count' in parameters) {
                 elements['limitCount'].value = parameters['count'];
+                advancedOptionsUsed = true;
             } else {
                 elements['limitCount'].value = '30';
             }
     
             if ('time' in parameters) {
                 elements['limitTime'].value = parameters['time'];
+                advancedOptionsUsed = true;
             } else {
                 elements['limitTime'].value = '30';
+            }
+
+            if (advancedOptionsUsed) {
+                document.getElementById("advanced-options").open = true;
             }
     
             if (runSearch) {
