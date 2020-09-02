@@ -1243,7 +1243,8 @@ if (typeof document !== 'undefined') { // This is not run in worker threads
             'gears': getAvailableGears(),
             'distanceConstraint': distanceConstraint,
             'id': currentTaskId,
-            'maxNumberOfResults': parseInt(document.getElementById('limitCount').value)
+            'maxNumberOfResults': parseInt(document.getElementById('limitCount').value),
+            'excludePairsWithFixedGears': false
         };
 
         readFixedSequenceGears(currentTask);
@@ -1499,9 +1500,14 @@ function getMissingPrimeFactors(targetRatio, availableFactors) {
 function* findSolutionsExact(parameters) {    
     var availableFactors = getGearFactorsSet(parameters.gears, parameters.gearFactors);
 
-    var availableGearsPrimary = parameters.gears.filter(gear => !parameters.fixedSecondary.includes(gear));
-    var availableGearsSecondary = parameters.gears.filter(gear => !parameters.fixedPrimary.includes(gear));
-
+    if (parameters.excludePairsWithFixedGears) {
+        var availableGearsPrimary = parameters.gears.filter(gear => !parameters.fixedSecondary.includes(gear));
+        var availableGearsSecondary = parameters.gears.filter(gear => !parameters.fixedPrimary.includes(gear));
+    } else {
+        var availableGearsPrimary = parameters.gears;
+        var availableGearsSecondary = parameters.gears;    
+    }
+    
     var missingFactors = getMissingPrimeFactors(parameters.searchRatio, availableFactors);
     if (missingFactors.length != 0) {
         postMessage({
@@ -1535,8 +1541,13 @@ function* findSolutionsExact(parameters) {
 function* findSolutionsApproximate(parameters) {
     var targetRatio = parameters.searchRatio.getDecimal();
     
-    var availableGearsPrimary = parameters.gears.filter(gear => gear != 1 && !parameters.fixedSecondary.includes(gear));
-    var availableGearsSecondary = parameters.gears.filter(gear => gear != 1 && !parameters.fixedPrimary.includes(gear));
+    if (parameters.excludePairsWithFixedGears) {
+        var availableGearsPrimary = parameters.gears.filter(gear => !parameters.fixedSecondary.includes(gear));
+        var availableGearsSecondary = parameters.gears.filter(gear => !parameters.fixedPrimary.includes(gear));
+    } else {
+        var availableGearsPrimary = parameters.gears;
+        var availableGearsSecondary = parameters.gears;    
+    }
     
     var hammingIterator = getHammingSequence(availableGearsPrimary);
     while (true) {
