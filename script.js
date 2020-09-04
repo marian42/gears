@@ -1177,6 +1177,119 @@ class SequenceEditor {
     }
 }
 
+class FitGears {
+    constructor() {
+        this.gear1 = null;
+        this.gear2 = null;
+
+        this.gear1Button = document.getElementById("gear-button1");
+        this.gear2Button = document.getElementById("gear-button2");
+
+        this.resultsContainer = document.getElementById('fit-results-container');
+
+        this.gear1Button.addEventListener("click", function(event) {
+            gearPicker.show(this.updateGear1.bind(this), this.gear1Button);
+        }.bind(this));
+
+        this.gear2Button.addEventListener("click", function(event) {
+            gearPicker.show(this.updateGear2.bind(this), this.gear2Button);
+        }.bind(this));
+
+        this.updateGear1(56);
+        this.updateGear2(24);
+    }
+
+    updateGear1(gear) {
+        this.gear1 = gear;
+        this.gear1Button.innerText = '';
+        this.gear1Button.appendChild(createGearSVG(gear));
+        this.update();
+    }
+
+    updateGear2(gear) {
+        this.gear2 = gear;
+        this.gear2Button.innerText = '';
+        this.gear2Button.appendChild(createGearSVG(gear));
+        this.update();
+    }
+
+    update() {
+        if (this.gear1 == null || this.gear2 == null) {
+            return;
+        }
+
+        const MAX_ERROR = 0.05;
+
+        var radius1 = this.gear1 / 16;
+        var radius2 = this.gear2 / 16;
+        var targetDistance = radius1 + radius2;
+
+        this.resultsContainer.innerText = '';
+
+        if (this.gear1 == 1 || this.gear2 == 1) {
+            return;
+        }
+
+        for (var y = 0; y <= Math.ceil(targetDistance); y++) {
+            var x = Math.round(Math.sqrt(Math.pow(targetDistance, 2) - Math.pow(y, 2)));
+            if (Number.isNaN(x)) {
+                continue;
+            }
+            var totalDistance = Math.sqrt(Math.pow(x, 2) + Math.pow(y, 2));
+            var error = totalDistance - targetDistance;
+            if (Math.abs(error) > MAX_ERROR) {
+                continue;
+            }
+            var angle = Math.atan2(y, x);
+
+            var resultElement = document.createElement('div');
+            resultElement.classList.add('sequence');
+
+            var fitBox = document.createElement('div');
+            fitBox.classList.add('fit-box');
+
+            var gearSVG1 = createGearSVG(this.gear1);
+            gearSVG1.style.left = ((1 - radius1) * 8 * PIXELS_PER_MM) + "px";
+            gearSVG1.style.top = ((1 - radius1) * 8 * PIXELS_PER_MM) + "px";
+
+            fitBox.appendChild(gearSVG1);
+            fitBox.style.width = (Math.max(Math.cos(angle) * targetDistance + 2.25, radius1 + 1.5, radius2 + 1.5) * 8 * PIXELS_PER_MM) + "px";
+            fitBox.style.height = (Math.max(Math.sin(angle) * targetDistance + 2.25, radius1 + 1.5, radius2 + 1.5) * 8 * PIXELS_PER_MM) + "px";          
+
+            var gearSVG2 = createGearSVG(this.gear2);
+            gearSVG2.style.left = ((1 - radius2 + x) * 8 * PIXELS_PER_MM) + "px";
+            gearSVG2.style.top = ((1 - radius2 + y) * 8 * PIXELS_PER_MM) + "px";
+            fitBox.appendChild(gearSVG2);
+
+            for (var a = 0; a <= x; a++) {
+                for (var b = 0; b <= y; b++) {
+                    var holeElement = document.createElement('div');
+                    holeElement.classList.add('hole');
+                    holeElement.style.left = ((1 + a) * 8 * PIXELS_PER_MM) + "px";
+                    holeElement.style.top = ((1 + b) * 8 * PIXELS_PER_MM) + "px";
+                    fitBox.appendChild(holeElement);
+                    if (a == 0 && b == 0 || a == x && b == y) {
+                        holeElement.classList.add('pin');
+                    }
+                }
+            }
+
+            resultElement.appendChild(fitBox);
+
+            var resultText = document.createElement('div');
+
+            if (error == 0) {
+                resultText.innerText = x + " ✕ " + y + " (exact fit)";
+            } else {
+                resultText.innerText = x + " ✕ " + y + ", distance: " + (Math.round(totalDistance * 100) / 100) + " / " + targetDistance + ", error: " + (Math.round(error * 100) / 100) + " (" + (Math.round(error * 8 * 100) / 100) + "mm)";
+            }
+
+            resultElement.appendChild(resultText);
+            this.resultsContainer.appendChild(resultElement);
+        }
+    }
+}
+
 if (typeof document !== 'undefined') { // This is not run in worker threads
     var resultDiv = document.getElementById("result");
     var searchingSpan = document.getElementById("searching");
@@ -1323,6 +1436,7 @@ if (typeof document !== 'undefined') { // This is not run in worker threads
     document.getElementById('reverse').addEventListener('click', function(event) {
         sequenceEditor.reverse();
     })
+    var fitGears = new FitGears();
 
     function getUrlParameters() {
         var form = document.querySelector('form');

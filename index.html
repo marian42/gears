@@ -22,6 +22,10 @@
     <label class="tab" for="tab-edit">
         Edit gear sequence
     </label>
+    <input type="radio" class="tab" id="tab-fit" name="tab">
+    <label class="tab" for="tab-fit">
+        Fit gears
+    </label>
     <input type="radio" class="tab" id="tab-about" name="tab">
     <label class="tab" for="tab-about">
         About
@@ -200,6 +204,17 @@
             </label>
         </div>
         <div id="sequence-editor" class="sequence"></div>
+    </div>
+
+    <div class="tab-content" id="content-fit">
+        <form>
+            <div>
+                <span class="description">Gears</span>
+                <div class="catalog-gear" id="gear-button1"></div>
+                <div class="catalog-gear" id="gear-button2"></div>
+            </div>
+        </form>
+        <div id="fit-results-container"></div>
     </div>
 
     <div class="tab-content" id="content-about">
