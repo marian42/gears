@@ -1306,10 +1306,14 @@ class FitGears {
 
             var resultText = document.createElement('div');
 
+            if (this.gear1 == 140 || this.gear2 == 140) {
+                error *= -1;
+            }
+
             if (error == 0) {
                 resultText.innerText = x + " ✕ " + y + " (exact fit)";
             } else {
-                resultText.innerText = x + " ✕ " + y + ", distance: " + (Math.round(totalDistance * 100) / 100) + " / " + targetDistance + ", error: " + (Math.round(error * 1000) / 1000) + " (" + (Math.round(error * 8 * 100) / 100) + "mm)";
+                resultText.innerText = x + " ✕ " + y + ", distance: " + (Math.round(totalDistance * 100) / 100) + " / " + targetDistance + ", error: " + (Math.round(Math.abs(error) * 1000) / 1000) + " units (" + (Math.round(Math.abs(error) * 8 * 100) / 100) + "mm) " + (error < 0 ? "too close" : "too far");
             }
 
             resultElement.appendChild(resultText);
