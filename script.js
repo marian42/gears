@@ -1256,11 +1256,14 @@ class FitGears {
 
         var step = this.includeHalfUnitsCheckbox.checked ? 0.5 : 1.0;
 
+        var foundAnything = false;
+
         if ((this.gear1 - 4) % 8 == 0 && (this.gear2 - 4) % 8 == 0) {
             var resultElement = document.createElement('div');
             resultElement.classList.add('sequence');
             resultElement.innerText = "These gears can be connected using perpendicular axles.";
             this.resultsContainer.appendChild(resultElement);
+            foundAnything = true;
         }
 
         for (var y = 0; y <= Math.ceil(targetDistance); y += step) {
@@ -1268,12 +1271,15 @@ class FitGears {
             if (Number.isNaN(x)) {
                 continue;
             }
+
             var totalDistance = Math.sqrt(Math.pow(x, 2) + Math.pow(y, 2));
             var error = totalDistance - targetDistance;
             if (Math.abs(error) > maxError) {
                 continue;
             }
             var angle = Math.atan2(y, x);
+
+            foundAnything = true;
 
             var resultElement = document.createElement('div');
             resultElement.classList.add('sequence');
@@ -1350,6 +1356,10 @@ class FitGears {
 
             resultElement.appendChild(resultText);
             this.resultsContainer.appendChild(resultElement);
+        }
+
+        if (!foundAnything) {
+            this.resultsContainer.innerText = "Nothing found.";
         }
     }
 }
