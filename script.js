@@ -1265,24 +1265,23 @@ class FitGears {
             var fitBox = document.createElement('div');
             fitBox.classList.add('fit-box');
 
-            var offset = 8 * PIXELS_PER_MM;
+            var margin = 1.5 * 8 * PIXELS_PER_MM;
 
             var gearSVG1 = createGearSVG(this.gear1);
             var svgSize1 = gearSVG1.width.baseVal.value;
-            gearSVG1.style.left = (offset - svgSize1 / 2) + "px";
-            gearSVG1.style.top = (offset - svgSize1 / 2) + "px";
+            gearSVG1.style.left = (margin - svgSize1 / 2) + "px";
+            gearSVG1.style.top = (margin - svgSize1 / 2) + "px";
 
             fitBox.appendChild(gearSVG1);
             
             var gearSVG2 = createGearSVG(this.gear2);
             var svgSize2 = gearSVG2.width.baseVal.value;
-            gearSVG2.style.left = (offset + x * 8 * PIXELS_PER_MM - svgSize2 / 2) + "px";
-            gearSVG2.style.top = (offset + y * 8 * PIXELS_PER_MM - svgSize2 / 2) + "px";
+            gearSVG2.style.left = (margin + x * 8 * PIXELS_PER_MM - svgSize2 / 2) + "px";
+            gearSVG2.style.top = (margin + y * 8 * PIXELS_PER_MM - svgSize2 / 2) + "px";
             fitBox.appendChild(gearSVG2);
-
-            var connectionAngle = Math.atan2(y, x);
-            var gear1ToothPosition = (connectionAngle / (2 * Math.PI) * this.gear1) % 1;
-            var gear2ToothPosition = ((connectionAngle + Math.PI) / (2 * Math.PI) * this.gear2) % 1;
+            
+            var gear1ToothPosition = (angle / (2 * Math.PI) * this.gear1) % 1;
+            var gear2ToothPosition = ((angle + Math.PI) / (2 * Math.PI) * this.gear2) % 1;
 
             if (this.gear1 == 140) {
                 gear1ToothPosition = 1.0 - gear1ToothPosition;
@@ -1298,19 +1297,16 @@ class FitGears {
                 for (var b = 0; b <= Math.ceil(y); b++) {
                     var holeElement = document.createElement('div');
                     holeElement.classList.add('hole');
-                    holeElement.style.left = (offset - 2 + a * 8 * PIXELS_PER_MM) + "px";
-                    holeElement.style.top = (offset - 2 + b * 8 * PIXELS_PER_MM) + "px";
+                    holeElement.style.left = (margin - 2 + a * 8 * PIXELS_PER_MM) + "px";
+                    holeElement.style.top = (margin - 2 + b * 8 * PIXELS_PER_MM) + "px";
                     fitBox.appendChild(holeElement);
-                    if (a == 0 && b == 0 || a == x && b == y) {
-                        holeElement.classList.add('pin');
-                    }
                 }
             }
             var radius1 = this.gear1 / 16;
             var radius2 = this.gear2 / 16;
 
-            fitBox.style.width = (Math.max(Math.cos(angle) * (radius1 + radius2) + 2.25, radius1 + 1.5, radius2 + 1.5) * 8 * PIXELS_PER_MM) + "px";
-            fitBox.style.height = (Math.max(Math.sin(angle) * (radius1 + radius2) + 2.25, radius1 + 1.5, radius2 + 1.5) * 8 * PIXELS_PER_MM) + "px";          
+            fitBox.style.width = (x * 8 * PIXELS_PER_MM + margin + Math.max(margin, radius2 * 8 * PIXELS_PER_MM + 20)) + "px";
+            fitBox.style.height = (y * 8 * PIXELS_PER_MM + margin + Math.max(margin, radius2 * 8 * PIXELS_PER_MM + 20)) + "px";          
 
             resultElement.appendChild(fitBox);
 

@@ -584,9 +584,5 @@ input.tab:active + label {
     border-radius: 8px;
     margin-left: -6px;
     margin-top: -6px;
-    background-color: rgba(0, 89, 255, 0.466);
-}
-
-.fit-box .hole.pin {
-    border: 1px solid rgba(0, 81, 255, 0.87);
+    border: 1px solid rgb(0, 110, 255);
 }
