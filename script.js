@@ -1222,6 +1222,13 @@ class FitGears {
 
         var radius1 = this.gear1 / 16;
         var radius2 = this.gear2 / 16;
+
+        if (this.gear1 == 140) {
+            radius1 -= radius2 * 2;
+        } else if (this.gear2 == 140) {
+            radius2 -= radius1 * 2;
+        }
+
         var targetDistance = radius1 + radius2;
 
         this.resultsContainer.innerText = '';
