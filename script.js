@@ -1763,7 +1763,8 @@ onmessage = function(event) {
         var violatesConstraint = false;
         if (parameters.distanceConstraint !== null) {
             var sequence = createSequence(solutionPrimary, solutionSecondary, parameters);
-            for (var connection of sequence) {
+            for (var i = Math.floor(parameters.startSequence.length / 2); i < sequence.length - Math.floor(parameters.endSequence.length / 2); i++) {
+                var connection = sequence[i];
                 if (connection.distance % parameters.distanceConstraint != 0) {
                     violatesConstraint = true;
                     break;
