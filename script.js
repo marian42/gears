@@ -1273,6 +1273,13 @@ class FitGears {
             var connectionAngle = Math.atan2(y, x);
             var gear1ToothPosition = (connectionAngle / (2 * Math.PI) * this.gear1) % 1;
             var gear2ToothPosition = ((connectionAngle + Math.PI) / (2 * Math.PI) * this.gear2) % 1;
+
+            if (this.gear1 == 140) {
+                gear1ToothPosition = 1.0 - gear1ToothPosition;
+            } else if (this.gear2 == 140) {
+                gear2ToothPosition = 1.0 - gear2ToothPosition;
+            }
+
             var gear2ToothCorrection = (gear1ToothPosition + gear2ToothPosition + 0.5) % 1;
             var gear2AngleCorrectionDegree = gear2ToothCorrection / this.gear2 * 360;
             gearSVG2.style.transform = 'rotate(' + gear2AngleCorrectionDegree + 'deg)';
