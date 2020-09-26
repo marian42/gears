@@ -1268,7 +1268,7 @@ class FitGears {
 
         for (var y = 0; y <= Math.ceil(targetDistance); y += step) {
             var x = Math.round((Math.sqrt(Math.pow(targetDistance, 2) - Math.pow(y, 2))) / step) * step;
-            if (Number.isNaN(x)) {
+            if (Number.isNaN(x) || x < y) {
                 continue;
             }
 
