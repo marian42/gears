@@ -1292,10 +1292,8 @@ class FitGears {
             var gear1ToothPosition = (angle / (2 * Math.PI) * this.gear1) % 1;
             var gear2ToothPosition = ((angle + Math.PI) / (2 * Math.PI) * this.gear2) % 1;
 
-            if (this.gear1 == 140) {
+            if (this.gear1 == 140 || this.gear2 == 140) {
                 gear1ToothPosition = 1.0 - gear1ToothPosition;
-            } else if (this.gear2 == 140) {
-                gear2ToothPosition = 1.0 - gear2ToothPosition;
             }
 
             var gear2ToothCorrection = (gear1ToothPosition + gear2ToothPosition + 0.5) % 1;
