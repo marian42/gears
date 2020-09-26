@@ -482,9 +482,10 @@ class Connection {
         table.appendChild(row);
         result.appendChild(table);
     
+        var distanceDiv = document.createElement("div");
         var distanceSpan = document.createElement("span");
+        distanceDiv.classList.add("distance");
         distanceSpan.innerText = this.distance + (this.distance == 1 ? " unit" : " units");
-        distanceSpan.classList.add("distance");
         if (this.distance % 1 == 0) {
             distanceSpan.classList.add("result-good");
         } else if (this.distance % 0.5 == 0) {
@@ -493,13 +494,18 @@ class Connection {
             distanceSpan.classList.add("result-bad");
         }
         distanceSpan.title = "Distance between axes";
-        result.appendChild(distanceSpan);
+        distanceDiv.appendChild(distanceSpan);
         if ((this.gear1 - 4) % 8 == 0 && (this.gear2 - 4) % 8 == 0) {
             var perpendicular = document.createElement("span");
             perpendicular.innerText = ' or perpendicular';
             perpendicular.title = 'The gears can be placed on perpendicular axles.';
-            result.appendChild(perpendicular);
-        
+            distanceDiv.appendChild(perpendicular);
+        }
+        result.appendChild(distanceDiv);
+
+        if (this.gear1 != 1 && this.gear2 != 1) {
+            distanceDiv.classList.add("clickable");
+            distanceDiv.addEventListener("click", this.showFitGearsTab.bind(this));
         }
         this.updateAnimation(animate, animationDuration);
         return result;
@@ -511,6 +517,10 @@ class Connection {
         
         this.svg2.firstChild.style.animationDuration = (duration / this.factor) + "s";
         this.svg2.firstChild.style.animationPlayState = enabled ? 'running' : 'paused';
+    }
+
+    showFitGearsTab() {
+        fitGears.showConnection(this.gear1, this.gear2, currentTask.distanceConstraint != 1);
     }
 }
 
@@ -1201,10 +1211,15 @@ class FitGears {
         this.maximumErrorTextbox = document.getElementById('fit-error');
         this.maximumErrorTextbox.addEventListener("change", this.update.bind(this));
 
+        this.suppressUpdate = true;
+
         this.updateGear1(40);
         this.updateGear2(28);
 
         document.getElementById("form-fit-gears").addEventListener("submit", function(event) {event.preventDefault();});
+    
+        this.suppressUpdate = false;
+        this.update();
     }
 
     updateGear1(gear) {
@@ -1227,11 +1242,24 @@ class FitGears {
         description.innerText = gear;
         description.classList.add("fit-gear-teeth");
         this.gear2Button.appendChild(description);
+
+        this.update();
+    }
+
+    showConnection(gear1, gear2, includeHalfUnits) {
+        this.suppressUpdate = true;
+        this.updateGear1(gear1, false);
+        this.updateGear2(gear2, false);
+        this.includeHalfUnitsCheckbox.checked = includeHalfUnits;
+        this.maximumErrorTextbox.value = "0.5";
+
+        document.getElementById("tab-fit").checked = true;
+        this.suppressUpdate = false;
         this.update();
     }
 
     update() {
-        if (this.gear1 == null || this.gear2 == null) {
+        if (this.suppressUpdate || this.gear1 == null || this.gear2 == null) {
             return;
         }
 

@@ -51,6 +51,11 @@ body {
     margin-top: 10px;
 }
 
+.clickable:hover {
+    cursor: pointer;
+    text-decoration: underline;
+}
+
 .result-good {
     color: green;
 }
