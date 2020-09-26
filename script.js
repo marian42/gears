@@ -1211,6 +1211,11 @@ class FitGears {
         this.gear1 = gear;
         this.gear1Button.innerText = '';
         this.gear1Button.appendChild(createGearSVG(gear));
+        var description = document.createElement("div");
+        description.innerText = gear;
+        description.classList.add("fit-gear-teeth");
+        this.gear1Button.appendChild(description);
+
         this.update();
     }
 
@@ -1218,6 +1223,10 @@ class FitGears {
         this.gear2 = gear;
         this.gear2Button.innerText = '';
         this.gear2Button.appendChild(createGearSVG(gear));
+        var description = document.createElement("div");
+        description.innerText = gear;
+        description.classList.add("fit-gear-teeth");
+        this.gear2Button.appendChild(description);
         this.update();
     }
 

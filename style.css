@@ -45,7 +45,6 @@ body {
 
 .teeth {
     font-size: 1.5em;
-    font-style: bold;
 }
 
 .distance {
@@ -585,4 +584,9 @@ input.tab:active + label {
     margin-left: -6px;
     margin-top: -6px;
     border: 1px solid rgb(0, 110, 255);
+}
+
+.fit-gear-teeth {
+    margin-top: 10px;
+    font-size: 1.5em;
 }
