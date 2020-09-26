@@ -1255,31 +1255,38 @@ class FitGears {
             var fitBox = document.createElement('div');
             fitBox.classList.add('fit-box');
 
+            var offset = 8 * PIXELS_PER_MM;
+
             var gearSVG1 = createGearSVG(this.gear1);
-            gearSVG1.style.left = ((1 - radius1) * 8 * PIXELS_PER_MM) + "px";
-            gearSVG1.style.top = ((1 - radius1) * 8 * PIXELS_PER_MM) + "px";
+            var svgSize1 = gearSVG1.width.baseVal.value;
+            gearSVG1.style.left = (offset - svgSize1 / 2) + "px";
+            gearSVG1.style.top = (offset - svgSize1 / 2) + "px";
 
             fitBox.appendChild(gearSVG1);
-            fitBox.style.width = (Math.max(Math.cos(angle) * targetDistance + 2.25, radius1 + 1.5, radius2 + 1.5) * 8 * PIXELS_PER_MM) + "px";
-            fitBox.style.height = (Math.max(Math.sin(angle) * targetDistance + 2.25, radius1 + 1.5, radius2 + 1.5) * 8 * PIXELS_PER_MM) + "px";          
-
+            
             var gearSVG2 = createGearSVG(this.gear2);
-            gearSVG2.style.left = ((1 - radius2 + x) * 8 * PIXELS_PER_MM) + "px";
-            gearSVG2.style.top = ((1 - radius2 + y) * 8 * PIXELS_PER_MM) + "px";
+            var svgSize2 = gearSVG2.width.baseVal.value;
+            gearSVG2.style.left = (offset + x * 8 * PIXELS_PER_MM - svgSize2 / 2) + "px";
+            gearSVG2.style.top = (offset + y * 8 * PIXELS_PER_MM - svgSize2 / 2) + "px";
             fitBox.appendChild(gearSVG2);
 
             for (var a = 0; a <= x; a++) {
                 for (var b = 0; b <= y; b++) {
                     var holeElement = document.createElement('div');
                     holeElement.classList.add('hole');
-                    holeElement.style.left = ((1 + a) * 8 * PIXELS_PER_MM) + "px";
-                    holeElement.style.top = ((1 + b) * 8 * PIXELS_PER_MM) + "px";
+                    holeElement.style.left = (offset - 2 + a * 8 * PIXELS_PER_MM) + "px";
+                    holeElement.style.top = (offset - 2 + b * 8 * PIXELS_PER_MM) + "px";
                     fitBox.appendChild(holeElement);
                     if (a == 0 && b == 0 || a == x && b == y) {
                         holeElement.classList.add('pin');
                     }
                 }
             }
+            var radius1 = this.gear1 / 16;
+            var radius2 = this.gear2 / 16;
+
+            fitBox.style.width = (Math.max(Math.cos(angle) * (radius1 + radius2) + 2.25, radius1 + 1.5, radius2 + 1.5) * 8 * PIXELS_PER_MM) + "px";
+            fitBox.style.height = (Math.max(Math.sin(angle) * (radius1 + radius2) + 2.25, radius1 + 1.5, radius2 + 1.5) * 8 * PIXELS_PER_MM) + "px";          
 
             resultElement.appendChild(fitBox);
 
@@ -1288,7 +1295,7 @@ class FitGears {
             if (error == 0) {
                 resultText.innerText = x + " ✕ " + y + " (exact fit)";
             } else {
-                resultText.innerText = x + " ✕ " + y + ", distance: " + (Math.round(totalDistance * 100) / 100) + " / " + targetDistance + ", error: " + (Math.round(error * 100) / 100) + " (" + (Math.round(error * 8 * 100) / 100) + "mm)";
+                resultText.innerText = x + " ✕ " + y + ", distance: " + (Math.round(totalDistance * 100) / 100) + " / " + targetDistance + ", error: " + (Math.round(error * 1000) / 1000) + " (" + (Math.round(error * 8 * 100) / 100) + "mm)";
             }
 
             resultElement.appendChild(resultText);
