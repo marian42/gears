@@ -1201,8 +1201,8 @@ class FitGears {
         this.maximumErrorTextbox = document.getElementById('fit-error');
         this.maximumErrorTextbox.addEventListener("change", this.update.bind(this));
 
-        this.updateGear1(56);
-        this.updateGear2(24);
+        this.updateGear1(40);
+        this.updateGear2(28);
 
         document.getElementById("form-fit-gears").addEventListener("submit", function(event) {event.preventDefault();});
     }
