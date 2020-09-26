@@ -1256,6 +1256,13 @@ class FitGears {
 
         var step = this.includeHalfUnitsCheckbox.checked ? 0.5 : 1.0;
 
+        if ((this.gear1 - 4) % 8 == 0 && (this.gear2 - 4) % 8 == 0) {
+            var resultElement = document.createElement('div');
+            resultElement.classList.add('sequence');
+            resultElement.innerText = "These gears can be connected using perpendicular axles.";
+            this.resultsContainer.appendChild(resultElement);
+        }
+
         for (var y = 0; y <= Math.ceil(targetDistance); y += step) {
             var x = Math.round((Math.sqrt(Math.pow(targetDistance, 2) - Math.pow(y, 2))) / step) * step;
             if (Number.isNaN(x)) {

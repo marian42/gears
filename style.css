@@ -590,3 +590,7 @@ input.tab:active + label {
     margin-top: 10px;
     font-size: 1.5em;
 }
+
+#fit-results-container {
+    margin-top: 10px;
+}
