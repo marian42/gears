@@ -1270,6 +1270,13 @@ class FitGears {
             gearSVG2.style.top = (offset + y * 8 * PIXELS_PER_MM - svgSize2 / 2) + "px";
             fitBox.appendChild(gearSVG2);
 
+            var connectionAngle = Math.atan2(y, x);
+            var gear1ToothPosition = (connectionAngle / (2 * Math.PI) * this.gear1) % 1;
+            var gear2ToothPosition = ((connectionAngle + Math.PI) / (2 * Math.PI) * this.gear2) % 1;
+            var gear2ToothCorrection = (gear1ToothPosition + gear2ToothPosition + 0.5) % 1;
+            var gear2AngleCorrectionDegree = gear2ToothCorrection / this.gear2 * 360;
+            gearSVG2.style.transform = 'rotate(' + gear2AngleCorrectionDegree + 'deg)';
+            
             for (var a = 0; a <= x; a++) {
                 for (var b = 0; b <= y; b++) {
                     var holeElement = document.createElement('div');
