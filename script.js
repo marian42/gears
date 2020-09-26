@@ -1195,6 +1195,9 @@ class FitGears {
             gearPicker.show(this.updateGear2.bind(this), this.gear2Button);
         }.bind(this));
 
+        this.includeHalfUnitsCheckbox = document.getElementById('fit-half');
+        this.includeHalfUnitsCheckbox.addEventListener("change", this.update.bind(this));
+
         this.updateGear1(56);
         this.updateGear2(24);
     }
@@ -1237,8 +1240,10 @@ class FitGears {
             return;
         }
 
-        for (var y = 0; y <= Math.ceil(targetDistance); y++) {
-            var x = Math.round(Math.sqrt(Math.pow(targetDistance, 2) - Math.pow(y, 2)));
+        var step = this.includeHalfUnitsCheckbox.checked ? 0.5 : 1.0;
+
+        for (var y = 0; y <= Math.ceil(targetDistance); y += step) {
+            var x = Math.round((Math.sqrt(Math.pow(targetDistance, 2) - Math.pow(y, 2))) / step) * step;
             if (Number.isNaN(x)) {
                 continue;
             }
@@ -1284,8 +1289,8 @@ class FitGears {
             var gear2AngleCorrectionDegree = gear2ToothCorrection / this.gear2 * 360;
             gearSVG2.style.transform = 'rotate(' + gear2AngleCorrectionDegree + 'deg)';
             
-            for (var a = 0; a <= x; a++) {
-                for (var b = 0; b <= y; b++) {
+            for (var a = 0; a <= Math.ceil(x); a++) {
+                for (var b = 0; b <= Math.ceil(y); b++) {
                     var holeElement = document.createElement('div');
                     holeElement.classList.add('hole');
                     holeElement.style.left = (offset - 2 + a * 8 * PIXELS_PER_MM) + "px";
