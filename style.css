@@ -51,13 +51,13 @@ body {
     margin-top: 10px;
 }
 
-.dst-good {
+.result-good {
     color: green;
 }
-.dst-ok {
+.result-ok {
     color: rgb(187, 128, 0);
 }
-.dst-bad {
+.result-bad {
     color: gray;
 }
 

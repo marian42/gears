@@ -486,11 +486,11 @@ class Connection {
         distanceSpan.innerText = this.distance + (this.distance == 1 ? " unit" : " units");
         distanceSpan.classList.add("distance");
         if (this.distance % 1 == 0) {
-            distanceSpan.classList.add("dst-good");
+            distanceSpan.classList.add("result-good");
         } else if (this.distance % 0.5 == 0) {
-            distanceSpan.classList.add("dst-ok");
+            distanceSpan.classList.add("result-ok");
         } else {
-            distanceSpan.classList.add("dst-bad");
+            distanceSpan.classList.add("result-bad");
         }
         distanceSpan.title = "Distance between axes";
         result.appendChild(distanceSpan);
@@ -1323,11 +1323,23 @@ class FitGears {
                 error *= -1;
             }
 
-            if (error == 0) {
-                resultText.innerText = x + " ✕ " + y + " (exact fit)";
+            var distancesSpan = document.createElement("span");
+            distancesSpan.innerText = x + " ✕ " + y;            
+            if (x % 1 == 0 && y % 1 == 0) {
+                distancesSpan.classList.add("result-good");
             } else {
-                resultText.innerText = x + " ✕ " + y + ", distance: " + (Math.round(totalDistance * 100) / 100) + " / " + targetDistance + ", error: " + (Math.round(Math.abs(error) * 1000) / 1000) + " units (" + (Math.round(Math.abs(error) * 8 * 100) / 100) + "mm) " + (error < 0 ? "too close" : "too far");
+                distancesSpan.classList.add("result-ok");
             }
+            resultText.appendChild(distancesSpan);
+
+            var errorSpan = document.createElement("span");
+            if (error == 0) {
+                errorSpan.innerText =  " (exact fit)";
+                errorSpan.classList.add("result-good");
+            } else {
+                errorSpan.innerText = ", distance: " + (Math.round(totalDistance * 100) / 100) + " / " + targetDistance + ", error: " + (Math.round(Math.abs(error) * 1000) / 1000) + " units (" + (Math.round(Math.abs(error) * 8 * 100) / 100) + "mm) " + (error < 0 ? "too close" : "too far");
+            }
+            resultText.appendChild(errorSpan);
 
             resultElement.appendChild(resultText);
             this.resultsContainer.appendChild(resultElement);
