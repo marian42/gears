@@ -207,7 +207,7 @@
     </div>
 
     <div class="tab-content" id="content-fit">
-        <form>
+        <form id="form-fit-gears">
             <div>
                 <span class="description">Gears:</span>
                 <div class="catalog-gear" id="gear-button1"></div>
@@ -218,6 +218,17 @@
                     <input type="checkbox" id="fit-half" name="fit-half">
                     Include solutions with half units
                 </label>
+            </div>
+            <div>
+                <span class="description">
+                    Maximum error:
+                </span>
+                <input 
+                    type="text"
+                    id="fit-error"
+                    name="fit-error"
+                    value="0.5"/>
+                mm
             </div>
         </form>
         <div id="fit-results-container"></div>

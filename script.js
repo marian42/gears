@@ -1198,8 +1198,13 @@ class FitGears {
         this.includeHalfUnitsCheckbox = document.getElementById('fit-half');
         this.includeHalfUnitsCheckbox.addEventListener("change", this.update.bind(this));
 
+        this.maximumErrorTextbox = document.getElementById('fit-error');
+        this.maximumErrorTextbox.addEventListener("change", this.update.bind(this));
+
         this.updateGear1(56);
         this.updateGear2(24);
+
+        document.getElementById("form-fit-gears").addEventListener("submit", function(event) {event.preventDefault();});
     }
 
     updateGear1(gear) {
@@ -1221,7 +1226,7 @@ class FitGears {
             return;
         }
 
-        const MAX_ERROR = 0.05;
+        var maxError = Number.parseFloat(this.maximumErrorTextbox.value) / 8;
 
         var radius1 = this.gear1 / 16;
         var radius2 = this.gear2 / 16;
@@ -1249,7 +1254,7 @@ class FitGears {
             }
             var totalDistance = Math.sqrt(Math.pow(x, 2) + Math.pow(y, 2));
             var error = totalDistance - targetDistance;
-            if (Math.abs(error) > MAX_ERROR) {
+            if (Math.abs(error) > maxError) {
                 continue;
             }
             var angle = Math.atan2(y, x);
