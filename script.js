@@ -8,6 +8,8 @@ const STANDARD_GEARS = [1, 8, 16, 24, 40, 56, 12, 20, 28, 36, 60, 140];
 const DEFAULT_GEARS_STANDARD = '1,8,16,24,40,56,12,20,28,36,60,140';
 const DEFAULT_GEARS_CUSTOM = '10,11,13,14,15,17,18,19,21,22,23,25,26,27,29,30,31,32';
 
+const DEFAULT_FIT_ERROR = 0.5; // mm
+
 function getOnCircle(angle, radius) {
     return [Math.cos(angle) * radius, Math.sin(angle) * radius];
 }
@@ -501,6 +503,69 @@ class Connection {
             perpendicular.title = 'The gears can be placed on perpendicular axles.';
             distanceDiv.appendChild(perpendicular);
         }
+
+        if (this.gear1 != 1 && this.gear2 != 1) {
+            var solutionCount = 0;
+            var fullSolution = null;
+            var halfSolution = null;
+
+            var radius1 = this.gear1 / 16;
+            var radius2 = this.gear2 / 16;
+
+            if (this.gear1 == 140) {
+                radius1 -= radius2 * 2;
+            } else if (this.gear2 == 140) {
+                radius2 -= radius1 * 2;
+            }
+
+            var targetDistance = radius1 + radius2;
+            var maxError = DEFAULT_FIT_ERROR / 8;
+            var step = currentTask.distanceConstraint == 1 ? 1 : 0.5;
+
+            for (var y = 0; y <= Math.ceil(targetDistance); y += step) {
+                var x = Math.round((Math.sqrt(Math.pow(targetDistance, 2) - Math.pow(y, 2))) / step) * step;
+                if (y == 0 || Number.isNaN(x) || x < y) {
+                    continue;
+                }
+    
+                var totalDistance = Math.sqrt(Math.pow(x, 2) + Math.pow(y, 2));
+                var error = totalDistance - targetDistance;
+                if (Math.abs(error) > maxError) {
+                    continue;
+                }
+
+                solutionCount++;
+                if (fullSolution == null && x % 1 == 0 && y % 1 == 0) {
+                    fullSolution = [x, y];
+                }
+                if (fullSolution == null && halfSolution == null) {
+                    halfSolution = [x, y];
+                }
+            }
+
+            if (solutionCount > 0) {
+                var orSpan = document.createElement("span");
+                orSpan.innerText = " or ";
+                orSpan.classList.add("result-bad");
+                distanceDiv.appendChild(orSpan);
+                var fitSpan = document.createElement("span");
+                if (fullSolution != null) {
+                    fitSpan.innerText = fullSolution[0] + " ✕ " + fullSolution[1];
+                    solutionCount--;
+                    fitSpan.classList.add("result-good");
+                } else if (halfSolution != null && this.distance % 0.5 != 0) {
+                    fitSpan.innerText = halfSolution[0] + " ✕ " + halfSolution[1];
+                    solutionCount--;
+                    fitSpan.classList.add("result-ok");
+                } else if (solutionCount > 0) {
+                    fitSpan.innerText += "2D";
+                    fitSpan.classList.add("result-bad");
+                }
+                fitSpan.title = "These gears can also be connected by offsetting the axles along two dimensions.";
+                distanceDiv.appendChild(fitSpan);
+            }
+        }
+
         result.appendChild(distanceDiv);
 
         if (this.gear1 != 1 && this.gear2 != 1) {
@@ -1209,6 +1274,7 @@ class FitGears {
         this.includeHalfUnitsCheckbox.addEventListener("change", this.update.bind(this));
 
         this.maximumErrorTextbox = document.getElementById('fit-error');
+        this.maximumErrorTextbox.value = DEFAULT_FIT_ERROR;
         this.maximumErrorTextbox.addEventListener("change", this.update.bind(this));
 
         this.suppressUpdate = true;
@@ -1251,7 +1317,7 @@ class FitGears {
         this.updateGear1(gear1, false);
         this.updateGear2(gear2, false);
         this.includeHalfUnitsCheckbox.checked = includeHalfUnits;
-        this.maximumErrorTextbox.value = "0.5";
+        this.maximumErrorTextbox.value = DEFAULT_FIT_ERROR;
 
         document.getElementById("tab-fit").checked = true;
         this.suppressUpdate = false;
