@@ -1,0 +1,244 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta name="description" content="" />
+    <meta charset="utf-8">
+    <title>Lego Technic Gear calculator</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="author" content="Marian Kleineberg">
+    <link rel="stylesheet" href="style.css">
+    <link rel="shortcut icon" type="image/png" href="favicon.png"/>
+</head>
+
+<body>
+    <a href="?" class="headline"><h1>Lego Gear Ratio Calculator</h1></a>   
+
+    <input type="radio" class="tab" id="tab-search" name="tab" checked="">
+    <label class="tab" for="tab-search">
+        Search gear sequence
+    </label>
+    <input type="radio" class="tab" id="tab-edit" name="tab">
+    <label class="tab" for="tab-edit">
+        Edit gear sequence
+    </label>
+    <input type="radio" class="tab" id="tab-fit" name="tab">
+    <label class="tab" for="tab-fit">
+        Fit gears
+    </label>
+    <input type="radio" class="tab" id="tab-about" name="tab">
+    <label class="tab" for="tab-about">
+        About
+    </label>
+
+    <div class="tabs-divider"></div>
+
+    <div class="tab-content" id="content-search">
+        <form>
+            <span class="description">Target ratio:</span>
+            <input type="text" id="ratio" name="ratio" value="3/4" placeholder="try 0.75 or 3/4"/>
+            
+            <div>
+                <span class="description">
+                    <label class="checkboxlabel" for="approximate">
+                        <input type="checkbox" id="approximate" name="approximate">
+                        Include approximate solutions within &#177;&nbsp;
+                    </label>
+                </span>
+                <input 
+                    type="text"
+                    id="error"
+                    name="error"
+                    value="0.01"/>
+            </div>
+            
+            <div class="group">
+                <span class="description">Gear distance:</span>
+                <input type="radio" id="full" name="distance" value="full">
+                <label class="radiolabel" for="full">Full</label>
+
+                <input type="radio" id="half" name="distance" value="half" checked="">
+                <label class="radiolabel" for="half">Half</label>
+
+                <input type="radio" id="any" name="distance" value="any">
+                <label class="radiolabel" for="any">Any</label>
+            </div>
+
+            <div>
+                <span class="description">
+                    <input type="checkbox" id="standardgearscheckbox" name="standardgears" checked="">
+                    <label class="checkboxlabel" for="standardgearscheckbox">
+                        Include standard gears:
+                    </label>
+                </span>
+                    
+                <input 
+                    type="text"
+                    id="standardgearslist"
+                    class="gearlist"
+                    name="standardgearslist"
+                    value="1, 8, 16, 24, 40, 56, 12, 20, 28, 36, 60, 140"
+                    placeholder="comma separated list of teeth counts of available gears"/>
+            </div>
+
+            <details id="advanced-options">
+                <summary>Advanced options</summary>
+
+                <div>
+                    <span class="description">
+                        <label class="checkboxlabel" for="customgearscheckbox">
+                            <input type="checkbox" id="customgearscheckbox" name="customgears">
+                            Include <a href="https://www.thingiverse.com/thing:4258996">custom gears</a>:
+                        </label>
+                    </span>
+                    <input 
+                        type="text"
+                        id="customgearslist"
+                        class="gearlist custom"
+                        name="customgearslist"
+                        value="10, 11, 13, 14, 15, 17, 18, 19, 21, 22, 23, 25, 26, 27, 29, 30, 31, 32"
+                        placeholder="comma separated list of teeth counts of available gears"/>
+                </div>
+
+                <div>
+                    <span class="description">Fixed start gear sequence:</span>
+                    <input 
+                        type="text"
+                        id="fixedStart"
+                        name="fixedStart"
+                        value=""
+                        class="gearlist"/>
+                </div>
+
+                <div>
+                    <span class="description">Fixed end gear sequence:</span>
+                    <input 
+                        type="text"
+                        id="fixedEnd"
+                        name="fixedEnd"
+                        value=""
+                        class="gearlist"/>
+                </div>
+
+                <div>
+                    <label class="checkboxlabel" for="exlude-pairs-with-fixed-gears">
+                        <input type="checkbox" id="exlude-pairs-with-fixed-gears" name="exlude-pairs-with-fixed-gears">
+                        Exclude solutions where fixed and non-fixed gears can be rearranged to become redundant
+                    </label>
+                </div>
+
+                <div>
+                    Limit search to&nbsp;
+                    <input 
+                        type="number"
+                        id="limitCount"
+                        name="limitCount"
+                        min="1"
+                        value="30"/>&nbsp;
+                    results
+                </div>
+
+                <div>
+                    Limit search to&nbsp;
+                    <input 
+                        type="number"
+                        id="limitTime"
+                        name="limitTime"
+                        min="1"
+                        value="30"/>&nbsp;
+                    seconds
+                </div>
+            </details>
+
+            <div>
+                <button class="button" id="calculate">Search</button>
+                <span id="searching">
+                    <div class="spinner"><div></div><div></div><div></div><div></div></div>
+                    <span>Searching...</span>
+                    <button id="stop" class="button white">Stop</button>
+                </span>
+            </div>
+        </form>
+
+        <div id="result-meta" class="topbar">
+            <span>
+                Results: <span id="resultcount">0</span>
+
+                <span id="smallest-error-container">
+                    &nbsp;
+                    Smallest error:
+                    <span id="smallest-error"></span>
+                </span>
+            </span>
+
+            <label class="checkboxlabel" for="animate">
+                <input type="checkbox" id="animate" name="animate">
+                Animate at&nbsp;
+                <input 
+                    type="text"
+                    id="animate-rpm"
+                    name="animate-rpm"
+                    value="20"/>&nbsp;
+                rpm
+            </label>
+        </div>
+
+        <div id="result"></div>
+    </div>
+
+    <div class="tab-content" id="content-edit">
+        <div id="result-meta" class="topbar">
+            <button id="clear-sequence" class="button white">Clear sequence</button>
+            <button id="reverse" class="button white">Reverse</button>
+            <a href='' class="permalink" id="editor-permalink">Permalink</a>
+
+            <label class="checkboxlabel" for="editor-animate">
+                <input type="checkbox" id="editor-animate" name="editor-animate">
+                Animate at&nbsp;
+                <input 
+                    type="text"
+                    id="editor-animate-rpm"
+                    name="editor-animate-rpm"
+                    value="20"/>&nbsp;
+                rpm
+            </label>
+        </div>
+        <div id="sequence-editor" class="sequence"></div>
+    </div>
+
+    <div class="tab-content" id="content-fit">
+        <form id="form-fit-gears">
+            This tool shows possible ways to connect a given pair of gears.
+            <div>
+                <span class="description">Gears:</span>
+                <div class="catalog-gear" id="gear-button1"></div>
+                <div class="catalog-gear" id="gear-button2"></div>
+            </div>
+            <div>
+                <label class="checkboxlabel" for="fit-half">
+                    <input type="checkbox" id="fit-half" name="fit-half" checked>
+                    Include solutions with half units
+                </label>
+            </div>
+            <div>
+                <span class="description">
+                    Maximum error:
+                </span>
+                <input 
+                    type="text"
+                    id="fit-error"
+                    name="fit-error"
+                    value="0.5"/>
+                mm
+            </div>
+        </form>
+        <div id="fit-results-container"></div>
+    </div>
+
+    <div class="tab-content" id="content-about">
+        About text
+    </div>
+
+    <script src="app.js"></script>
+</body>
+</html>
