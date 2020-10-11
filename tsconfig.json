@@ -1,0 +1,14 @@
+{
+    "compilerOptions": {
+        "outFile": "app.js",
+        "sourceMap": true,
+        "target": "es2017",
+        "noImplicitAny": true,
+        "alwaysStrict": true,
+        "strict": true
+    },
+	"compileOnSave": true,
+    "include": [
+        "**/*.ts"
+    ]
+}
