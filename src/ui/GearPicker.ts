@@ -22,7 +22,7 @@ class GearPicker {
                 if (this.active && comparePosition != 0 && comparePosition != 20) {
                     this.select(null);
                 }
-            }, 0);
+            }.bind(this), 0);
         }.bind(this));
 
         this.element.addEventListener('click', function(event: MouseEvent) {

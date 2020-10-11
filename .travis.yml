@@ -20,7 +20,7 @@ script:
   - git config user.email "travis@travis-ci.org"
   - git reset .
   - rm .gitignore  
-  - git add index.html app.css app.js favicon.png
+  - git add index.html style.css app.js favicon.png
   - git commit -m "Render page" || travis_terminate 0
   - git branch -f gh-pages
   - git checkout gh-pages
