@@ -1,6 +1,7 @@
 "use strict";
 const PIXELS_PER_MM = 2.5;
 const STANDARD_GEARS = [1, 8, 16, 24, 40, 56, 12, 20, 28, 36, 60, 140];
+const HELPER_GEARS = [8, 16, 24, 40, 12, 20, 28, 36];
 const DEFAULT_GEARS_STANDARD = '1,8,16,24,40,56,12,20,28,36,60,140';
 const DEFAULT_GEARS_CUSTOM = '10,11,13,14,15,17,18,19,21,22,23,25,26,27,29,30,31,32';
 const DEFAULT_FIT_ERROR = 0.5; // mm
@@ -1220,49 +1221,107 @@ class FitGears {
             if (Math.abs(error) > maxError) {
                 continue;
             }
-            var angle = Math.atan2(y, x);
             foundAnything = true;
-            var resultElement = document.createElement('div');
-            resultElement.classList.add('sequence');
-            var fitBox = document.createElement('div');
-            fitBox.classList.add('fit-box');
-            var margin = 1.5 * 8 * PIXELS_PER_MM;
-            var gearSVG1 = GearSVGGenerator.createGearSVG(this.gear1);
-            var svgSize1 = gearSVG1.width.baseVal.value;
-            gearSVG1.style.left = (margin - svgSize1 / 2) + "px";
-            gearSVG1.style.top = (margin - svgSize1 / 2) + "px";
-            fitBox.appendChild(gearSVG1);
-            var gearSVG2 = GearSVGGenerator.createGearSVG(this.gear2);
-            var svgSize2 = gearSVG2.width.baseVal.value;
-            gearSVG2.style.left = (margin + x * 8 * PIXELS_PER_MM - svgSize2 / 2) + "px";
-            gearSVG2.style.top = (margin + y * 8 * PIXELS_PER_MM - svgSize2 / 2) + "px";
-            fitBox.appendChild(gearSVG2);
-            var gear1ToothPosition = (angle / (2 * Math.PI) * this.gear1) % 1;
-            var gear2ToothPosition = ((angle + Math.PI) / (2 * Math.PI) * this.gear2) % 1;
-            if (this.gear1 == 140 || this.gear2 == 140) {
-                gear1ToothPosition = 1.0 - gear1ToothPosition;
-            }
-            var gear2ToothCorrection = (gear1ToothPosition + gear2ToothPosition + 0.5) % 1;
-            var gear2AngleCorrectionDegree = gear2ToothCorrection / this.gear2 * 360;
-            gearSVG2.style.transform = 'rotate(' + gear2AngleCorrectionDegree + 'deg)';
-            for (var a = 0; a <= Math.ceil(x); a++) {
-                for (var b = 0; b <= Math.ceil(y); b++) {
-                    var holeElement = document.createElement('div');
-                    holeElement.classList.add('hole');
-                    holeElement.style.left = (margin - 2 + a * 8 * PIXELS_PER_MM) + "px";
-                    holeElement.style.top = (margin - 2 + b * 8 * PIXELS_PER_MM) + "px";
-                    fitBox.appendChild(holeElement);
+            this.addResult(x, y, totalDistance, targetDistance);
+        }
+        var foundSoultionWithHelperGear = false;
+        for (var helperGear of HELPER_GEARS) {
+            var helperRadius = helperGear / 16;
+            var targetHelperDistance = radius1 + helperRadius;
+            for (var helperY = 0; helperY <= Math.ceil(targetHelperDistance); helperY += step) {
+                var helperX = Math.round((Math.sqrt(Math.pow(targetHelperDistance, 2) - Math.pow(helperY, 2))) / step) * step;
+                if (Number.isNaN(helperX) || helperX < helperY) {
+                    continue;
+                }
+                var helperDistance = Math.sqrt(Math.pow(helperX, 2) + Math.pow(helperY, 2));
+                if (Math.abs(helperDistance - targetHelperDistance) > maxError) {
+                    continue;
+                }
+                if (this.gear1 == helperGear && helperY % 1 == 0 && helperX % 1 == 0) {
+                    continue;
+                }
+                var targetDistance = helperRadius + radius2;
+                for (var y = 0; y <= Math.ceil(targetDistance); y += step) {
+                    var x = Math.round((Math.sqrt(Math.pow(targetDistance, 2) - Math.pow(y, 2))) / step) * step;
+                    if (Number.isNaN(x) || x < y) {
+                        continue;
+                    }
+                    var totalDistance = Math.sqrt(Math.pow(x, 2) + Math.pow(y, 2));
+                    var error = totalDistance - targetDistance;
+                    if (Math.abs(error) > maxError) {
+                        continue;
+                    }
+                    if (!foundSoultionWithHelperGear) {
+                        var headline = document.createElement('h2');
+                        headline.innerText = 'Solutions with helper gear';
+                        this.resultsContainer.appendChild(headline);
+                    }
+                    foundAnything = true;
+                    foundSoultionWithHelperGear = true;
+                    this.addResult(x + helperX, y + helperY, totalDistance, targetDistance, {
+                        gear: helperGear, x: helperX, y: helperY, distance: helperDistance, targetDistance: targetHelperDistance
+                    });
                 }
             }
-            var radius1 = this.gear1 / 16;
-            var radius2 = this.gear2 / 16;
-            fitBox.style.width = (x * 8 * PIXELS_PER_MM + margin + Math.max(margin, radius2 * 8 * PIXELS_PER_MM + 20)) + "px";
-            fitBox.style.height = (y * 8 * PIXELS_PER_MM + margin + Math.max(margin, radius2 * 8 * PIXELS_PER_MM + 20)) + "px";
-            resultElement.appendChild(fitBox);
-            var resultText = document.createElement('div');
-            if (this.gear1 == 140 || this.gear2 == 140) {
-                error *= -1;
+        }
+        if (!foundAnything) {
+            this.resultsContainer.innerText = "Nothing found.";
+        }
+    }
+    addResult(x, y, totalDistance, targetDistance, helperGearData = null) {
+        if (this.gear1 == null || this.gear2 == null) {
+            return;
+        }
+        var error = totalDistance - targetDistance;
+        var resultElement = document.createElement('div');
+        resultElement.classList.add('sequence');
+        var fitBox = document.createElement('div');
+        fitBox.classList.add('fit-box');
+        var margin = 1.5 * 8 * PIXELS_PER_MM;
+        var gearSVG1 = GearSVGGenerator.createGearSVG(this.gear1);
+        var svgSize1 = gearSVG1.width.baseVal.value;
+        gearSVG1.style.left = (margin - svgSize1 / 2) + "px";
+        gearSVG1.style.top = (margin - svgSize1 / 2) + "px";
+        fitBox.appendChild(gearSVG1);
+        var gearSVG2 = GearSVGGenerator.createGearSVG(this.gear2);
+        var svgSize2 = gearSVG2.width.baseVal.value;
+        gearSVG2.style.left = (margin + x * 8 * PIXELS_PER_MM - svgSize2 / 2) + "px";
+        gearSVG2.style.top = (margin + y * 8 * PIXELS_PER_MM - svgSize2 / 2) + "px";
+        fitBox.appendChild(gearSVG2);
+        if (helperGearData !== null) {
+            var helperGearSVG = GearSVGGenerator.createGearSVG(helperGearData.gear);
+            var helperGearSVGSize = helperGearSVG.width.baseVal.value;
+            helperGearSVG.style.left = (margin + helperGearData.x * 8 * PIXELS_PER_MM - helperGearSVGSize / 2) + "px";
+            helperGearSVG.style.top = (margin + helperGearData.y * 8 * PIXELS_PER_MM - helperGearSVGSize / 2) + "px";
+            fitBox.appendChild(helperGearSVG);
+            var helperGearCorrection = this.getGearRotationCorrection(this.gear1, helperGearData.gear, helperGearData.x, helperGearData.y);
+            helperGearSVG.style.transform = 'rotate(' + helperGearCorrection + 'deg)';
+            gearSVG2.style.transform = 'rotate(' + this.getGearRotationCorrection(helperGearData.gear, this.gear2, x - helperGearData.x, y - helperGearData.y, helperGearCorrection) + 'deg)';
+        }
+        else {
+            gearSVG2.style.transform = 'rotate(' + this.getGearRotationCorrection(this.gear1, this.gear2, x, y) + 'deg)';
+        }
+        for (var a = 0; a <= Math.ceil(x); a++) {
+            for (var b = 0; b <= Math.ceil(y); b++) {
+                var holeElement = document.createElement('div');
+                holeElement.classList.add('hole');
+                holeElement.style.left = (margin - 2 + a * 8 * PIXELS_PER_MM) + "px";
+                holeElement.style.top = (margin - 2 + b * 8 * PIXELS_PER_MM) + "px";
+                fitBox.appendChild(holeElement);
             }
+        }
+        var radius1 = this.gear1 / 16;
+        var radius2 = this.gear2 / 16;
+        fitBox.style.width = (x * 8 * PIXELS_PER_MM + margin + Math.max(margin, radius2 * 8 * PIXELS_PER_MM + 20)) + "px";
+        fitBox.style.height = (y * 8 * PIXELS_PER_MM + margin + Math.max(margin, radius2 * 8 * PIXELS_PER_MM + 20)) + "px";
+        resultElement.appendChild(fitBox);
+        if (helperGearData === null) {
+            resultElement.appendChild(this.createResultText(x, y, this.gear1 == 140 || this.gear2 == 140, totalDistance, targetDistance));
+        }
+        else {
+            resultElement.appendChild(this.createResultText(helperGearData.x, helperGearData.y, this.gear1 == 140, helperGearData.distance, helperGearData.targetDistance));
+            resultElement.appendChild(this.createResultText(x - helperGearData.x, y - helperGearData.y, this.gear2 == 140, totalDistance, targetDistance));
+            var resultText = document.createElement('div');
             var distancesSpan = document.createElement("span");
             distancesSpan.innerText = x + " ✕ " + y;
             if (x % 1 == 0 && y % 1 == 0) {
@@ -1272,21 +1331,48 @@ class FitGears {
                 distancesSpan.classList.add("result-ok");
             }
             resultText.appendChild(distancesSpan);
-            var errorSpan = document.createElement("span");
-            if (error == 0) {
-                errorSpan.innerText = " (exact fit)";
-                errorSpan.classList.add("result-good");
-            }
-            else {
-                errorSpan.innerText = ", distance: " + (Math.round(totalDistance * 100) / 100) + " / " + targetDistance + ", error: " + (Math.round(Math.abs(error) * 1000) / 1000) + " units (" + (Math.round(Math.abs(error) * 8 * 100) / 100) + "mm) " + (error < 0 ? "too close" : "too far");
-            }
-            resultText.appendChild(errorSpan);
+            var textSpan = document.createElement("span");
+            textSpan.innerText = " total using a " + helperGearData.gear + " teeth helper gear";
+            resultText.appendChild(textSpan);
             resultElement.appendChild(resultText);
-            this.resultsContainer.appendChild(resultElement);
         }
-        if (!foundAnything) {
-            this.resultsContainer.innerText = "Nothing found.";
+        this.resultsContainer.appendChild(resultElement);
+    }
+    getGearRotationCorrection(gear1, gear2, x, y, gear1Rotation = 0) {
+        var angle = Math.atan2(y, x);
+        var gear1ToothPosition = (angle / (2 * Math.PI) * gear1 - gear1Rotation * gear1 / 360) % 1;
+        var gear2ToothPosition = ((angle + Math.PI) / (2 * Math.PI) * gear2) % 1;
+        if (gear1 == 140 || gear2 == 140) {
+            gear1ToothPosition = 1.0 - gear1ToothPosition;
         }
+        var correction = (gear1ToothPosition + gear2ToothPosition + 0.5) % 1; // in teeth
+        return correction / gear2 * 360;
+    }
+    createResultText(x, y, hasBananaGear, totalDistance, targetDistance) {
+        var resultText = document.createElement('div');
+        var error = totalDistance - targetDistance;
+        if (hasBananaGear) {
+            error *= -1;
+        }
+        var distancesSpan = document.createElement("span");
+        distancesSpan.innerText = x + " ✕ " + y;
+        if (x % 1 == 0 && y % 1 == 0) {
+            distancesSpan.classList.add("result-good");
+        }
+        else {
+            distancesSpan.classList.add("result-ok");
+        }
+        resultText.appendChild(distancesSpan);
+        var errorSpan = document.createElement("span");
+        if (error == 0) {
+            errorSpan.innerText = " (exact fit)";
+            errorSpan.classList.add("result-good");
+        }
+        else {
+            errorSpan.innerText = ", distance: " + (Math.round(totalDistance * 100) / 100) + " / " + targetDistance + ", error: " + (Math.round(Math.abs(error) * 1000) / 1000) + " units (" + (Math.round(Math.abs(error) * 8 * 100) / 100) + "mm) " + (error < 0 ? "too close" : "too far");
+        }
+        resultText.appendChild(errorSpan);
+        return resultText;
     }
 }
 class SequenceEditor {
