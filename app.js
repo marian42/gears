@@ -1225,42 +1225,44 @@ class FitGears {
             this.addResult(x, y, totalDistance, targetDistance);
         }
         var foundSoultionWithHelperGear = false;
-        for (var helperGear of HELPER_GEARS) {
-            var helperRadius = helperGear / 16;
-            var targetHelperDistance = radius1 + helperRadius;
-            for (var helperY = 0; helperY <= Math.ceil(targetHelperDistance); helperY += step) {
-                var helperX = Math.round((Math.sqrt(Math.pow(targetHelperDistance, 2) - Math.pow(helperY, 2))) / step) * step;
-                if (Number.isNaN(helperX) || helperX < helperY) {
-                    continue;
-                }
-                var helperDistance = Math.sqrt(Math.pow(helperX, 2) + Math.pow(helperY, 2));
-                if (Math.abs(helperDistance - targetHelperDistance) > maxError) {
-                    continue;
-                }
-                if (this.gear1 == helperGear && helperY % 1 == 0 && helperX % 1 == 0) {
-                    continue;
-                }
-                var targetDistance = helperRadius + radius2;
-                for (var y = 0; y <= Math.ceil(targetDistance); y += step) {
-                    var x = Math.round((Math.sqrt(Math.pow(targetDistance, 2) - Math.pow(y, 2))) / step) * step;
-                    if (Number.isNaN(x) || x < y) {
+        if (this.gear1 != 140 && this.gear2 != 140) {
+            for (var helperGear of HELPER_GEARS) {
+                var helperRadius = helperGear / 16;
+                var targetHelperDistance = radius1 + helperRadius;
+                for (var helperY = 0; helperY <= Math.ceil(targetHelperDistance); helperY += step) {
+                    var helperX = Math.round((Math.sqrt(Math.pow(targetHelperDistance, 2) - Math.pow(helperY, 2))) / step) * step;
+                    if (Number.isNaN(helperX) || helperX < helperY) {
                         continue;
                     }
-                    var totalDistance = Math.sqrt(Math.pow(x, 2) + Math.pow(y, 2));
-                    var error = totalDistance - targetDistance;
-                    if (Math.abs(error) > maxError) {
+                    var helperDistance = Math.sqrt(Math.pow(helperX, 2) + Math.pow(helperY, 2));
+                    if (Math.abs(helperDistance - targetHelperDistance) > maxError) {
                         continue;
                     }
-                    if (!foundSoultionWithHelperGear) {
-                        var headline = document.createElement('h2');
-                        headline.innerText = 'Solutions with helper gear';
-                        this.resultsContainer.appendChild(headline);
+                    if (this.gear1 == helperGear && helperY % 1 == 0 && helperX % 1 == 0) {
+                        continue;
                     }
-                    foundAnything = true;
-                    foundSoultionWithHelperGear = true;
-                    this.addResult(x + helperX, y + helperY, totalDistance, targetDistance, {
-                        gear: helperGear, x: helperX, y: helperY, distance: helperDistance, targetDistance: targetHelperDistance
-                    });
+                    var targetDistance = helperRadius + radius2;
+                    for (var y = 0; y <= Math.ceil(targetDistance); y += step) {
+                        var x = Math.round((Math.sqrt(Math.pow(targetDistance, 2) - Math.pow(y, 2))) / step) * step;
+                        if (Number.isNaN(x) || x < y) {
+                            continue;
+                        }
+                        var totalDistance = Math.sqrt(Math.pow(x, 2) + Math.pow(y, 2));
+                        var error = totalDistance - targetDistance;
+                        if (Math.abs(error) > maxError) {
+                            continue;
+                        }
+                        if (!foundSoultionWithHelperGear) {
+                            var headline = document.createElement('h2');
+                            headline.innerText = 'Solutions with helper gear';
+                            this.resultsContainer.appendChild(headline);
+                        }
+                        foundAnything = true;
+                        foundSoultionWithHelperGear = true;
+                        this.addResult(x + helperX, y + helperY, totalDistance, targetDistance, {
+                            gear: helperGear, x: helperX, y: helperY, distance: helperDistance, targetDistance: targetHelperDistance
+                        });
+                    }
                 }
             }
         }
