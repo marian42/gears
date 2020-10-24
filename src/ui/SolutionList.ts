@@ -2,12 +2,14 @@ class SolutionList {
     private readonly container: HTMLDivElement;
     private readonly solutions: {[count: number]: Solution[]} = {};
     private readonly sizeContainers: {[count: number]: HTMLDivElement} = {};
+    private readonly task: SearchParameters;
     public totalSolutions: number = 0;
     private smallestError: number | null = null;
 
-    constructor(container: HTMLDivElement) {
+    constructor(container: HTMLDivElement, task: SearchParameters) {
         this.container = container;
         this.container.textContent = '';
+        this.task = task;
     }
 
     public add(solution: Solution) {
@@ -34,7 +36,7 @@ class SolutionList {
             this.solutions[count] = [];
         }
 
-        if (currentTask.exact) {
+        if (this.task.exact) {
             this.sizeContainers[count].appendChild(solution.createDiv());
             this.solutions[count].push(solution);
         } else {
@@ -54,7 +56,7 @@ class SolutionList {
         }
         this.totalSolutions++;
         document.getElementById('resultcount')!.innerText = this.totalSolutions.toString();
-        if (!currentTask.exact &&(this.smallestError === null || solution.error! < this.smallestError)) {
+        if (!this.task.exact &&(this.smallestError === null || solution.error! < this.smallestError)) {
             this.smallestError = solution.error!;
             document.getElementById('smallest-error')!.innerText = this.smallestError!.toPrecision(3);
         }

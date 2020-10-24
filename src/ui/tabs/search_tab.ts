@@ -23,18 +23,42 @@ type AnimationSettings = {
     duration: number;
 }
 
-if (typeof document !== 'undefined') { // This is not run in worker threads
-    var resultDiv: HTMLDivElement = document.getElementById("result") as HTMLDivElement;
-    var searchingSpan: HTMLSpanElement = document.getElementById("searching") as HTMLSpanElement;
+function parseGearList(value: string, distinct=false): number[] {
+    var result: number[] = [];
+    for (var gearString of value.split(',')) {
+        gearString = gearString.trim();
+        var teethCount = parseInt(gearString);
+        if (!isNaN(teethCount) && (!distinct || !result.includes(teethCount))) {
+            result.push(teethCount);
+        }
+    }
+    return result;
+}
 
-    var currentWorker: Worker | null = null;
+class SearchTab {
+    private readonly resultDiv: HTMLDivElement;
+    private readonly searchingSpan: HTMLSpanElement;
 
-    var currentTask: SearchParameters;
-    var currentTaskId = 0;
-    
-    var animationSettings: AnimationSettings = { enabled: false, duration: 0};
+    private currentWorker: Worker | null = null;
 
-    function getAvailableGears() {
+    public currentTask: SearchParameters | null = null;
+    private currentTaskId = 0;
+
+    public animationSettings: AnimationSettings = { enabled: false, duration: 0 };
+
+    private readonly animateCheckbox: HTMLInputElement;
+    private readonly rpmTextbox: HTMLInputElement;
+
+    constructor() {
+        this.resultDiv = document.getElementById("result") as HTMLDivElement;
+        this.searchingSpan = document.getElementById("searching") as HTMLSpanElement;
+        this.animateCheckbox = document.getElementById('animate') as HTMLInputElement;
+        this.rpmTextbox = document.getElementById('animate-rpm') as HTMLInputElement;
+        this.updateAnimation();
+        this.prepareEventListeners();
+    }
+
+    private getAvailableGears(): number[] {
         var result: number[] = [];
     
         if ((document.getElementById('standardgearscheckbox') as HTMLInputElement).checked) {
@@ -48,40 +72,28 @@ if (typeof document !== 'undefined') { // This is not run in worker threads
         return result;
     }
 
-    function parseGearList(value: string, distinct=false): number[] {
-        var result: number[] = [];
-        for (var gearString of value.split(',')) {
-            gearString = gearString.trim();
-            var teethCount = parseInt(gearString);
-            if (!isNaN(teethCount) && (!distinct || !result.includes(teethCount))) {
-                result.push(teethCount);
+    private onReceiveWorkerMessage(event: MessageEvent) {
+        if (event.data.type == 'solution' && event.data.id == this.currentTaskId) {
+            var sequence = createSequence(event.data.gearsPrimary, event.data.gearsSecondary, this.currentTask!);
+            this.currentTask!.solutionList!.add(new Solution(sequence, this.currentTask!));
+
+            if (this.currentTask!.solutionList!.totalSolutions >= this.currentTask!.maxNumberOfResults) {
+                this.stopSearch();
             }
         }
-        return result;
-    }
-
-    function onReceiveWorkerMessage(this: Worker, event: MessageEvent) {
-        if (event.data.type == 'solution' && event.data.id == currentTaskId) {
-            var sequence = createSequence(event.data.gearsPrimary, event.data.gearsSecondary, currentTask);
-            currentTask.solutionList!.add(new Solution(sequence));
-
-            if (currentTask.solutionList!.totalSolutions >= currentTask.maxNumberOfResults) {
-                stopSearch();
-            }
-        }
-        if (event.data.type == 'stop' && event.data.id == currentTaskId) {
-            searchingSpan.style.display = 'none';
-            currentWorker = null;
+        if (event.data.type == 'stop' && event.data.id == this.currentTaskId) {
+            this.searchingSpan.style.display = 'none';
+            this.currentWorker = null;
 
             if (event.data.reason == 'missingfactors') {
-                resultDiv.innerText = '\nNo exact solution is available because these gears are missing:\n\n'
+                this.resultDiv.innerText = '\nNo exact solution is available because these gears are missing:\n\n'
                 + event.data.missingFactors.join('\n')
                 + '\n\nConsider searching for approximate results.';
             }
         }
     }
 
-    function readFixedSequenceGears(currentTask: SearchParameters) {
+    private readFixedSequenceGears(currentTask: SearchParameters) {
         currentTask.startSequence = parseGearList((document.getElementById('fixedStart') as HTMLInputElement).value);
         currentTask.endSequence = parseGearList((document.getElementById('fixedEnd') as HTMLInputElement).value);
 
@@ -111,16 +123,16 @@ if (typeof document !== 'undefined') { // This is not run in worker threads
         currentTask.searchRatio = currentTask.targetRatio.multiply(new Fraction(currentTask.fixedSecondaryFactor, currentTask.fixedPrimaryFactor));
     }
 
-    function handleTaskTimeout() {
-        var taskId = currentTaskId;
-        setTimeout(function() {
-            if (currentTask.id == taskId && currentWorker != null) {
-                stopSearch();
+    private handleTaskTimeout() {
+        var taskId = this.currentTaskId;
+        setTimeout(function(this: SearchTab) {
+            if (this.currentTask!.id == taskId && this.currentWorker != null) {
+                this.stopSearch();
             }
-        }, parseInt((document.getElementById('limitTime') as HTMLInputElement).value) * 1000);
+        }.bind(this), parseInt((document.getElementById('limitTime') as HTMLInputElement).value) * 1000);
     }
 
-    function startSearch() {
+    private startSearch() {
         var targetRatio = Fraction.parse((document.getElementById('ratio') as HTMLInputElement).value);
         var distanceConstraint = null;
         if ((document.getElementById('full') as HTMLInputElement).checked) {
@@ -131,23 +143,15 @@ if (typeof document !== 'undefined') { // This is not run in worker threads
         var approxiamte = (document.getElementById('approximate') as HTMLInputElement).checked;
         var error = parseFloat((document.getElementById('error') as HTMLInputElement).value);
 
-        currentTaskId++;
+        this.currentTaskId++;        
 
-        if (currentWorker != null) {
-            currentWorker.terminate();
-        }
-
-        currentWorker = new Worker("app.js");
-
-        currentWorker.onmessage = onReceiveWorkerMessage;
-
-        currentTask = {
+        this.currentTask = {
             exact: !approxiamte,
             error: error,
             targetRatio: targetRatio,
-            gears: getAvailableGears(),
+            gears: this.getAvailableGears(),
             distanceConstraint: distanceConstraint,
-            id: currentTaskId,
+            id: this.currentTaskId,
             maxNumberOfResults: parseInt((document.getElementById('limitCount') as HTMLInputElement).value),
             excludePairsWithFixedGears: (document.getElementById('exlude-pairs-with-fixed-gears') as HTMLInputElement).checked,
             startSequence: [],
@@ -161,51 +165,54 @@ if (typeof document !== 'undefined') { // This is not run in worker threads
             fixedSecondaryFactor: null
         };
 
-        readFixedSequenceGears(currentTask);
+        this.readFixedSequenceGears(this.currentTask);
 
-        currentWorker.postMessage(currentTask);
-        searchingSpan.style.display = "inline";
-        currentTask.solutionList = new SolutionList(resultDiv);
-        handleTaskTimeout();
+        if (this.currentWorker != null) {
+            this.currentWorker.terminate();
+        }
+
+        this.currentWorker = new Worker("app.js");
+        this.currentWorker.onmessage = this.onReceiveWorkerMessage.bind(this);
+        this.currentWorker.postMessage(this.currentTask);
+
+        this.searchingSpan.style.display = "inline";
+        this.currentTask.solutionList = new SolutionList(this.resultDiv, this.currentTask);
+        this.handleTaskTimeout();
 
         document.getElementById('resultcount')!.innerText = "0";
         document.getElementById('result-meta')!.style.display = 'block';
-        document.getElementById('smallest-error-container')!.style.display = currentTask.exact ? 'none' : 'inline';
+        document.getElementById('smallest-error-container')!.style.display = this.currentTask.exact ? 'none' : 'inline';
         document.getElementById('smallest-error')!.innerText = '';
     }
 
-    function stopSearch() {
-        if (currentWorker != null) {
-            currentWorker.terminate();
-            currentWorker = null;
+    private stopSearch() {
+        if (this.currentWorker != null) {
+            this.currentWorker.terminate();
+            this.currentWorker = null;
         }
 
-        searchingSpan.style.display = "none";
+        this.searchingSpan.style.display = "none";
     }
     
-    document.getElementById('calculate')!.addEventListener('click', function(event) {
-        event.preventDefault();
-        
-        startSearch();
+    private prepareEventListeners() {    
+        document.getElementById('calculate')!.addEventListener('click', function(this: SearchTab, event: MouseEvent) {
+            event.preventDefault();
+            
+            this.startSearch();
 
-        window.history.pushState({}, "", getUrlParameters());
-    });
+            window.history.pushState({}, "", this.getUrlParameters());
+        }.bind(this));
 
-    document.getElementById('stop')!.addEventListener('click', function(event) {
-        event.preventDefault();
-        stopSearch();        
-    });
+        document.getElementById('stop')!.addEventListener('click', function(this: SearchTab, event: MouseEvent) {
+            event.preventDefault();
+            this.stopSearch();        
+        }.bind(this));
 
-    var sequenceEditor = new SequenceEditor(document.getElementById('sequence-editor') as HTMLDivElement);
-    document.getElementById('clear-sequence')!.addEventListener('click', function(event) {
-        sequenceEditor.clear();
-    });
-    document.getElementById('reverse')!.addEventListener('click', function(event) {
-        sequenceEditor.reverse();
-    })
-    var fitGears = new FitGears();
+        this.animateCheckbox.addEventListener('change', this.updateAnimation.bind(this));
+        this.rpmTextbox.addEventListener('change', this.updateAnimation.bind(this));
+    }
 
-    function getUrlParameters() {
+    getUrlParameters(): string {
         var form = document.querySelector('form') as HTMLFormElement;
         var elements: {[name: string]: HTMLInputElement} = {};
     
@@ -263,7 +270,7 @@ if (typeof document !== 'undefined') { // This is not run in worker threads
         return '?' + items.join('&');
     }
     
-    function loadUrlParameters(runSearch=true) {
+    loadUrlParameters(runSearch=true) {
         var parameters: {[key: string]: string} = {};
         window.location.href.replace(/[?&]+([^=&]+)=([^&]*)/gi, function(m: string, key: string, value: string) {
             parameters[key] = decodeURI(value);
@@ -367,31 +374,33 @@ if (typeof document !== 'undefined') { // This is not run in worker threads
             }
     
             if (runSearch) {
-                startSearch();
+                this.startSearch();
             } else {
-                resultDiv.innerText = '';
+                this.resultDiv.innerText = '';
             }
         }
     }
 
-    function updateAnimation() {
-        animationSettings.enabled = (document.getElementById('animate') as HTMLInputElement).checked;
-        animationSettings.duration = 60 / parseFloat((document.getElementById('animate-rpm') as HTMLInputElement).value);
+    updateAnimation() {
+        this.animationSettings.enabled = this.animateCheckbox.checked;
+        this.animationSettings.duration = 60 / parseFloat(this.rpmTextbox.value);
 
-        if (currentTask != null) {
-            currentTask.solutionList!.updateAnimation();
+        if (this.currentTask != null) {
+            this.currentTask.solutionList!.updateAnimation();
         }
     }
+}
 
-    updateAnimation();
+if (typeof document !== 'undefined') { // This is not run in worker threads
+    var searchTab = new SearchTab();
+    var fitGears = new FitGears();
+    var sequenceEditor = new SequenceEditor(document.getElementById('sequence-editor') as HTMLDivElement);
+    searchTab.loadUrlParameters();
 
-    (document.getElementById('animate') as HTMLInputElement).addEventListener('change', updateAnimation);
-    (document.getElementById('animate-rpm') as HTMLInputElement).addEventListener('change', updateAnimation);
-    
-    loadUrlParameters();
-
-    window.onpopstate = function(event: PopStateEvent) {
-        loadUrlParameters(false);
-        stopSearch();
-    }
+    document.getElementById('clear-sequence')!.addEventListener('click', function(event) {
+        sequenceEditor.clear();
+    });
+    document.getElementById('reverse')!.addEventListener('click', function(event) {
+        sequenceEditor.reverse();
+    })
 }
