@@ -1,3 +1,6 @@
+
+///<reference path="../SolutionList.ts" />
+
 type SearchParameters = {
     targetRatio: Fraction;
     searchRatio: Fraction | null;
@@ -389,18 +392,4 @@ class SearchTab {
             this.currentTask.solutionList!.updateAnimation();
         }
     }
-}
-
-if (typeof document !== 'undefined') { // This is not run in worker threads
-    var searchTab = new SearchTab();
-    var fitGears = new FitGears();
-    var sequenceEditor = new SequenceEditor(document.getElementById('sequence-editor') as HTMLDivElement);
-    searchTab.loadUrlParameters();
-
-    document.getElementById('clear-sequence')!.addEventListener('click', function(event) {
-        sequenceEditor.clear();
-    });
-    document.getElementById('reverse')!.addEventListener('click', function(event) {
-        sequenceEditor.reverse();
-    })
 }

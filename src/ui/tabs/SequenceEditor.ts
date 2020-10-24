@@ -1,3 +1,7 @@
+
+///<reference path="../../model/Fraction.ts" />
+///<reference path="../../model/Connection.ts" />
+
 class SequenceEditor {
     private readonly container: HTMLDivElement;
     private readonly startFractionContainer: HTMLSpanElement;
@@ -52,6 +56,9 @@ class SequenceEditor {
         this.animateCheckbox.addEventListener('change', function() { sequenceEditor.updateAnimation(); });
         this.animateRpmInput.addEventListener('change', function() { sequenceEditor.updateAnimation(); });
         this.animateRpmInput.addEventListener('keyup', function() { sequenceEditor.updateAnimation(); });
+
+        document.getElementById('clear-sequence')!.addEventListener('click', this.clear.bind(this));
+        document.getElementById('reverse')!.addEventListener('click', this.reverse.bind(this));
     }
 
     private updateDom() {
