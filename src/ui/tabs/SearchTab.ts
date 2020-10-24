@@ -1,5 +1,5 @@
-
 ///<reference path="../SolutionList.ts" />
+///<reference path="./SearchParameters.ts" />
 
 type SearchParameters = {
     targetRatio: Fraction;
@@ -24,6 +24,71 @@ type SearchParameters = {
 type AnimationSettings = {
     enabled: boolean;
     duration: number;
+}
+
+class FormParameters {
+    public readonly targetRatio = new StringSearchParameter("3/4", "targetratio", "ratio");
+    public readonly error = new CheckboxedSearchParameter(new NumberSearchParameter(0.01, "error", "error"), false, "approximate");
+    public readonly gearDistance = new DistanceParameter(0.5, "dst");
+    public readonly standardGears = new CheckboxedSearchParameter(new GearListSearchParameter(STANDARD_GEARS, "gears", "standardgearslist"), true, "standardgearscheckbox");
+    public readonly customGears = new CheckboxedSearchParameter(new GearListSearchParameter(DEFAULT_CUSTOM_GEARS, "customgears", "customgearslist"), false, "customgearscheckbox");
+    public readonly startGears = new GearListSearchParameter([], "start", "fixedStart");
+    public readonly endGears = new GearListSearchParameter([], "end", "fixedEnd");
+    public readonly excludePairsWithFixedGears = new BooleanSearchParameter(false, "epwfg", "exlude-pairs-with-fixed-gears");
+    public readonly limitCount = new NumberSearchParameter(30, "count", "limitCount");
+    public readonly limitTime = new NumberSearchParameter(30, "time", "limitTime");
+
+    private readonly items: SearchParameter<any>[] = [
+        this.targetRatio,
+        this.error,
+        this.gearDistance,
+        this.standardGears,
+        this.customGears,
+        this.startGears,
+        this.endGears,
+        this.excludePairsWithFixedGears,
+        this.limitCount,
+        this.limitTime
+    ];
+
+    private readonly advancedParameters: SearchParameter<any>[] = [
+        this.customGears,
+        this.startGears,
+        this.endGears,
+        this.excludePairsWithFixedGears,
+        this.limitCount,
+        this.limitTime
+    ];
+
+    public applyUrlParametersToForm(parameters: ParsedUrlParameters) {
+        for (var item of this.items) {
+            item.setFromUrl(parameters);
+        }
+    }
+
+    public getUrlParametersFromForm(): string {
+        var parts: string[] = [];
+        for (var item of this.items) {
+            var part = item.getUrlKeyValuePairFromDOM();
+            if (part !== null) {
+                parts.push(part);
+            }
+        }
+        if (this.targetRatio.getFromDOM() == this.targetRatio.defaultValue) {
+            parts.push(this.targetRatio.urlKey + "=" + this.targetRatio.defaultValue);
+        }
+        return "?" + parts.join("&");
+    }
+
+    public advancedParametersUsed(parameters: ParsedUrlParameters): boolean {
+        for (var item of this.advancedParameters) {
+            if (!item.isDefault(parameters)) {
+                console.log(item.urlKey);
+                return true;
+            }
+        }
+        return false;
+    }
 }
 
 function parseGearList(value: string, distinct=false): number[] {
@@ -51,6 +116,8 @@ class SearchTab {
 
     private readonly animateCheckbox: HTMLInputElement;
     private readonly rpmTextbox: HTMLInputElement;
+
+    private readonly formParamters = new FormParameters();
 
     constructor() {
         this.resultDiv = document.getElementById("result") as HTMLDivElement;
@@ -216,71 +283,15 @@ class SearchTab {
     }
 
     getUrlParameters(): string {
-        var form = document.querySelector('form') as HTMLFormElement;
-        var elements: {[name: string]: HTMLInputElement} = {};
-    
-        var items = [];
-        
-        for (var element of form.elements) {
-            var inputElement = element as HTMLInputElement;
-            elements[inputElement.name] = inputElement;
-            if (inputElement.type == 'radio' && inputElement.checked) {
-                items.push('dst=' + inputElement.value);
-            }
-        }
-    
-        items.push('targetratio=' + encodeURI(elements['ratio'].value));
-        if (elements['standardgears'].checked) {
-            var value = elements['standardgearslist'].value.replace(/ /g, '');
-            if (value == DEFAULT_GEARS_STANDARD) {
-                value = 'default';
-            }
-            items.push('gears=' + encodeURI(value));
-        }
-    
-        if (elements['customgears'].checked) {
-            var value = elements['customgearslist'].value.replace(/ /g, '');
-            if (value == DEFAULT_GEARS_CUSTOM) {
-                value = 'default';
-            }
-            items.push('customgears=' + encodeURI(value));
-        }
-    
-        if (elements['approximate'].checked) {
-            items.push('error=' + encodeURI(elements['error'].value));
-        }
-    
-        if (elements['fixedStart'].value != '') {
-            items.push('start=' + encodeURI(elements['fixedStart'].value));
-        }
-    
-        if (elements['fixedEnd'].value != '') {
-            items.push('end=' + encodeURI(elements['fixedEnd'].value));
-        }
-
-        if (elements['exlude-pairs-with-fixed-gears'].checked) {
-            items.push('epwfg=' + encodeURI('' + elements['exlude-pairs-with-fixed-gears'].checked));
-        }
-
-        if (elements['limitCount'].value != '30') {
-            items.push('count=' + encodeURI(elements['limitCount'].value));
-        }
-
-        if (elements['limitTime'].value != '30') {
-            items.push('time=' + encodeURI(elements['limitTime'].value));
-        }
-    
-        return '?' + items.join('&');
+        return this.formParamters.getUrlParametersFromForm();
     }
     
     loadUrlParameters(runSearch=true) {
-        var parameters: {[key: string]: string} = {};
+        var parameters: ParsedUrlParameters = {};
         window.location.href.replace(/[?&]+([^=&]+)=([^&]*)/gi, function(m: string, key: string, value: string) {
             parameters[key] = decodeURI(value);
             return '';
         });
-
-        var advancedOptionsUsed = false;
 
         if ("seq" in parameters) {
             var gearStrings = parameters["seq"].split(',');
@@ -300,79 +311,9 @@ class SearchTab {
     
         if ("targetratio" in parameters) {
             (document.getElementById('tab-search') as HTMLInputElement).checked = true;
-            var form = document.querySelector('form') as HTMLFormElement;
-            var elements: {[name: string]: HTMLInputElement } = {};
             
-            for (var element of form.elements) {
-                elements[(element as HTMLInputElement).name] = element as HTMLInputElement;
-            }
-            
-            elements['ratio'].value = parameters['targetratio'];
-    
-            if ('dst' in parameters) {
-                (document.getElementById(parameters['dst']) as HTMLInputElement).checked = true;
-            }
-    
-            elements['standardgears'].checked = 'gears' in parameters;
-            if ('gears' in parameters) {
-                if (parameters['gears'] == 'default') {
-                    elements['standardgearslist'].value = DEFAULT_GEARS_STANDARD.replace(/,/g, ', ');
-                } else {
-                    elements['standardgearslist'].value = parameters['gears'].replace(/,/g, ', ');
-                }
-            }
-    
-            elements['customgears'].checked = 'customgears' in parameters;
-            if ('customgears' in parameters) {
-                if (parameters['customgears'] == 'default') {
-                    elements['customgearslist'].value = DEFAULT_GEARS_CUSTOM.replace(/,/g, ', ');
-                } else {
-                    elements['standarcustomgearslistdgearslist'].value = parameters['customgears'].replace(/,/g, ', ');
-                }
-                advancedOptionsUsed = true;
-            }
-    
-            elements['approximate'].checked = 'error' in parameters;
-            if ('error' in parameters) {
-                elements['error'].value = parameters['error'];
-            }
-    
-            if ('start' in parameters) {
-                elements['fixedStart'].value = parameters['start'];
-                advancedOptionsUsed = true;
-            } else {
-                elements['fixedStart'].value = '';
-            }
-    
-            if ('end' in parameters) {
-                elements['fixedEnd'].value = parameters['end'];
-                advancedOptionsUsed = true;
-            } else {
-                elements['fixedEnd'].value = '';
-            }
-
-            if ('epwfg' in parameters) {
-                elements['exlude-pairs-with-fixed-gears'].checked = parameters['epwfg'] == 'true';
-                advancedOptionsUsed = true;
-            } else {
-                elements['exlude-pairs-with-fixed-gears'].checked = false;
-            }
-    
-            if ('count' in parameters) {
-                elements['limitCount'].value = parameters['count'];
-                advancedOptionsUsed = true;
-            } else {
-                elements['limitCount'].value = '30';
-            }
-    
-            if ('time' in parameters) {
-                elements['limitTime'].value = parameters['time'];
-                advancedOptionsUsed = true;
-            } else {
-                elements['limitTime'].value = '30';
-            }
-
-            if (advancedOptionsUsed) {
+            this.formParamters.applyUrlParametersToForm(parameters);
+            if (this.formParamters.advancedParametersUsed(parameters)) {
                 (document.getElementById("advanced-options") as HTMLDetailsElement).open = true;
             }
     
