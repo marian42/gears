@@ -242,7 +242,7 @@ class SearchTab {
         document.getElementById('smallest-error')!.innerText = '';
     }
 
-    private stopSearch() {
+    public stopSearch() {
         if (this.currentWorker != null) {
             this.currentWorker.terminate();
             this.currentWorker = null;
