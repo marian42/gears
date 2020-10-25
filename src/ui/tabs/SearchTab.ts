@@ -96,18 +96,6 @@ class SearchParameters {
     }
 }
 
-function parseGearList(value: string, distinct=false): number[] {
-    var result: number[] = [];
-    for (var gearString of value.split(',')) {
-        gearString = gearString.trim();
-        var teethCount = parseInt(gearString);
-        if (!isNaN(teethCount) && (!distinct || !result.includes(teethCount))) {
-            result.push(teethCount);
-        }
-    }
-    return result;
-}
-
 class SearchTab {
     private readonly resultDiv: HTMLDivElement;
     private readonly searchingSpan: HTMLSpanElement;
