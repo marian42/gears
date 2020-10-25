@@ -64,7 +64,7 @@ function getIndexOfBestMatch(gear: number, sequence: number[]) {
     return 0;
 }
 
-function createSequence(gearsPrimary: number[], gearsSecondary: number[], parameters: SearchParameters) {
+function createSequence(gearsPrimary: number[], gearsSecondary: number[], parameters: Task) {
     var sequenceStart: Connection[] = [];
     for (var i = 0; i < parameters.startSequence.length - 1; i += 2) {
         sequenceStart.push(new Connection(parameters.startSequence[i], parameters.startSequence[i + 1]));

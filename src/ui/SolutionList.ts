@@ -2,11 +2,11 @@ class SolutionList {
     private readonly container: HTMLDivElement;
     private readonly solutions: {[count: number]: Solution[]} = {};
     private readonly sizeContainers: {[count: number]: HTMLDivElement} = {};
-    private readonly task: SearchParameters;
+    private readonly task: Task;
     public totalSolutions: number = 0;
     private smallestError: number | null = null;
 
-    constructor(container: HTMLDivElement, task: SearchParameters) {
+    constructor(container: HTMLDivElement, task: Task) {
         this.container = container;
         this.container.textContent = '';
         this.task = task;

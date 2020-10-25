@@ -2,12 +2,12 @@ class Solution {
     public readonly connections: Connection[];
     private readonly fractions: Fraction[];
     private readonly ratio: Fraction;
-    private readonly task: SearchParameters;
+    private readonly task: Task;
     public error: number | null = null;
 
     public domObject: HTMLDivElement | null = null;
 
-    constructor(sequence: Connection[], task: SearchParameters) {
+    constructor(sequence: Connection[], task: Task) {
         this.connections = sequence;
         this.task = task;
         var currentFraction = new Fraction(1);

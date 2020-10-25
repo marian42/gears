@@ -1,7 +1,7 @@
 ///<reference path="../SolutionList.ts" />
 ///<reference path="./SearchParameters.ts" />
 
-type SearchParameters = {
+type Task = {
     targetRatio: Fraction;
     searchRatio: Fraction | null;
     error: number;
@@ -26,7 +26,7 @@ type AnimationSettings = {
     duration: number;
 }
 
-class FormParameters {
+class SearchParameters {
     public readonly targetRatio = new StringSearchParameter("3/4", "targetratio", "ratio");
     public readonly error = new CheckboxedSearchParameter(new NumberSearchParameter(0.01, "error", "error"), false, "approximate");
     public readonly gearDistance = new DistanceParameter(0.5, "dst");
@@ -114,7 +114,7 @@ class SearchTab {
 
     private currentWorker: Worker | null = null;
 
-    public currentTask: SearchParameters | null = null;
+    public currentTask: Task | null = null;
     private currentTaskId = 0;
 
     public animationSettings: AnimationSettings = { enabled: false, duration: 0 };
@@ -122,7 +122,7 @@ class SearchTab {
     private readonly animateCheckbox: HTMLInputElement;
     private readonly rpmTextbox: HTMLInputElement;
 
-    private readonly formParamters = new FormParameters();
+    private readonly searchParameters = new SearchParameters();
 
     constructor() {
         this.resultDiv = document.getElementById("result") as HTMLDivElement;
@@ -131,18 +131,18 @@ class SearchTab {
         this.rpmTextbox = document.getElementById('animate-rpm') as HTMLInputElement;
         this.updateAnimation();
         this.prepareEventListeners();
-        this.formParamters.applyDefaults();
+        this.searchParameters.applyDefaults();
     }
 
     private getAvailableGears(): number[] {
         var result: number[] = [];
 
-        var standardGears = this.formParamters.standardGears.getFromDOM();
+        var standardGears = this.searchParameters.standardGears.getFromDOM();
         if (standardGears.checked) {
             result = result.concat(standardGears.value);
         }
     
-        var customGears = this.formParamters.customGears.getFromDOM();
+        var customGears = this.searchParameters.customGears.getFromDOM();
         if (customGears.checked) {
             result = result.concat(customGears.value);
         }
@@ -171,9 +171,9 @@ class SearchTab {
         }
     }
 
-    private readFixedSequenceGears(currentTask: SearchParameters) {
-        currentTask.startSequence = this.formParamters.startGears.getFromDOM();
-        currentTask.endSequence = this.formParamters.endGears.getFromDOM();
+    private readFixedSequenceGears(currentTask: Task) {
+        currentTask.startSequence = this.searchParameters.startGears.getFromDOM();
+        currentTask.endSequence = this.searchParameters.endGears.getFromDOM();
 
         currentTask.fixedPrimary = [];
         currentTask.fixedSecondary = [];
@@ -211,18 +211,18 @@ class SearchTab {
     }
 
     private startSearch() {
-        var approximateSettings = this.formParamters.error.getFromDOM() as CheckableValue<number>;        
+        var approximateSettings = this.searchParameters.error.getFromDOM() as CheckableValue<number>;        
         this.currentTaskId++;        
 
         this.currentTask = {
             exact: !approximateSettings.checked,
             error: approximateSettings.value,
-            targetRatio: Fraction.parse(this.formParamters.targetRatio.getFromDOM()),
+            targetRatio: Fraction.parse(this.searchParameters.targetRatio.getFromDOM()),
             gears: this.getAvailableGears(),
-            distanceConstraint: this.formParamters.gearDistance.getFromDOM(),
+            distanceConstraint: this.searchParameters.gearDistance.getFromDOM(),
             id: this.currentTaskId,
-            maxNumberOfResults: this.formParamters.limitCount.getFromDOM(),
-            excludePairsWithFixedGears: this.formParamters.excludePairsWithFixedGears.getFromDOM(),
+            maxNumberOfResults: this.searchParameters.limitCount.getFromDOM(),
+            excludePairsWithFixedGears: this.searchParameters.excludePairsWithFixedGears.getFromDOM(),
             startSequence: [],
             endSequence: [],
             searchRatio: null,
@@ -282,7 +282,7 @@ class SearchTab {
     }
 
     getUrlParameters(): string {
-        return this.formParamters.getUrlParametersFromForm();
+        return this.searchParameters.getUrlParametersFromForm();
     }
     
     loadUrlParameters(runSearch=true) {
@@ -311,8 +311,8 @@ class SearchTab {
         if ("targetratio" in parameters) {
             (document.getElementById('tab-search') as HTMLInputElement).checked = true;
             
-            this.formParamters.applyUrlParametersToForm(parameters);
-            if (this.formParamters.advancedParametersUsed(parameters)) {
+            this.searchParameters.applyUrlParametersToForm(parameters);
+            if (this.searchParameters.advancedParametersUsed(parameters)) {
                 (document.getElementById("advanced-options") as HTMLDetailsElement).open = true;
             }
     
