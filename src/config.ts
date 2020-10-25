@@ -1,6 +1,7 @@
 const PIXELS_PER_MM = 2.5;
 
 const STANDARD_GEARS = [1, 8, 16, 24, 40, 56, 12, 20, 28, 36, 60, 140];
+const DEFAULT_CUSTOM_GEARS = [10, 11, 13, 14, 15, 17, 18, 19, 21, 22, 23, 25, 26, 27, 29, 30, 31, 32];
 
 const HELPER_GEARS = [8, 16, 24, 40, 12, 20, 28, 36];
 

@@ -1,3 +1,6 @@
+///<reference path="../../config.ts" />
+///<reference path="../gears/GearSVGGenerator.ts" />
+
 type HelperGearData = {gear: number, x: number, y: number, distance: number, targetDistance: number};
 
 class FitGears {

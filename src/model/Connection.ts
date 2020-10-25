@@ -117,7 +117,11 @@ class Connection {
 
             var targetDistance = radius1 + radius2;
             var maxError = DEFAULT_FIT_ERROR / 8;
-            var step = currentTask.distanceConstraint == 1 ? 1 : 0.5;
+
+            var step = 0.5;
+            if (searchTab !== null && searchTab!.currentTask !== null) {
+                searchTab!.currentTask!.distanceConstraint == 1 ? 1 : 0.5;
+            }
 
             for (var y = 0; y <= Math.ceil(targetDistance); y += step) {
                 var x = Math.round((Math.sqrt(Math.pow(targetDistance, 2) - Math.pow(y, 2))) / step) * step;
@@ -182,6 +186,10 @@ class Connection {
     }
 
     private showFitGearsTab() {
-        fitGears.showConnection(this.gear1, this.gear2, currentTask.distanceConstraint != 1);
+        var includeHalfUnits = true;
+        if (searchTab !== null && searchTab.currentTask !== null) {
+            includeHalfUnits = searchTab!.currentTask!.distanceConstraint != 1;
+        }
+        fitGears.showConnection(this.gear1, this.gear2, includeHalfUnits);
     }
 }

@@ -146,7 +146,7 @@ function findGears(target: number, availableGears: number[], gearFactors: GearFa
     }
 }
 
-function* findSolutionsExact(parameters: SearchParameters): Generator<[number[], number[]], void, null> {    
+function* findSolutionsExact(parameters: Task): Generator<[number[], number[]], void, null> {    
     var availableFactors = getGearFactorsSet(parameters.gears, parameters.gearFactors!);
 
     if (parameters.excludePairsWithFixedGears) {
@@ -188,7 +188,7 @@ function* findSolutionsExact(parameters: SearchParameters): Generator<[number[],
     }
 }
 
-function* findSolutionsApproximate(parameters: SearchParameters): Generator<[number[], number[]], void, null> {
+function* findSolutionsApproximate(parameters: Task): Generator<[number[], number[]], void, null> {
     var targetRatio = parameters.searchRatio!.getDecimal();
     
     if (parameters.excludePairsWithFixedGears) {
@@ -229,7 +229,7 @@ function* findSolutionsApproximate(parameters: SearchParameters): Generator<[num
 }
 
 self.onmessage = function(event: MessageEvent) {
-    var parameters = event.data as SearchParameters;
+    var parameters = event.data as Task;
     parameters.targetRatio = new Fraction(parameters.targetRatio!.a, parameters.targetRatio!.b);
     parameters.searchRatio = new Fraction(parameters.searchRatio!.a, parameters.searchRatio!.b);
 
