@@ -8,6 +8,6 @@ const HELPER_GEARS = [8, 16, 24, 40, 12, 20, 28, 36];
 const DEFAULT_GEARS_STANDARD = '1,8,16,24,40,56,12,20,28,36,60,140';
 const DEFAULT_GEARS_CUSTOM = '10,11,13,14,15,17,18,19,21,22,23,25,26,27,29,30,31,32';
 
-const DEFAULT_FIT_ERROR = 0.5; // mm
+const DEFAULT_FIT_ERROR = 0.4; // mm
 
 const SVG_NAMESPACE = "http://www.w3.org/2000/svg";
