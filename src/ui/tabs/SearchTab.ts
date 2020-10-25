@@ -273,43 +273,14 @@ class SearchTab {
         return this.searchParameters.getUrlParametersFromForm();
     }
     
-    loadUrlParameters(runSearch=true) {
-        var parameters: ParsedUrlParameters = {};
-        window.location.href.replace(/[?&]+([^=&]+)=([^&]*)/gi, function(m: string, key: string, value: string) {
-            parameters[key] = decodeURI(value);
-            return '';
-        });
+    loadUrlParameters(parameters: ParsedUrlParameters) {
+        this.searchParameters.applyUrlParametersToForm(parameters);
+        
+        if (this.searchParameters.advancedParametersUsed(parameters)) {
+            (document.getElementById("advanced-options") as HTMLDetailsElement).open = true;
+        }
 
-        if ("seq" in parameters) {
-            var gearStrings = parameters["seq"].split(',');
-            var gears = [];
-            for (var gearString of gearStrings) {
-                var gear = parseInt(gearString.trim());
-                if (Number.isInteger(gear)) {
-                    gears.push(gear);
-                }
-            }
-            if (gears.length > 0) {
-                sequenceEditor.setSequence(gears);
-                (document.getElementById('tab-edit') as HTMLInputElement).checked = true;
-                return;
-            }
-        }
-    
-        if ("targetratio" in parameters) {
-            (document.getElementById('tab-search') as HTMLInputElement).checked = true;
-            
-            this.searchParameters.applyUrlParametersToForm(parameters);
-            if (this.searchParameters.advancedParametersUsed(parameters)) {
-                (document.getElementById("advanced-options") as HTMLDetailsElement).open = true;
-            }
-    
-            if (runSearch) {
-                this.startSearch();
-            } else {
-                this.resultDiv.innerText = '';
-            }
-        }
+        this.startSearch();
     }
 
     updateAnimation() {

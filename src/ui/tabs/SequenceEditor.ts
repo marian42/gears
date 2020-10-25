@@ -142,4 +142,18 @@ class SequenceEditor {
     public reverse() {
         this.setSequence(this.getGears().reverse());
     }
+
+    loadUrlParameters(parameters: ParsedUrlParameters) {
+        var gearStrings = parameters["seq"].split(',');
+        var gears = [];
+        for (var gearString of gearStrings) {
+            var gear = parseInt(gearString.trim());
+            if (Number.isInteger(gear)) {
+                gears.push(gear);
+            }
+        }
+        if (gears.length > 0) {
+            this.setSequence(gears);
+        }
+    }
 }
