@@ -61,14 +61,14 @@ abstract class InputElementSearchParameter<T> extends SearchParameter<T> {
     }
 }
 
-class NumberSearchParameter extends InputElementSearchParameter<Number> {
-    constructor(defaultValue: Number, urlKey: string, domElementID: string) {
+class NumberSearchParameter extends InputElementSearchParameter<number> {
+    constructor(defaultValue: number, urlKey: string, domElementID: string) {
         super(defaultValue, urlKey, domElementID);
     }
-    protected toString(value: Number): string {
+    protected toString(value: number): string {
         return value.toString();
     }
-    protected fromString(value: string): Number {
+    protected fromString(value: string): number {
         return Number.parseFloat(value);
     }
 }
@@ -108,11 +108,11 @@ class BooleanSearchParameter extends SearchParameter<boolean> {
     }
 }
 
-class GearListSearchParameter extends InputElementSearchParameter<Number[]> {
-    constructor(defaultValue: Number[], urlKey: string, domElementID: string) {
+class GearListSearchParameter extends InputElementSearchParameter<number[]> {
+    constructor(defaultValue: number[], urlKey: string, domElementID: string) {
         super(defaultValue, urlKey, domElementID);
     }
-    protected toString(value: Number[]): string {
+    protected toString(value: number[]): string {
         return value.join(", ");
     }
     protected fromString(value: string): number[] {
