@@ -9,6 +9,7 @@ type Task = {
     endSequence: number[];
     exact: boolean;
     gears: number[];
+    gearAssignmentCosts: GearAssignmentCostTable;
     distanceConstraint: number | null;
     id: number;
     maxNumberOfResults: number;
@@ -95,6 +96,8 @@ class SearchParameters {
         }
     }
 }
+
+type GearAssignmentCostTable = {[gear1: number]: {[gear2: number]: number}};
 
 class SearchTab {
     private readonly resultDiv: HTMLDivElement;
@@ -189,6 +192,75 @@ class SearchTab {
         currentTask.searchRatio = currentTask.targetRatio.multiply(new Fraction(currentTask.fixedSecondaryFactor, currentTask.fixedPrimaryFactor));
     }
 
+    private get2DFitCost(gear1: number, gear2: number): number {
+        var targetDistance = (gear1 + gear2) / 16;
+        var maxError = DEFAULT_FIT_ERROR / 8;
+
+        var lowestCost = 0;
+
+        for (var y = 0; y <= Math.ceil(targetDistance); y += 0.5) {
+            var x = Math.round((Math.sqrt(Math.pow(targetDistance, 2) - Math.pow(y, 2))) / 0.5) * 0.5;
+            if (x == 0 || y == 0 || Number.isNaN(x) || x < y) {
+                continue;
+            }
+
+            var totalDistance = Math.sqrt(Math.pow(x, 2) + Math.pow(y, 2));
+            var error = totalDistance - targetDistance;
+            if (Math.abs(error) > maxError) {
+                continue;
+            }
+            
+            if (x % 1 == 0 && y % 1 == 0) {
+                lowestCost = Math.min(lowestCost, ASSIGNMENT_COST_FULL_2D);
+            } else if (x % 1 == 0 || y % 1 == 0) {
+                lowestCost = Math.min(lowestCost, ASSIGNMENT_COST_HALF_FULL_2D);                
+            } else {
+                lowestCost = Math.min(lowestCost, ASSIGNMENT_COST_HALF_2D);
+            }
+        }
+        return lowestCost;
+    }
+
+    private getGearAssignmentCosts(availableGears: number[]): GearAssignmentCostTable {
+        var result: GearAssignmentCostTable = {};
+
+        var test: Array<[number, string]> = [];
+        for (var driverGear of availableGears) {
+            result[driverGear] = {};
+
+            for (var followerGear of availableGears) {
+                var cost = 0;
+                var totalTeeth = driverGear + followerGear;
+
+                if (driverGear == 1 || followerGear == 1) {
+                    var remainingGear = totalTeeth - 1;
+                    if (remainingGear % 16 == 8 || remainingGear % 16 == 4) {
+                        cost += ASSIGNMENT_COST_FULL_1D;
+                    } else if (remainingGear % 16 == 0 || remainingGear % 16 == 12) {
+                        cost += ASSIGNMENT_COST_HALF_1D;
+                    }
+                } else {
+                    if (totalTeeth % 16 == 0) {
+                        cost += ASSIGNMENT_COST_FULL_1D;
+                    } else if (totalTeeth % 16 == 8) {
+                        cost += ASSIGNMENT_COST_HALF_1D;
+                    }
+                    if (driverGear % 8 == 4 && followerGear % 8 == 4) {
+                        cost += ASSIGNMENT_COST_PERPENDICULAR;
+                    }
+                    cost += this.get2DFitCost(driverGear, followerGear);
+                }
+                result[driverGear][followerGear] = cost;
+                test.push([cost, driverGear + ", " + followerGear]);
+            }
+        }
+
+        result[1][1] = Number.POSITIVE_INFINITY;
+        result[140][140] = Number.POSITIVE_INFINITY;
+
+        return result;
+    }
+
     private handleTaskTimeout() {
         var taskId = this.currentTaskId;
         setTimeout(function(this: SearchTab) {
@@ -200,13 +272,15 @@ class SearchTab {
 
     private startSearch() {
         var approximateSettings = this.searchParameters.error.getFromDOM() as CheckableValue<number>;        
-        this.currentTaskId++;        
+        this.currentTaskId++;
+        var gears = this.getAvailableGears()
 
         this.currentTask = {
             exact: !approximateSettings.checked,
             error: approximateSettings.value,
             targetRatio: Fraction.parse(this.searchParameters.targetRatio.getFromDOM()),
-            gears: this.getAvailableGears(),
+            gears: gears,
+            gearAssignmentCosts: this.getGearAssignmentCosts(gears),
             distanceConstraint: this.searchParameters.gearDistance.getFromDOM(),
             id: this.currentTaskId,
             maxNumberOfResults: this.searchParameters.limitCount.getFromDOM(),
