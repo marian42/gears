@@ -189,28 +189,28 @@ class CheckboxedSearchParameter<T> extends SearchParameter<CheckableValue<T>> {
     }
 }
 
-class DistanceParameter extends SearchParameter<number> {
+class DistanceParameter extends SearchParameter<number | null> {
     private readonly halfRadioButton = document.getElementById("half") as HTMLInputElement;
     private readonly fullRadioButton = document.getElementById("full") as HTMLInputElement;
     private readonly anyRadioButton = document.getElementById("any") as HTMLInputElement;
 
-    constructor(defaultValue: number, urlKey: string) {
+    constructor(defaultValue: number | null, urlKey: string) {
         super(defaultValue, urlKey);
     }
 
-    public getFromDOM(): number {
+    public getFromDOM(): number | null {
         if (this.halfRadioButton.checked) {
             return 0.5;
         } else if (this.fullRadioButton.checked) {
             return 1.0;
         } else if (this.anyRadioButton.checked) {
-            return 0.0;
+            return null;
         }
         throw new Error("No radio button is selected.");
     }
-    public setInDom(value: number): void {
+    public setInDom(value: number | null): void {
         switch(value) {
-            case 0.0:
+            case null:
                 this.anyRadioButton.checked = true;
                 break;
             case 0.5:
@@ -223,9 +223,9 @@ class DistanceParameter extends SearchParameter<number> {
                 throw new Error("Invalid value for gear distance.");
         }
     }
-    protected toString(value: number): string {
+    protected toString(value: number | null): string {
         switch(value) {
-            case 0.0:
+            case null:
                 return "any";
             case 0.5:
                 return "half";
@@ -235,8 +235,8 @@ class DistanceParameter extends SearchParameter<number> {
                 throw new Error("Invalid value for gear distance.");
         }
     }
-    protected fromString(value: string): number {
-        const map: { [key: string] : number; } = {"any": 0, "half": 0.5, "full": 1.0};
+    protected fromString(value: string): number | null {
+        const map: { [key: string] : number | null; } = {"any": null, "half": 0.5, "full": 1.0};
         return map[value];
     }
     
