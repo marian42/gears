@@ -83,7 +83,6 @@ class FormParameters {
     public advancedParametersUsed(parameters: ParsedUrlParameters): boolean {
         for (var item of this.advancedParameters) {
             if (!item.isDefault(parameters)) {
-                console.log(item.urlKey);
                 return true;
             }
         }
@@ -137,13 +136,15 @@ class SearchTab {
 
     private getAvailableGears(): number[] {
         var result: number[] = [];
-    
-        if ((document.getElementById('standardgearscheckbox') as HTMLInputElement).checked) {
-            result = result.concat(parseGearList((document.getElementById('standardgearslist') as HTMLInputElement).value, true));
+
+        var standardGears = this.formParamters.standardGears.getFromDOM();
+        if (standardGears.checked) {
+            result = result.concat(standardGears.value);
         }
     
-        if ((document.getElementById('customgearscheckbox') as HTMLInputElement).checked) {
-            result = result.concat(parseGearList((document.getElementById('customgearslist') as HTMLInputElement).value, true));
+        var customGears = this.formParamters.customGears.getFromDOM();
+        if (customGears.checked) {
+            result = result.concat(customGears.value);
         }
     
         return result;
@@ -171,8 +172,8 @@ class SearchTab {
     }
 
     private readFixedSequenceGears(currentTask: SearchParameters) {
-        currentTask.startSequence = parseGearList((document.getElementById('fixedStart') as HTMLInputElement).value);
-        currentTask.endSequence = parseGearList((document.getElementById('fixedEnd') as HTMLInputElement).value);
+        currentTask.startSequence = this.formParamters.startGears.getFromDOM();
+        currentTask.endSequence = this.formParamters.endGears.getFromDOM();
 
         currentTask.fixedPrimary = [];
         currentTask.fixedSecondary = [];
@@ -210,27 +211,18 @@ class SearchTab {
     }
 
     private startSearch() {
-        var targetRatio = Fraction.parse((document.getElementById('ratio') as HTMLInputElement).value);
-        var distanceConstraint = null;
-        if ((document.getElementById('full') as HTMLInputElement).checked) {
-            distanceConstraint = 1;
-        } else if ((document.getElementById('half') as HTMLInputElement).checked) {
-            distanceConstraint = 0.5;
-        }
-        var approxiamte = (document.getElementById('approximate') as HTMLInputElement).checked;
-        var error = parseFloat((document.getElementById('error') as HTMLInputElement).value);
-
+        var approximateSettings = this.formParamters.error.getFromDOM() as CheckableValue<number>;        
         this.currentTaskId++;        
 
         this.currentTask = {
-            exact: !approxiamte,
-            error: error,
-            targetRatio: targetRatio,
+            exact: !approximateSettings.checked,
+            error: approximateSettings.value,
+            targetRatio: Fraction.parse(this.formParamters.targetRatio.getFromDOM()),
             gears: this.getAvailableGears(),
-            distanceConstraint: distanceConstraint,
+            distanceConstraint: this.formParamters.gearDistance.getFromDOM(),
             id: this.currentTaskId,
-            maxNumberOfResults: parseInt((document.getElementById('limitCount') as HTMLInputElement).value),
-            excludePairsWithFixedGears: (document.getElementById('exlude-pairs-with-fixed-gears') as HTMLInputElement).checked,
+            maxNumberOfResults: this.formParamters.limitCount.getFromDOM(),
+            excludePairsWithFixedGears: this.formParamters.excludePairsWithFixedGears.getFromDOM(),
             startSequence: [],
             endSequence: [],
             searchRatio: null,
