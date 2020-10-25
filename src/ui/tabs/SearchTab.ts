@@ -89,6 +89,12 @@ class FormParameters {
         }
         return false;
     }
+
+    public applyDefaults() {
+        for (var item of this.items) {
+            item.setInDom(item.defaultValue);
+        }
+    }
 }
 
 function parseGearList(value: string, distinct=false): number[] {
@@ -126,6 +132,7 @@ class SearchTab {
         this.rpmTextbox = document.getElementById('animate-rpm') as HTMLInputElement;
         this.updateAnimation();
         this.prepareEventListeners();
+        this.formParamters.applyDefaults();
     }
 
     private getAvailableGears(): number[] {
