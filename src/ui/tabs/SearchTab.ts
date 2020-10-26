@@ -232,7 +232,9 @@ class SearchTab {
                 var cost = 0;
                 var totalTeeth = driverGear + followerGear;
 
-                if (driverGear == 1 || followerGear == 1) {
+                if ((driverGear == 1 && followerGear == 1) || (driverGear == 140 && followerGear == 140)) {
+                    cost = Number.POSITIVE_INFINITY;
+                } else if (driverGear == 1 || followerGear == 1) {
                     var remainingGear = totalTeeth - 1;
                     if (remainingGear % 16 == 8 || remainingGear % 16 == 4) {
                         cost += ASSIGNMENT_COST_FULL_1D;
@@ -254,9 +256,6 @@ class SearchTab {
                 test.push([cost, driverGear + ", " + followerGear]);
             }
         }
-
-        result[1][1] = Number.POSITIVE_INFINITY;
-        result[140][140] = Number.POSITIVE_INFINITY;
 
         return result;
     }
