@@ -65,7 +65,35 @@ function getIndexOfBestMatch(gear: number, sequence: number[]) {
 }
 
 function createSequence(gearsPrimary: number[], gearsSecondary: number[], parameters: Task) {
-    var sequenceStart: Connection[] = [];
+    var matrix: Matrix = [];
+
+    while (gearsPrimary.length < gearsSecondary.length) {
+        gearsPrimary.push(1);
+    }
+    while (gearsPrimary.length > gearsSecondary.length) {
+        gearsSecondary.push(1);
+    }
+
+    for (var gear1 of gearsPrimary) {
+        var row: number[] = [];
+        for (var gear2 of gearsSecondary) {
+            row.push(parameters.gearAssignmentCosts[gear1][gear2]);
+        }
+        matrix.push(row);
+    }
+
+    var munkres = new MunkresAlgorithm(matrix);
+    var assignments = munkres.run();
+    var connections: Connection[] = [];
+    for (var pair of assignments) {
+        connections.push(new Connection(gearsPrimary[pair[0]], gearsSecondary[pair[1]]));
+    }
+
+    connections.sort(function (a, b) { return Math.sign(a.factor - b.factor); });
+    
+    return connections;
+
+    /*var sequenceStart: Connection[] = [];
     for (var i = 0; i < parameters.startSequence.length - 1; i += 2) {
         sequenceStart.push(new Connection(parameters.startSequence[i], parameters.startSequence[i + 1]));
     }
@@ -149,5 +177,5 @@ function createSequence(gearsPrimary: number[], gearsSecondary: number[], parame
 
     connections.sort(function (a, b) { return Math.sign(a.factor - b.factor); });
 
-    return sequenceStart.concat(connections, sequenceEnd);
+    return sequenceStart.concat(connections, sequenceEnd);*/
 }
