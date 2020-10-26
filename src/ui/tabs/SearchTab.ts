@@ -233,7 +233,7 @@ class SearchTab {
                 var totalTeeth = driverGear + followerGear;
 
                 if ((driverGear == 1 && followerGear == 1) || (driverGear == 140 && followerGear == 140)) {
-                    cost = Number.POSITIVE_INFINITY;
+                    cost = ASSIGNMENT_COST_FORBIDDEN;
                 } else if (driverGear == 1 || followerGear == 1) {
                     var remainingGear = totalTeeth - 1;
                     if (remainingGear % 16 == 8 || remainingGear % 16 == 4) {
