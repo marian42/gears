@@ -65,15 +65,30 @@ function getIndexOfBestMatch(gear: number, sequence: number[]) {
 }
 
 function createSequence(gearsPrimary: number[], gearsSecondary: number[], parameters: Task) {
-    var matrix: Matrix = [];
-
-    while (gearsPrimary.length < gearsSecondary.length) {
+    // gearsPrimary and gearsSecondary contain gears decided by the algorithm.
+    // In addition to that, the result will contain the fixed start and end gear sequences set by the user.
+    // There are three types of gear pairs: fixed and fixed, fixed and decided (at the end/beginning of an odd sized fixed sequence)
+    // and pairs completely decided by the algorithm. Only th completely decided pairs can be reordered.
+    
+    // Add worm gears if needed
+    while (gearsPrimary.length + parameters.fixedPrimary!.length < gearsSecondary.length + parameters.fixedSecondary!.length) {
         gearsPrimary.push(1);
     }
-    while (gearsPrimary.length > gearsSecondary.length) {
+    while (gearsPrimary.length + parameters.fixedPrimary!.length > gearsSecondary.length + parameters.fixedSecondary!.length) {
         gearsSecondary.push(1);
     }
 
+    // If fixed sequence is of odd length, one fixed gear will be paired with non-fixed gears
+    if (parameters.startSequence.length % 2 == 1) {
+        gearsPrimary.push(parameters.startSequence[parameters.startSequence.length - 1]);
+    }
+    if (parameters.endSequence.length % 2 == 1) {
+        gearsSecondary.push(parameters.endSequence[0]);
+    }
+    var lastItemIndex = gearsPrimary.length - 1;
+
+    // Run Munkres algorithm
+    var matrix: Matrix = [];    
     for (var gear1 of gearsPrimary) {
         var row: number[] = [];
         for (var gear2 of gearsSecondary) {
@@ -82,100 +97,43 @@ function createSequence(gearsPrimary: number[], gearsSecondary: number[], parame
         matrix.push(row);
     }
 
+    if (parameters.startSequence.length % 2 == 1 && parameters.endSequence.length % 2 == 1) {
+        matrix[lastItemIndex][lastItemIndex] = Number.POSITIVE_INFINITY;
+    }
+
     var munkres = new MunkresAlgorithm(matrix);
     var assignments = munkres.run();
-    var connections: Connection[] = [];
-    for (var pair of assignments) {
-        connections.push(new Connection(gearsPrimary[pair[0]], gearsSecondary[pair[1]]));
-    }
-
-    connections.sort(function (a, b) { return Math.sign(a.factor - b.factor); });
     
-    return connections;
+    // Assemble sequence
+    var sequenceStart: Array<[number, number]> = [];
+    var sequenceReorderable: Array<[number, number]> = [];
+    var sequenceEnd: Array<[number, number]> = [];
 
-    /*var sequenceStart: Connection[] = [];
     for (var i = 0; i < parameters.startSequence.length - 1; i += 2) {
-        sequenceStart.push(new Connection(parameters.startSequence[i], parameters.startSequence[i + 1]));
+        sequenceStart.push([parameters.startSequence[i], parameters.startSequence[i + 1]]);
     }
-    if (parameters.startSequence.length % 2 == 1) {
-        var lastStartSequenceGear = parameters.startSequence[parameters.startSequence.length - 1];
-        if (gearsSecondary.length == 0) {
-            sequenceStart.push(new Connection(lastStartSequenceGear, 1));
+
+    for (var [index1, index2] of assignments) {
+        var gearPair: [number, number] = [gearsPrimary[index1], gearsSecondary[index2]];
+        if (parameters.startSequence.length % 2 == 1 && index1 == lastItemIndex) {
+            sequenceStart.push(gearPair); // append at the end
+        } else if (parameters.endSequence.length % 2 == 1 && index2 == lastItemIndex) {
+            sequenceEnd.push(gearPair); // insert at the start
         } else {
-            var index = getIndexOfBestMatch(lastStartSequenceGear, gearsSecondary);
-            sequenceStart.push(new Connection(lastStartSequenceGear, gearsSecondary[index]));
-            gearsSecondary = gearsSecondary.slice();
-            gearsSecondary.splice(index, 1);
+            sequenceReorderable.push(gearPair); // order doesn't matter here
         }
     }
-    var sequenceEnd: Connection[] = [];
-    if (parameters.endSequence.length % 2 == 1) {
-        var firstEndSequenceGear = parameters.endSequence[0];
-        if (gearsPrimary.length == 0) {
-            sequenceStart.push(new Connection(1, firstEndSequenceGear));
-        } else {
-            var index = getIndexOfBestMatch(firstEndSequenceGear, gearsPrimary);
-            sequenceEnd.push(new Connection(gearsPrimary[index], firstEndSequenceGear));
-            gearsPrimary = gearsPrimary.slice();
-            gearsPrimary.splice(index, 1);
-        }
-    }
+
     for (var i = parameters.endSequence.length % 2; i < parameters.endSequence.length; i += 2) {
-        sequenceEnd.push(new Connection(parameters.endSequence[i], parameters.endSequence[i + 1]));
+        sequenceEnd.push([parameters.endSequence[i], parameters.endSequence[i + 1]]);
     }
 
-    var binsPrimary = createBins(gearsPrimary, function (gear) { return gear % 16; });
-    var binsSecondary = createBins(gearsSecondary, function (gear) { return (16 - gear % 16) % 16; });
-    var remainderPrimary: number[] = [];
-    var remainderSecondary: number[] = [];
-    var connections: Connection[] = [];
-
-    for (var i = 0; i < 16; i++) {
-        if (!(i in binsPrimary) && !(i in binsSecondary)) {
-            continue;
-        }
-        if (!(i in binsPrimary)) {
-            remainderSecondary = remainderSecondary.concat(binsSecondary[i]);
-        } else if (!(i in binsSecondary)) {
-            remainderPrimary = remainderPrimary.concat(binsPrimary[i]);
-        } else {
-            const n = Math.min(binsPrimary[i].length, binsSecondary[i].length);
-            for (var j = 0; j < n; j++) {
-                connections.push(new Connection(binsPrimary[i][j], binsSecondary[i][j]));
-            }
-            remainderPrimary = remainderPrimary.concat(binsPrimary[i].slice(n));
-            remainderSecondary = remainderSecondary.concat(binsSecondary[i].slice(n));
-        }
+    sequenceReorderable.sort(function (a, b) { return Math.sign(a[0] / a[1] - b[0] / b[1]); });
+    
+    var result: Connection[] = [];
+    for (var [gear1, gear2] of sequenceStart.concat(sequenceReorderable, sequenceEnd)) {
+        result.push(new Connection(gear1, gear2));
     }
 
-    var binsPrimary = createBins(remainderPrimary, function (gear) { return gear % 8; });
-    var binsSecondary = createBins(remainderSecondary, function (gear) { return (8 - gear % 8) % 8; });
-    remainderPrimary = [];
-    remainderSecondary = [];
-
-    for (var i = 0; i < 8; i++) {
-        if (!(i in binsPrimary) && !(i in binsSecondary)) {
-            continue;
-        }
-        if (!(i in binsPrimary)) {
-            remainderSecondary = remainderSecondary.concat(binsSecondary[i]);
-        } else if (!(i in binsSecondary)) {
-            remainderPrimary = remainderPrimary.concat(binsPrimary[i]);
-        } else {
-            const n = Math.min(binsPrimary[i].length, binsSecondary[i].length);
-            for (var j = 0; j < n; j++) {
-                connections.push(new Connection(binsPrimary[i][j], binsSecondary[i][j]));
-            }
-            remainderPrimary = remainderPrimary.concat(binsPrimary[i].slice(n));
-            remainderSecondary = remainderSecondary.concat(binsSecondary[i].slice(n));
-        }
-    }
-
-    for (var i = 0; i < Math.max(remainderPrimary.length, remainderSecondary.length); i++) {
-        connections.push(new Connection(i < remainderPrimary.length ? remainderPrimary[i] : 1, i < remainderSecondary.length ? remainderSecondary[i] : 1))
-    }
-
-    connections.sort(function (a, b) { return Math.sign(a.factor - b.factor); });
-
-    return sequenceStart.concat(connections, sequenceEnd);*/
+    return result;
 }
