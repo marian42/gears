@@ -215,17 +215,16 @@ function* findSolutionsApproximate(parameters: Task): Generator<[number[], numbe
     }
 }
 
-type ResultCandidate = {
-    sequence: Array<[number, number]>,
-    valid: boolean
-}
-
-function prepareResult(gearsPrimary: number[], gearsSecondary: number[], parameters: Task): ResultCandidate {
+function prepareResult(gearsPrimary: number[], gearsSecondary: number[], parameters: Task): Array<[number, number]> | null {
     // gearsPrimary and gearsSecondary contain gears decided by the algorithm.
     // In addition to that, the result will contain the fixed start and end gear sequences set by the user.
     // There are three types of gear pairs: fixed and fixed, fixed and decided (at the end/beginning of an odd sized fixed sequence)
     // and pairs completely decided by the algorithm. Only th completely decided pairs can be reordered.
     
+    if (!parameters.gears.includes(1) && gearsPrimary.length + parameters.fixedPrimary!.length != gearsSecondary.length + parameters.fixedSecondary!.length) {
+        return null;
+    }
+
     // Add worm gears if needed
     while (gearsPrimary.length + parameters.fixedPrimary!.length < gearsSecondary.length + parameters.fixedSecondary!.length) {
         gearsPrimary.push(1);
@@ -268,12 +267,10 @@ function prepareResult(gearsPrimary: number[], gearsSecondary: number[], paramet
     for (var i = 0; i < parameters.startSequence.length - 1; i += 2) {
         sequenceStart.push([parameters.startSequence[i], parameters.startSequence[i + 1]]);
     }
-    
-    var validSolution = true;
 
     for (var [index1, index2] of assignments) {
         if (costMatrix[index1][index2] == ASSIGNMENT_COST_FORBIDDEN) {
-            validSolution = false;
+            return null;
         }
         var gearPair: [number, number] = [gearsPrimary[index1], gearsSecondary[index2]];
         if (parameters.startSequence.length % 2 == 1 && index1 == lastItemIndex) {
@@ -291,12 +288,8 @@ function prepareResult(gearsPrimary: number[], gearsSecondary: number[], paramet
 
     sequenceReorderable.sort(function (a, b) { return Math.sign(a[0] / a[1] - b[0] / b[1]); });
     
-    return {
-        sequence: sequenceStart.concat(sequenceReorderable, sequenceEnd),
-        valid: validSolution
-    };
+    return sequenceStart.concat(sequenceReorderable, sequenceEnd);
 }
-
 
 self.onmessage = function(event: MessageEvent) {
     var parameters = event.data as Task;
@@ -306,22 +299,15 @@ self.onmessage = function(event: MessageEvent) {
     var iterator = parameters.exact ? findSolutionsExact(parameters) : findSolutionsApproximate(parameters);
 
     while (true) {
-        var candidate = iterator.next().value as [number[], number[]];
-
-        var solutionPrimary = candidate[0];
-        var solutionSecondary = candidate[1];
-
-        if (!parameters.gears.includes(1) && solutionPrimary.length + parameters.fixedPrimary!.length != solutionSecondary.length + parameters.fixedSecondary!.length) {
-            continue;
-        }
-
-        var resultCandidate = prepareResult(solutionPrimary, solutionSecondary, parameters);
+        var [primaryGears, secondaryGears] = iterator.next().value as [number[], number[]];
         
-        if (resultCandidate.valid) {
+        var result = prepareResult(primaryGears, secondaryGears, parameters);
+        
+        if (result != null) {
             const workerGlobalContext: Worker = self as any;
             workerGlobalContext.postMessage({
                 id: parameters.id,
-                sequence: resultCandidate.sequence
+                sequence: result
             });
         }
     }
