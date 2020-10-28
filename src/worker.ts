@@ -156,19 +156,6 @@ function* findSolutionsExact(parameters: Task): Generator<[number[], number[]], 
         var availableGearsPrimary = parameters.gears;
         var availableGearsSecondary = parameters.gears;    
     }
-    
-    var missingFactors = getMissingPrimeFactors(parameters.searchRatio!, availableFactors);
-    if (missingFactors.length != 0) {
-        const workerGlobalContext: Worker = self as any;
-        workerGlobalContext.postMessage({
-            id: parameters.id,
-            type: 'stop',
-            reason: 'missingfactors',
-            missingFactors: missingFactors
-        });
-        close();
-        return;
-    }
 
     var hammingIterator = getHammingSequence(availableFactors);
     while (true) {
@@ -315,13 +302,7 @@ self.onmessage = function(event: MessageEvent) {
     var parameters = event.data as Task;
     parameters.targetRatio = new Fraction(parameters.targetRatio!.a, parameters.targetRatio!.b);
     parameters.searchRatio = new Fraction(parameters.searchRatio!.a, parameters.searchRatio!.b);
-
-    parameters.gearFactors = {};
-    for (var gear of parameters.gears) {
-        parameters.gearFactors[gear] = factorize(gear);
-    }
-    var wormGearAvailable = parameters.gears.includes(1);
-
+    
     var iterator = parameters.exact ? findSolutionsExact(parameters) : findSolutionsApproximate(parameters);
 
     while (true) {
@@ -330,7 +311,7 @@ self.onmessage = function(event: MessageEvent) {
         var solutionPrimary = candidate[0];
         var solutionSecondary = candidate[1];
 
-        if (!wormGearAvailable && solutionPrimary.length + parameters.fixedPrimary!.length != solutionSecondary.length + parameters.fixedSecondary!.length) {
+        if (!parameters.gears.includes(1) && solutionPrimary.length + parameters.fixedPrimary!.length != solutionSecondary.length + parameters.fixedSecondary!.length) {
             continue;
         }
 
@@ -340,7 +321,6 @@ self.onmessage = function(event: MessageEvent) {
             const workerGlobalContext: Worker = self as any;
             workerGlobalContext.postMessage({
                 id: parameters.id,
-                type: 'solution',
                 sequence: resultCandidate.sequence
             });
         }

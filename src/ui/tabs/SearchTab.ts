@@ -14,7 +14,7 @@ type Task = {
     id: number;
     maxNumberOfResults: number;
     excludePairsWithFixedGears: boolean;
-    gearFactors: GearFactorsDict | null;
+    gearFactors: GearFactorsDict;
     fixedPrimary: number[] | null;
     fixedSecondary: number[] | null;
     solutionList: SolutionList | null;
@@ -142,7 +142,7 @@ class SearchTab {
     }
 
     private onReceiveWorkerMessage(event: MessageEvent) {
-        if (event.data.type == 'solution' && event.data.id == this.currentTaskId) {
+        if (event.data.id == this.currentTaskId) {
             var connections = [];
             for (var [gear1, gear2] of event.data.sequence) {
                 connections.push(new Connection(gear1, gear2));
@@ -151,16 +151,6 @@ class SearchTab {
 
             if (this.currentTask!.solutionList!.totalSolutions >= this.currentTask!.maxNumberOfResults) {
                 this.stopSearch();
-            }
-        }
-        if (event.data.type == 'stop' && event.data.id == this.currentTaskId) {
-            this.searchingSpan.style.display = 'none';
-            this.currentWorker = null;
-
-            if (event.data.reason == 'missingfactors') {
-                this.resultDiv.innerText = '\nNo exact solution is available because these gears are missing:\n\n'
-                + event.data.missingFactors.join('\n')
-                + '\n\nConsider searching for approximate results.';
             }
         }
     }
@@ -280,6 +270,18 @@ class SearchTab {
         }.bind(this), parseInt((document.getElementById('limitTime') as HTMLInputElement).value) * 1000);
     }
 
+    private checkForMissingFactors(task: Task) {
+        var availableFactors = getGearFactorsSet(task.gears, task.gearFactors!);
+        var missingFactors = getMissingPrimeFactors(task.searchRatio!, availableFactors);
+        if (missingFactors.length != 0) {
+            this.resultDiv.innerText = '\nNo exact solution is available because these gears are missing:\n\n'
+                + missingFactors.join('\n')
+                + '\n\nConsider searching for approximate results.';
+            return true;
+        }
+        return false;
+    }
+
     private startSearch() {
         var approximateSettings = this.searchParameters.error.getFromDOM() as CheckableValue<number>;        
         this.currentTaskId++;
@@ -299,18 +301,31 @@ class SearchTab {
             startSequence: [],
             endSequence: [],
             searchRatio: null,
-            gearFactors: null,
+            gearFactors: {},
             fixedPrimary: null,
             fixedSecondary: null,
             solutionList: null,
             fixedPrimaryFactor: null,
             fixedSecondaryFactor: null
         };
+        
+        for (var gear of this.currentTask.gears) {
+            this.currentTask.gearFactors[gear] = factorize(gear);
+        }
 
         this.readFixedSequenceGears(this.currentTask);
 
+        document.getElementById('resultcount')!.innerText = "0";
+        document.getElementById('result-meta')!.style.display = 'block';
+        document.getElementById('smallest-error-container')!.style.display = this.currentTask.exact ? 'none' : 'inline';
+        document.getElementById('smallest-error')!.innerText = '';
+
         if (this.currentWorker != null) {
             this.currentWorker.terminate();
+        }
+
+        if (this.checkForMissingFactors(this.currentTask)) {
+            return;
         }
 
         this.currentWorker = new Worker("app.js");
@@ -320,11 +335,6 @@ class SearchTab {
         this.searchingSpan.style.display = "inline";
         this.currentTask.solutionList = new SolutionList(this.resultDiv, this.currentTask);
         this.handleTaskTimeout();
-
-        document.getElementById('resultcount')!.innerText = "0";
-        document.getElementById('result-meta')!.style.display = 'block';
-        document.getElementById('smallest-error-container')!.style.display = this.currentTask.exact ? 'none' : 'inline';
-        document.getElementById('smallest-error')!.innerText = '';
     }
 
     public stopSearch() {
