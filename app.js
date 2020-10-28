@@ -279,6 +279,7 @@ class SearchParameters {
         this.targetRatio = new StringSearchParameter("3/4", "targetratio", "ratio");
         this.error = new CheckboxedSearchParameter(new NumberSearchParameter(0.01, "error", "error"), false, "approximate");
         this.gearDistance = new DistanceParameter(0.5, "dst");
+        this.include2DConnections = new BooleanSearchParameter(true, "incl2d", "include2dconnectionscheckbox");
         this.standardGears = new CheckboxedSearchParameter(new GearListSearchParameter(STANDARD_GEARS, "gears", "standardgearslist"), true, "standardgearscheckbox");
         this.customGears = new CheckboxedSearchParameter(new GearListSearchParameter(DEFAULT_CUSTOM_GEARS, "customgears", "customgearslist"), false, "customgearscheckbox");
         this.startGears = new GearListSearchParameter([], "start", "fixedStart");
@@ -290,6 +291,7 @@ class SearchParameters {
             this.targetRatio,
             this.error,
             this.gearDistance,
+            this.include2DConnections,
             this.standardGears,
             this.customGears,
             this.startGears,
@@ -367,20 +369,14 @@ class SearchTab {
         return result;
     }
     onReceiveWorkerMessage(event) {
-        if (event.data.type == 'solution' && event.data.id == this.currentTaskId) {
-            var sequence = createSequence(event.data.gearsPrimary, event.data.gearsSecondary, this.currentTask);
-            this.currentTask.solutionList.add(new Solution(sequence, this.currentTask));
+        if (event.data.id == this.currentTaskId) {
+            var connections = [];
+            for (var [gear1, gear2] of event.data.sequence) {
+                connections.push(new Connection(gear1, gear2));
+            }
+            this.currentTask.solutionList.add(new Solution(connections, this.currentTask));
             if (this.currentTask.solutionList.totalSolutions >= this.currentTask.maxNumberOfResults) {
                 this.stopSearch();
-            }
-        }
-        if (event.data.type == 'stop' && event.data.id == this.currentTaskId) {
-            this.searchingSpan.style.display = 'none';
-            this.currentWorker = null;
-            if (event.data.reason == 'missingfactors') {
-                this.resultDiv.innerText = '\nNo exact solution is available because these gears are missing:\n\n'
-                    + event.data.missingFactors.join('\n')
-                    + '\n\nConsider searching for approximate results.';
             }
         }
     }
@@ -413,6 +409,89 @@ class SearchTab {
         }
         currentTask.searchRatio = currentTask.targetRatio.multiply(new Fraction(currentTask.fixedSecondaryFactor, currentTask.fixedPrimaryFactor));
     }
+    get2DFitCost(gear1, gear2) {
+        var targetDistance = (gear1 + gear2) / 16;
+        var maxError = DEFAULT_FIT_ERROR / 8;
+        var lowestCost = 0;
+        for (var y = 0; y <= Math.ceil(targetDistance); y += 0.5) {
+            var x = Math.round((Math.sqrt(Math.pow(targetDistance, 2) - Math.pow(y, 2))) / 0.5) * 0.5;
+            if (x == 0 || y == 0 || Number.isNaN(x) || x < y) {
+                continue;
+            }
+            var totalDistance = Math.sqrt(Math.pow(x, 2) + Math.pow(y, 2));
+            var error = totalDistance - targetDistance;
+            if (Math.abs(error) > maxError) {
+                continue;
+            }
+            if (x % 1 == 0 && y % 1 == 0) {
+                lowestCost = Math.min(lowestCost, ASSIGNMENT_COST_FULL_2D);
+            }
+            else if (x % 1 == 0 || y % 1 == 0) {
+                lowestCost = Math.min(lowestCost, ASSIGNMENT_COST_HALF_FULL_2D);
+            }
+            else {
+                lowestCost = Math.min(lowestCost, ASSIGNMENT_COST_HALF_2D);
+            }
+        }
+        return lowestCost;
+    }
+    getGearAssignmentCosts(availableGears, distanceConstraint, include2DConnections) {
+        var result = {};
+        for (var driverGear of availableGears) {
+            result[driverGear] = {};
+            for (var followerGear of availableGears) {
+                var cost = 0;
+                var totalTeeth = driverGear + followerGear;
+                var violatesConstraint = (distanceConstraint == null) ? false : (totalTeeth % 16 * distanceConstraint) != 0;
+                if ((driverGear == 1 && followerGear == 1) || (driverGear == 140 && followerGear == 140)) {
+                    cost = ASSIGNMENT_COST_FORBIDDEN;
+                }
+                else if (driverGear == 1 || followerGear == 1) {
+                    var remainingGear = totalTeeth - 1;
+                    if (remainingGear % 16 == 8 || remainingGear % 16 == 4) {
+                        cost += ASSIGNMENT_COST_FULL_1D;
+                        violatesConstraint = false;
+                    }
+                    else if (remainingGear % 16 == 0 || remainingGear % 16 == 12) {
+                        cost += ASSIGNMENT_COST_HALF_1D;
+                        if (distanceConstraint == 0.5) {
+                            violatesConstraint = false;
+                        }
+                    }
+                }
+                else {
+                    if (totalTeeth % 16 == 0) {
+                        cost += ASSIGNMENT_COST_FULL_1D;
+                        if (include2DConnections) {
+                            violatesConstraint = false;
+                        }
+                    }
+                    else if (totalTeeth % 16 == 8) {
+                        cost += ASSIGNMENT_COST_HALF_1D;
+                        if (include2DConnections && distanceConstraint == 0.5) {
+                            violatesConstraint = false;
+                        }
+                    }
+                    if (driverGear % 8 == 4 && followerGear % 8 == 4) {
+                        cost += ASSIGNMENT_COST_PERPENDICULAR;
+                    }
+                    var assignmentCost2D = this.get2DFitCost(driverGear, followerGear);
+                    cost += assignmentCost2D;
+                    if (include2DConnections && assignmentCost2D == ASSIGNMENT_COST_FULL_2D) {
+                        violatesConstraint = false;
+                    }
+                    else if (include2DConnections && assignmentCost2D < 0 && distanceConstraint == 0.5) {
+                        violatesConstraint = false;
+                    }
+                }
+                if (violatesConstraint) {
+                    cost = ASSIGNMENT_COST_FORBIDDEN;
+                }
+                result[driverGear][followerGear] = cost;
+            }
+        }
+        return result;
+    }
     handleTaskTimeout() {
         var taskId = this.currentTaskId;
         setTimeout(function () {
@@ -421,31 +500,55 @@ class SearchTab {
             }
         }.bind(this), parseInt(document.getElementById('limitTime').value) * 1000);
     }
+    checkForMissingFactors(task) {
+        var availableFactors = getGearFactorsSet(task.gears, task.gearFactors);
+        var missingFactors = getMissingPrimeFactors(task.searchRatio, availableFactors);
+        if (missingFactors.length != 0) {
+            this.resultDiv.innerText = '\nNo exact solution is available because these gears are missing:\n\n'
+                + missingFactors.join('\n')
+                + '\n\nConsider searching for approximate results.';
+            return true;
+        }
+        return false;
+    }
     startSearch() {
         var approximateSettings = this.searchParameters.error.getFromDOM();
         this.currentTaskId++;
+        var gears = this.getAvailableGears();
+        var distanceConstraint = this.searchParameters.gearDistance.getFromDOM();
         this.currentTask = {
             exact: !approximateSettings.checked,
             error: approximateSettings.value,
             targetRatio: Fraction.parse(this.searchParameters.targetRatio.getFromDOM()),
-            gears: this.getAvailableGears(),
-            distanceConstraint: this.searchParameters.gearDistance.getFromDOM(),
+            gears: gears,
+            gearAssignmentCosts: this.getGearAssignmentCosts(gears, distanceConstraint, this.searchParameters.include2DConnections.getFromDOM()),
+            distanceConstraint: distanceConstraint,
             id: this.currentTaskId,
             maxNumberOfResults: this.searchParameters.limitCount.getFromDOM(),
             excludePairsWithFixedGears: this.searchParameters.excludePairsWithFixedGears.getFromDOM(),
             startSequence: [],
             endSequence: [],
             searchRatio: null,
-            gearFactors: null,
+            gearFactors: {},
             fixedPrimary: null,
             fixedSecondary: null,
             solutionList: null,
             fixedPrimaryFactor: null,
             fixedSecondaryFactor: null
         };
+        for (var gear of this.currentTask.gears) {
+            this.currentTask.gearFactors[gear] = factorize(gear);
+        }
         this.readFixedSequenceGears(this.currentTask);
+        document.getElementById('resultcount').innerText = "0";
+        document.getElementById('result-meta').style.display = 'block';
+        document.getElementById('smallest-error-container').style.display = this.currentTask.exact ? 'none' : 'inline';
+        document.getElementById('smallest-error').innerText = '';
         if (this.currentWorker != null) {
             this.currentWorker.terminate();
+        }
+        if (this.checkForMissingFactors(this.currentTask)) {
+            return;
         }
         this.currentWorker = new Worker("app.js");
         this.currentWorker.onmessage = this.onReceiveWorkerMessage.bind(this);
@@ -453,10 +556,6 @@ class SearchTab {
         this.searchingSpan.style.display = "inline";
         this.currentTask.solutionList = new SolutionList(this.resultDiv, this.currentTask);
         this.handleTaskTimeout();
-        document.getElementById('resultcount').innerText = "0";
-        document.getElementById('result-meta').style.display = 'block';
-        document.getElementById('smallest-error-container').style.display = this.currentTask.exact ? 'none' : 'inline';
-        document.getElementById('smallest-error').innerText = '';
     }
     stopSearch() {
         if (this.currentWorker != null) {
@@ -504,6 +603,13 @@ const DEFAULT_GEARS_STANDARD = '1,8,16,24,40,56,12,20,28,36,60,140';
 const DEFAULT_GEARS_CUSTOM = '10,11,13,14,15,17,18,19,21,22,23,25,26,27,29,30,31,32';
 const DEFAULT_FIT_ERROR = 0.4; // mm
 const SVG_NAMESPACE = "http://www.w3.org/2000/svg";
+const ASSIGNMENT_COST_FORBIDDEN = 1000;
+const ASSIGNMENT_COST_FULL_1D = -13;
+const ASSIGNMENT_COST_HALF_1D = -9;
+const ASSIGNMENT_COST_FULL_2D = -12;
+const ASSIGNMENT_COST_HALF_2D = -7;
+const ASSIGNMENT_COST_HALF_FULL_2D = -8;
+const ASSIGNMENT_COST_PERPENDICULAR = -2;
 class GearSVGGenerator {
     constructor(n) {
         this.pathStrings = [];
@@ -1437,121 +1543,6 @@ function factorize(number) {
     }
     return result;
 }
-function createBins(items, itemToBin) {
-    var result = {};
-    for (var item of items) {
-        var bin = itemToBin(item);
-        if (!(bin in result)) {
-            result[bin] = [];
-        }
-        result[bin].push(item);
-    }
-    return result;
-}
-function getIndexOfBestMatch(gear, sequence) {
-    for (var i = 0; i < sequence.length; i++) {
-        if ((gear + sequence[i]) % 16 == 0) {
-            return i;
-        }
-    }
-    for (var i = 0; i < sequence.length; i++) {
-        if ((gear + sequence[i]) % 8 == 0) {
-            return i;
-        }
-    }
-    for (var i = 0; i < sequence.length; i++) {
-        if (sequence[i] % 8 != 0 && (sequence[i] + 12) % 8 != 0) {
-            return i;
-        }
-    }
-    return 0;
-}
-function createSequence(gearsPrimary, gearsSecondary, parameters) {
-    var sequenceStart = [];
-    for (var i = 0; i < parameters.startSequence.length - 1; i += 2) {
-        sequenceStart.push(new Connection(parameters.startSequence[i], parameters.startSequence[i + 1]));
-    }
-    if (parameters.startSequence.length % 2 == 1) {
-        var lastStartSequenceGear = parameters.startSequence[parameters.startSequence.length - 1];
-        if (gearsSecondary.length == 0) {
-            sequenceStart.push(new Connection(lastStartSequenceGear, 1));
-        }
-        else {
-            var index = getIndexOfBestMatch(lastStartSequenceGear, gearsSecondary);
-            sequenceStart.push(new Connection(lastStartSequenceGear, gearsSecondary[index]));
-            gearsSecondary = gearsSecondary.slice();
-            gearsSecondary.splice(index, 1);
-        }
-    }
-    var sequenceEnd = [];
-    if (parameters.endSequence.length % 2 == 1) {
-        var firstEndSequenceGear = parameters.endSequence[0];
-        if (gearsPrimary.length == 0) {
-            sequenceStart.push(new Connection(1, firstEndSequenceGear));
-        }
-        else {
-            var index = getIndexOfBestMatch(firstEndSequenceGear, gearsPrimary);
-            sequenceEnd.push(new Connection(gearsPrimary[index], firstEndSequenceGear));
-            gearsPrimary = gearsPrimary.slice();
-            gearsPrimary.splice(index, 1);
-        }
-    }
-    for (var i = parameters.endSequence.length % 2; i < parameters.endSequence.length; i += 2) {
-        sequenceEnd.push(new Connection(parameters.endSequence[i], parameters.endSequence[i + 1]));
-    }
-    var binsPrimary = createBins(gearsPrimary, function (gear) { return gear % 16; });
-    var binsSecondary = createBins(gearsSecondary, function (gear) { return (16 - gear % 16) % 16; });
-    var remainderPrimary = [];
-    var remainderSecondary = [];
-    var connections = [];
-    for (var i = 0; i < 16; i++) {
-        if (!(i in binsPrimary) && !(i in binsSecondary)) {
-            continue;
-        }
-        if (!(i in binsPrimary)) {
-            remainderSecondary = remainderSecondary.concat(binsSecondary[i]);
-        }
-        else if (!(i in binsSecondary)) {
-            remainderPrimary = remainderPrimary.concat(binsPrimary[i]);
-        }
-        else {
-            const n = Math.min(binsPrimary[i].length, binsSecondary[i].length);
-            for (var j = 0; j < n; j++) {
-                connections.push(new Connection(binsPrimary[i][j], binsSecondary[i][j]));
-            }
-            remainderPrimary = remainderPrimary.concat(binsPrimary[i].slice(n));
-            remainderSecondary = remainderSecondary.concat(binsSecondary[i].slice(n));
-        }
-    }
-    var binsPrimary = createBins(remainderPrimary, function (gear) { return gear % 8; });
-    var binsSecondary = createBins(remainderSecondary, function (gear) { return (8 - gear % 8) % 8; });
-    remainderPrimary = [];
-    remainderSecondary = [];
-    for (var i = 0; i < 8; i++) {
-        if (!(i in binsPrimary) && !(i in binsSecondary)) {
-            continue;
-        }
-        if (!(i in binsPrimary)) {
-            remainderSecondary = remainderSecondary.concat(binsSecondary[i]);
-        }
-        else if (!(i in binsSecondary)) {
-            remainderPrimary = remainderPrimary.concat(binsPrimary[i]);
-        }
-        else {
-            const n = Math.min(binsPrimary[i].length, binsSecondary[i].length);
-            for (var j = 0; j < n; j++) {
-                connections.push(new Connection(binsPrimary[i][j], binsSecondary[i][j]));
-            }
-            remainderPrimary = remainderPrimary.concat(binsPrimary[i].slice(n));
-            remainderSecondary = remainderSecondary.concat(binsSecondary[i].slice(n));
-        }
-    }
-    for (var i = 0; i < Math.max(remainderPrimary.length, remainderSecondary.length); i++) {
-        connections.push(new Connection(i < remainderPrimary.length ? remainderPrimary[i] : 1, i < remainderSecondary.length ? remainderSecondary[i] : 1));
-    }
-    connections.sort(function (a, b) { return Math.sign(a.factor - b.factor); });
-    return sequenceStart.concat(connections, sequenceEnd);
-}
 function getTeethProduct(gearTeeth, gearCounts) {
     var result = 1;
     for (var i = 0; i < gearTeeth.length; i++) {
@@ -1692,18 +1683,6 @@ function* findSolutionsExact(parameters) {
         var availableGearsPrimary = parameters.gears;
         var availableGearsSecondary = parameters.gears;
     }
-    var missingFactors = getMissingPrimeFactors(parameters.searchRatio, availableFactors);
-    if (missingFactors.length != 0) {
-        const workerGlobalContext = self;
-        workerGlobalContext.postMessage({
-            'id': parameters.id,
-            'type': 'stop',
-            'reason': 'missingfactors',
-            'missingFactors': missingFactors
-        });
-        close();
-        return;
-    }
     var hammingIterator = getHammingSequence(availableFactors);
     while (true) {
         var currentRatio = parameters.searchRatio.extend(hammingIterator.next().value);
@@ -1752,45 +1731,326 @@ function* findSolutionsApproximate(parameters) {
         }
     }
 }
+function prepareResult(gearsPrimary, gearsSecondary, parameters) {
+    // gearsPrimary and gearsSecondary contain gears decided by the algorithm.
+    // In addition to that, the result will contain the fixed start and end gear sequences set by the user.
+    // There are three types of gear pairs: fixed and fixed, fixed and decided (at the end/beginning of an odd sized fixed sequence)
+    // and pairs completely decided by the algorithm. Only th completely decided pairs can be reordered.
+    if (!parameters.gears.includes(1) && gearsPrimary.length + parameters.fixedPrimary.length != gearsSecondary.length + parameters.fixedSecondary.length) {
+        return null;
+    }
+    // Add worm gears if needed
+    while (gearsPrimary.length + parameters.fixedPrimary.length < gearsSecondary.length + parameters.fixedSecondary.length) {
+        gearsPrimary.push(1);
+    }
+    while (gearsPrimary.length + parameters.fixedPrimary.length > gearsSecondary.length + parameters.fixedSecondary.length) {
+        gearsSecondary.push(1);
+    }
+    // If fixed sequence is of odd length, one fixed gear will be paired with non-fixed gears
+    if (parameters.startSequence.length % 2 == 1) {
+        gearsPrimary.push(parameters.startSequence[parameters.startSequence.length - 1]);
+    }
+    if (parameters.endSequence.length % 2 == 1) {
+        gearsSecondary.push(parameters.endSequence[0]);
+    }
+    var lastItemIndex = gearsPrimary.length - 1;
+    // Run Munkres algorithm
+    var costMatrix = [];
+    for (var gear1 of gearsPrimary) {
+        var row = [];
+        for (var gear2 of gearsSecondary) {
+            row.push(parameters.gearAssignmentCosts[gear1][gear2]);
+        }
+        costMatrix.push(row);
+    }
+    if (parameters.startSequence.length % 2 == 1 && parameters.endSequence.length % 2 == 1) {
+        costMatrix[lastItemIndex][lastItemIndex] = ASSIGNMENT_COST_FORBIDDEN;
+    }
+    var munkres = new MunkresAlgorithm(costMatrix);
+    var assignments = munkres.run();
+    // Assemble sequence
+    var sequenceStart = [];
+    var sequenceReorderable = [];
+    var sequenceEnd = [];
+    for (var i = 0; i < parameters.startSequence.length - 1; i += 2) {
+        sequenceStart.push([parameters.startSequence[i], parameters.startSequence[i + 1]]);
+    }
+    for (var [index1, index2] of assignments) {
+        if (costMatrix[index1][index2] == ASSIGNMENT_COST_FORBIDDEN) {
+            return null;
+        }
+        var gearPair = [gearsPrimary[index1], gearsSecondary[index2]];
+        if (parameters.startSequence.length % 2 == 1 && index1 == lastItemIndex) {
+            sequenceStart.push(gearPair); // append at the end
+        }
+        else if (parameters.endSequence.length % 2 == 1 && index2 == lastItemIndex) {
+            sequenceEnd.push(gearPair); // insert at the start
+        }
+        else {
+            sequenceReorderable.push(gearPair); // order doesn't matter here
+        }
+    }
+    for (var i = parameters.endSequence.length % 2; i < parameters.endSequence.length; i += 2) {
+        sequenceEnd.push([parameters.endSequence[i], parameters.endSequence[i + 1]]);
+    }
+    sequenceReorderable.sort(function (a, b) { return Math.sign(a[0] / a[1] - b[0] / b[1]); });
+    return sequenceStart.concat(sequenceReorderable, sequenceEnd);
+}
 self.onmessage = function (event) {
     var parameters = event.data;
     parameters.targetRatio = new Fraction(parameters.targetRatio.a, parameters.targetRatio.b);
     parameters.searchRatio = new Fraction(parameters.searchRatio.a, parameters.searchRatio.b);
-    parameters.gearFactors = {};
-    for (var gear of parameters.gears) {
-        parameters.gearFactors[gear] = factorize(gear);
-    }
-    var wormGearAvailable = parameters.gears.includes(1);
     var iterator = parameters.exact ? findSolutionsExact(parameters) : findSolutionsApproximate(parameters);
     while (true) {
-        var candidate = iterator.next().value;
-        var solutionPrimary = candidate[0];
-        var solutionSecondary = candidate[1];
-        if (!wormGearAvailable && solutionPrimary.length + parameters.fixedPrimary.length != solutionSecondary.length + parameters.fixedSecondary.length) {
-            continue;
-        }
-        var violatesConstraint = false;
-        if (parameters.distanceConstraint !== null) {
-            var sequence = createSequence(solutionPrimary, solutionSecondary, parameters);
-            for (var i = Math.floor(parameters.startSequence.length / 2); i < sequence.length - Math.floor(parameters.endSequence.length / 2); i++) {
-                var connection = sequence[i];
-                if (connection.distance % parameters.distanceConstraint != 0) {
-                    violatesConstraint = true;
-                    break;
-                }
-            }
-        }
-        if (!violatesConstraint) {
+        var [primaryGears, secondaryGears] = iterator.next().value;
+        var result = prepareResult(primaryGears, secondaryGears, parameters);
+        if (result != null) {
             const workerGlobalContext = self;
             workerGlobalContext.postMessage({
-                'id': parameters.id,
-                'type': 'solution',
-                'gearsPrimary': solutionPrimary,
-                'gearsSecondary': solutionSecondary
+                id: parameters.id,
+                sequence: result
             });
         }
     }
 };
+var State;
+(function (State) {
+    State[State["None"] = 0] = "None";
+    State[State["Starred"] = 1] = "Starred";
+    State[State["Primed"] = 2] = "Primed";
+})(State || (State = {}));
+// Munkres Algorithm aka Hungarian Algorithm based on https://brc2.com/the-algorithm-workshop/
+class MunkresAlgorithm {
+    constructor(costMatrix) {
+        this.matrix = [];
+        for (var row of costMatrix) {
+            this.matrix.push(row.slice());
+        }
+        this.size = this.matrix.length;
+        this.rowsCovered = [];
+        this.columnsCovered = [];
+        for (var i = 0; i < this.size; i++) {
+            this.rowsCovered.push(false);
+            this.columnsCovered.push(false);
+        }
+        this.path = [];
+        for (var i = 0; i < this.size * 2; i++) {
+            this.path.push([0, 0]);
+        }
+        this.zero0 = [0, 0];
+        this.state = new Array(this.size);
+        for (var i = 0; i < this.size; i++) {
+            this.state[i] = new Array(this.size);
+            for (var j = 0; j < this.size; j++) {
+                this.state[i][j] = State.None;
+            }
+        }
+    }
+    ;
+    run() {
+        var nextStep = 1;
+        var stepImplementations = [
+            this.step1,
+            this.step2,
+            this.step3,
+            this.step4,
+            this.step5,
+            this.step6
+        ];
+        while (nextStep != -1) {
+            nextStep = stepImplementations[nextStep - 1].apply(this);
+        }
+        var selectedIndices = [];
+        for (var i = 0; i < this.size; i++) {
+            for (var j = 0; j < this.size; j++) {
+                if (this.state[i][j] == State.Starred) {
+                    selectedIndices.push([i, j]);
+                }
+            }
+        }
+        return selectedIndices;
+    }
+    step1() {
+        for (var i = 0; i < this.size; i++) {
+            var rowMinimum = Math.min.apply(Math, this.matrix[i]);
+            for (var j = 0; j < this.size; j++) {
+                this.matrix[i][j] -= rowMinimum;
+            }
+        }
+        return 2;
+    }
+    ;
+    step2() {
+        for (var i = 0; i < this.size; i++) {
+            for (var j = 0; j < this.size; j++) {
+                if (this.matrix[i][j] == 0 && !this.rowsCovered[i] && !this.columnsCovered[j]) {
+                    this.state[i][j] = State.Starred;
+                    this.rowsCovered[i] = true;
+                    this.columnsCovered[j] = true;
+                    break;
+                }
+            }
+        }
+        this.resetCovered();
+        return 3;
+    }
+    ;
+    step3() {
+        var count = 0;
+        for (var i = 0; i < this.size; i++) {
+            for (var j = 0; j < this.size; j++) {
+                if (this.state[i][j] == State.Starred && this.columnsCovered[j] == false) {
+                    this.columnsCovered[j] = true;
+                    count++;
+                }
+            }
+        }
+        if (count >= this.size) {
+            return -1;
+        }
+        else {
+            return 4;
+        }
+    }
+    ;
+    step4() {
+        while (true) {
+            var [row, column] = this.findAZero();
+            if (row < 0) {
+                return 6;
+            }
+            this.state[row][column] = State.Primed;
+            var starredColumn = this.findStarInRow(row);
+            if (starredColumn >= 0) {
+                column = starredColumn;
+                this.rowsCovered[row] = true;
+                this.columnsCovered[column] = false;
+            }
+            else {
+                this.zero0 = [row, column];
+                return 5;
+            }
+        }
+    }
+    ;
+    step5() {
+        var count = 0;
+        this.path[count][0] = this.zero0[0];
+        this.path[count][1] = this.zero0[1];
+        var done = false;
+        while (!done) {
+            var row = this.findStarInColumn(this.path[count][1]);
+            if (row >= 0) {
+                count++;
+                this.path[count][0] = row;
+                this.path[count][1] = this.path[count - 1][1];
+            }
+            else {
+                done = true;
+            }
+            if (!done) {
+                var column = this.findPrimeInRow(this.path[count][0]);
+                count++;
+                this.path[count][0] = this.path[count - 1][0];
+                this.path[count][1] = column;
+            }
+        }
+        this.convertPath(count);
+        this.resetCovered();
+        this.resetPrimes();
+        return 3;
+    }
+    ;
+    step6() {
+        var smallestUncovered = this.findSmallestUncovered();
+        for (var i = 0; i < this.size; i++) {
+            for (var j = 0; j < this.size; j++) {
+                if (this.rowsCovered[i]) {
+                    this.matrix[i][j] += smallestUncovered;
+                }
+                if (!this.columnsCovered[j]) {
+                    this.matrix[i][j] -= smallestUncovered;
+                }
+            }
+        }
+        return 4;
+    }
+    ;
+    findSmallestUncovered() {
+        var result = ASSIGNMENT_COST_FORBIDDEN;
+        for (var i = 0; i < this.size; i++) {
+            for (var j = 0; j < this.size; j++) {
+                if (!this.rowsCovered[i] && !this.columnsCovered[j] && result > this.matrix[i][j]) {
+                    result = this.matrix[i][j];
+                }
+            }
+        }
+        return result;
+    }
+    ;
+    findAZero() {
+        for (var i = 0; i < this.size; ++i) {
+            for (var j = 0; j < this.size; ++j) {
+                if (this.matrix[i][j] == 0 && !this.rowsCovered[i] && !this.columnsCovered[j]) {
+                    return [i, j];
+                }
+            }
+        }
+        return [-1, -1];
+    }
+    ;
+    findStarInRow(row) {
+        for (var j = 0; j < this.size; j++) {
+            if (this.state[row][j] == State.Starred) {
+                return j;
+            }
+        }
+        return -1;
+    }
+    ;
+    findStarInColumn(column) {
+        for (var i = 0; i < this.size; i++) {
+            if (this.state[i][column] == State.Starred) {
+                return i;
+            }
+        }
+        return -1;
+    }
+    ;
+    findPrimeInRow(row) {
+        for (var j = 0; j < this.size; j++) {
+            if (this.state[row][j] == State.Primed) {
+                return j;
+            }
+        }
+        return -1;
+    }
+    ;
+    convertPath(count) {
+        for (var i = 0; i <= count; i++) {
+            var [x, y] = this.path[i];
+            this.state[x][y] = (this.state[x][y] == State.Starred) ? State.None : State.Starred;
+        }
+    }
+    ;
+    resetCovered() {
+        for (var i = 0; i < this.size; i++) {
+            this.rowsCovered[i] = false;
+            this.columnsCovered[i] = false;
+        }
+    }
+    ;
+    resetPrimes() {
+        for (var i = 0; i < this.size; i++) {
+            for (var j = 0; j < this.size; j++) {
+                if (this.state[i][j] == State.Primed) {
+                    this.state[i][j] = State.None;
+                }
+            }
+        }
+    }
+    ;
+}
 class Solution {
     constructor(sequence, task) {
         this.error = null;
