@@ -32,34 +32,3 @@ function factorize(number: number): number[] {
     }
     return result;
 }
-
-function createBins(items: number[], itemToBin: (item: number) => number): {[bin: number]: number[]} {
-    var result: {[bin: number]: number[]} = {};
-    for (var item of items) {
-        var bin = itemToBin(item);
-        if (!(bin in result)) {
-            result[bin] = [];
-        }
-        result[bin].push(item);
-    }
-    return result;
-}
-
-function getIndexOfBestMatch(gear: number, sequence: number[]) {
-    for (var i = 0; i < sequence.length; i++) {
-        if ((gear + sequence[i]) % 16 == 0) {
-            return i;
-        }
-    }
-    for (var i = 0; i < sequence.length; i++) {
-        if ((gear + sequence[i]) % 8 == 0) {
-            return i;
-        }
-    }
-    for (var i = 0; i < sequence.length; i++) {
-        if (sequence[i] % 8 != 0 && (sequence[i] + 12) % 8 != 0) {
-            return i;
-        }
-    }
-    return 0;
-}
