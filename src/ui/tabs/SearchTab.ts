@@ -143,8 +143,11 @@ class SearchTab {
 
     private onReceiveWorkerMessage(event: MessageEvent) {
         if (event.data.type == 'solution' && event.data.id == this.currentTaskId) {
-            var sequence = createSequence(event.data.gearsPrimary, event.data.gearsSecondary, this.currentTask!);
-            this.currentTask!.solutionList!.add(new Solution(sequence, this.currentTask!));
+            var connections = [];
+            for (var [gear1, gear2] of event.data.sequence) {
+                connections.push(new Connection(gear1, gear2));
+            }
+            this.currentTask!.solutionList!.add(new Solution(connections, this.currentTask!));
 
             if (this.currentTask!.solutionList!.totalSolutions >= this.currentTask!.maxNumberOfResults) {
                 this.stopSearch();
@@ -221,10 +224,9 @@ class SearchTab {
         return lowestCost;
     }
 
-    private getGearAssignmentCosts(availableGears: number[]): GearAssignmentCostTable {
+    private getGearAssignmentCosts(availableGears: number[], distanceConstraint: number | null): GearAssignmentCostTable {
         var result: GearAssignmentCostTable = {};
 
-        var test: Array<[number, string]> = [];
         for (var driverGear of availableGears) {
             result[driverGear] = {};
 
@@ -232,14 +234,20 @@ class SearchTab {
                 var cost = 0;
                 var totalTeeth = driverGear + followerGear;
 
+                var violatesConstraint = (distanceConstraint == null) ? false : (totalTeeth % 16 * distanceConstraint) != 0; 
+
                 if ((driverGear == 1 && followerGear == 1) || (driverGear == 140 && followerGear == 140)) {
                     cost = ASSIGNMENT_COST_FORBIDDEN;
                 } else if (driverGear == 1 || followerGear == 1) {
                     var remainingGear = totalTeeth - 1;
                     if (remainingGear % 16 == 8 || remainingGear % 16 == 4) {
                         cost += ASSIGNMENT_COST_FULL_1D;
+                        violatesConstraint = false;
                     } else if (remainingGear % 16 == 0 || remainingGear % 16 == 12) {
                         cost += ASSIGNMENT_COST_HALF_1D;
+                        if (distanceConstraint == 0.5) {
+                            violatesConstraint = false;
+                        }
                     }
                 } else {
                     if (totalTeeth % 16 == 0) {
@@ -252,8 +260,11 @@ class SearchTab {
                     }
                     cost += this.get2DFitCost(driverGear, followerGear);
                 }
+
+                if (violatesConstraint) {
+                    cost = ASSIGNMENT_COST_FORBIDDEN;
+                }
                 result[driverGear][followerGear] = cost;
-                test.push([cost, driverGear + ", " + followerGear]);
             }
         }
 
@@ -272,15 +283,16 @@ class SearchTab {
     private startSearch() {
         var approximateSettings = this.searchParameters.error.getFromDOM() as CheckableValue<number>;        
         this.currentTaskId++;
-        var gears = this.getAvailableGears()
+        var gears = this.getAvailableGears();
+        var distanceConstraint = this.searchParameters.gearDistance.getFromDOM();
 
         this.currentTask = {
             exact: !approximateSettings.checked,
             error: approximateSettings.value,
             targetRatio: Fraction.parse(this.searchParameters.targetRatio.getFromDOM()),
             gears: gears,
-            gearAssignmentCosts: this.getGearAssignmentCosts(gears),
-            distanceConstraint: this.searchParameters.gearDistance.getFromDOM(),
+            gearAssignmentCosts: this.getGearAssignmentCosts(gears, distanceConstraint),
+            distanceConstraint: distanceConstraint,
             id: this.currentTaskId,
             maxNumberOfResults: this.searchParameters.limitCount.getFromDOM(),
             excludePairsWithFixedGears: this.searchParameters.excludePairsWithFixedGears.getFromDOM(),

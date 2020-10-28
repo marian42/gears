@@ -161,10 +161,10 @@ function* findSolutionsExact(parameters: Task): Generator<[number[], number[]], 
     if (missingFactors.length != 0) {
         const workerGlobalContext: Worker = self as any;
         workerGlobalContext.postMessage({
-            'id': parameters.id,
-            'type': 'stop',
-            'reason': 'missingfactors',
-            'missingFactors': missingFactors
+            id: parameters.id,
+            type: 'stop',
+            reason: 'missingfactors',
+            missingFactors: missingFactors
         });
         close();
         return;
@@ -228,6 +228,89 @@ function* findSolutionsApproximate(parameters: Task): Generator<[number[], numbe
     }
 }
 
+type ResultCandidate = {
+    sequence: Array<[number, number]>,
+    valid: boolean
+}
+
+function prepareResult(gearsPrimary: number[], gearsSecondary: number[], parameters: Task): ResultCandidate {
+    // gearsPrimary and gearsSecondary contain gears decided by the algorithm.
+    // In addition to that, the result will contain the fixed start and end gear sequences set by the user.
+    // There are three types of gear pairs: fixed and fixed, fixed and decided (at the end/beginning of an odd sized fixed sequence)
+    // and pairs completely decided by the algorithm. Only th completely decided pairs can be reordered.
+    
+    // Add worm gears if needed
+    while (gearsPrimary.length + parameters.fixedPrimary!.length < gearsSecondary.length + parameters.fixedSecondary!.length) {
+        gearsPrimary.push(1);
+    }
+    while (gearsPrimary.length + parameters.fixedPrimary!.length > gearsSecondary.length + parameters.fixedSecondary!.length) {
+        gearsSecondary.push(1);
+    }
+
+    // If fixed sequence is of odd length, one fixed gear will be paired with non-fixed gears
+    if (parameters.startSequence.length % 2 == 1) {
+        gearsPrimary.push(parameters.startSequence[parameters.startSequence.length - 1]);
+    }
+    if (parameters.endSequence.length % 2 == 1) {
+        gearsSecondary.push(parameters.endSequence[0]);
+    }
+    var lastItemIndex = gearsPrimary.length - 1;
+
+    // Run Munkres algorithm
+    var costMatrix: Matrix = [];    
+    for (var gear1 of gearsPrimary) {
+        var row: number[] = [];
+        for (var gear2 of gearsSecondary) {
+            row.push(parameters.gearAssignmentCosts[gear1][gear2]);
+        }
+        costMatrix.push(row);
+    }
+
+    if (parameters.startSequence.length % 2 == 1 && parameters.endSequence.length % 2 == 1) {
+        costMatrix[lastItemIndex][lastItemIndex] = ASSIGNMENT_COST_FORBIDDEN;
+    }
+
+    var munkres = new MunkresAlgorithm(costMatrix);
+    var assignments = munkres.run();
+    
+    // Assemble sequence
+    var sequenceStart: Array<[number, number]> = [];
+    var sequenceReorderable: Array<[number, number]> = [];
+    var sequenceEnd: Array<[number, number]> = [];
+
+    for (var i = 0; i < parameters.startSequence.length - 1; i += 2) {
+        sequenceStart.push([parameters.startSequence[i], parameters.startSequence[i + 1]]);
+    }
+    
+    var validSolution = true;
+
+    for (var [index1, index2] of assignments) {
+        if (costMatrix[index1][index2] == ASSIGNMENT_COST_FORBIDDEN) {
+            validSolution = false;
+        }
+        var gearPair: [number, number] = [gearsPrimary[index1], gearsSecondary[index2]];
+        if (parameters.startSequence.length % 2 == 1 && index1 == lastItemIndex) {
+            sequenceStart.push(gearPair); // append at the end
+        } else if (parameters.endSequence.length % 2 == 1 && index2 == lastItemIndex) {
+            sequenceEnd.push(gearPair); // insert at the start
+        } else {
+            sequenceReorderable.push(gearPair); // order doesn't matter here
+        }
+    }
+
+    for (var i = parameters.endSequence.length % 2; i < parameters.endSequence.length; i += 2) {
+        sequenceEnd.push([parameters.endSequence[i], parameters.endSequence[i + 1]]);
+    }
+
+    sequenceReorderable.sort(function (a, b) { return Math.sign(a[0] / a[1] - b[0] / b[1]); });
+    
+    return {
+        sequence: sequenceStart.concat(sequenceReorderable, sequenceEnd),
+        valid: validSolution
+    };
+}
+
+
 self.onmessage = function(event: MessageEvent) {
     var parameters = event.data as Task;
     parameters.targetRatio = new Fraction(parameters.targetRatio!.a, parameters.targetRatio!.b);
@@ -251,25 +334,14 @@ self.onmessage = function(event: MessageEvent) {
             continue;
         }
 
-        var violatesConstraint = false;
-        if (parameters.distanceConstraint !== null) {
-            var sequence = createSequence(solutionPrimary, solutionSecondary, parameters);
-            for (var i = Math.floor(parameters.startSequence.length / 2); i < sequence.length - Math.floor(parameters.endSequence.length / 2); i++) {
-                var connection = sequence[i];
-                if (connection.distance % parameters.distanceConstraint != 0) {
-                    violatesConstraint = true;
-                    break;
-                }
-            }
-        }
-
-        if (!violatesConstraint) {
+        var resultCandidate = prepareResult(solutionPrimary, solutionSecondary, parameters);
+        
+        if (resultCandidate.valid) {
             const workerGlobalContext: Worker = self as any;
             workerGlobalContext.postMessage({
-                'id': parameters.id,
-                'type': 'solution',
-                'gearsPrimary': solutionPrimary,
-                'gearsSecondary': solutionSecondary
+                id: parameters.id,
+                type: 'solution',
+                sequence: resultCandidate.sequence
             });
         }
     }

@@ -19,7 +19,11 @@ class MunkresAlgorithm {
     private path: Array<[number, number]>;
 
     constructor(costMatrix: Matrix) {
-        this.matrix = costMatrix;
+        this.matrix = [];
+        for (var row of costMatrix) {
+            this.matrix.push(row.slice());
+        }
+        
         this.size = this.matrix.length;
 
         this.rowsCovered = [];
