@@ -31,6 +31,7 @@ class SearchParameters {
     public readonly targetRatio = new StringSearchParameter("3/4", "targetratio", "ratio");
     public readonly error = new CheckboxedSearchParameter(new NumberSearchParameter(0.01, "error", "error"), false, "approximate");
     public readonly gearDistance = new DistanceParameter(0.5, "dst");
+    public readonly include2DConnections = new BooleanSearchParameter(true, "incl2d", "include2dconnectionscheckbox");
     public readonly standardGears = new CheckboxedSearchParameter(new GearListSearchParameter(STANDARD_GEARS, "gears", "standardgearslist"), true, "standardgearscheckbox");
     public readonly customGears = new CheckboxedSearchParameter(new GearListSearchParameter(DEFAULT_CUSTOM_GEARS, "customgears", "customgearslist"), false, "customgearscheckbox");
     public readonly startGears = new GearListSearchParameter([], "start", "fixedStart");
@@ -43,6 +44,7 @@ class SearchParameters {
         this.targetRatio,
         this.error,
         this.gearDistance,
+        this.include2DConnections,
         this.standardGears,
         this.customGears,
         this.startGears,
@@ -214,7 +216,7 @@ class SearchTab {
         return lowestCost;
     }
 
-    private getGearAssignmentCosts(availableGears: number[], distanceConstraint: number | null): GearAssignmentCostTable {
+    private getGearAssignmentCosts(availableGears: number[], distanceConstraint: number | null, include2DConnections: boolean): GearAssignmentCostTable {
         var result: GearAssignmentCostTable = {};
 
         for (var driverGear of availableGears) {
@@ -242,13 +244,26 @@ class SearchTab {
                 } else {
                     if (totalTeeth % 16 == 0) {
                         cost += ASSIGNMENT_COST_FULL_1D;
+                        if (include2DConnections) {
+                            violatesConstraint = false;
+                        }
                     } else if (totalTeeth % 16 == 8) {
                         cost += ASSIGNMENT_COST_HALF_1D;
+                        if (include2DConnections && distanceConstraint == 0.5) {
+                            violatesConstraint = false;
+                        }
                     }
                     if (driverGear % 8 == 4 && followerGear % 8 == 4) {
                         cost += ASSIGNMENT_COST_PERPENDICULAR;
                     }
-                    cost += this.get2DFitCost(driverGear, followerGear);
+                    var assignmentCost2D = this.get2DFitCost(driverGear, followerGear);
+                    cost += assignmentCost2D;
+
+                    if (include2DConnections && assignmentCost2D == ASSIGNMENT_COST_FULL_2D) {
+                        violatesConstraint = false;
+                    } else if (include2DConnections && assignmentCost2D < 0 && distanceConstraint == 0.5) {
+                        violatesConstraint = false;
+                    } 
                 }
 
                 if (violatesConstraint) {
@@ -293,7 +308,7 @@ class SearchTab {
             error: approximateSettings.value,
             targetRatio: Fraction.parse(this.searchParameters.targetRatio.getFromDOM()),
             gears: gears,
-            gearAssignmentCosts: this.getGearAssignmentCosts(gears, distanceConstraint),
+            gearAssignmentCosts: this.getGearAssignmentCosts(gears, distanceConstraint, this.searchParameters.include2DConnections.getFromDOM()),
             distanceConstraint: distanceConstraint,
             id: this.currentTaskId,
             maxNumberOfResults: this.searchParameters.limitCount.getFromDOM(),
