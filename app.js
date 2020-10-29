@@ -435,44 +435,37 @@ class SearchTab {
         }
         return lowestCost;
     }
-    getGearAssignmentCosts(availableGears, distanceConstraint, include2DConnections) {
+    getGearAssignmentCosts(task, include2DConnections) {
         var result = {};
+        var availableGears = task.gears.slice();
+        if (task.startSequence.length % 2 == 1 && !availableGears.includes(task.startSequence[task.startSequence.length - 1])) {
+            availableGears.push(task.startSequence[task.startSequence.length - 1]);
+        }
+        if (task.endSequence.length % 2 == 1 && !availableGears.includes(task.endSequence[0])) {
+            availableGears.push(task.endSequence[0]);
+        }
         for (var driverGear of availableGears) {
             result[driverGear] = {};
             for (var followerGear of availableGears) {
                 var cost = 0;
                 var totalTeeth = driverGear + followerGear;
-                var violatesConstraint = (distanceConstraint == null) ? false : (totalTeeth % 16 * distanceConstraint) != 0;
+                var violatesConstraint = (task.distanceConstraint == null) ? false : (totalTeeth % 16 * task.distanceConstraint) != 0;
                 if ((driverGear == 1 && followerGear == 1) || (driverGear == 140 && followerGear == 140)) {
                     cost = ASSIGNMENT_COST_FORBIDDEN;
                 }
-                else if (driverGear == 1 || followerGear == 1) {
-                    var remainingGear = totalTeeth - 1;
-                    if (remainingGear % 16 == 8 || remainingGear % 16 == 4) {
+                else {
+                    var distance = getGearDistance(driverGear, followerGear);
+                    if (distance % 1 == 0) {
                         cost += ASSIGNMENT_COST_FULL_1D;
                         violatesConstraint = false;
                     }
-                    else if (remainingGear % 16 == 0 || remainingGear % 16 == 12) {
+                    else if (distance % 0.5 == 0) {
                         cost += ASSIGNMENT_COST_HALF_1D;
-                        if (distanceConstraint == 0.5) {
+                        if (task.distanceConstraint == 0.5) {
                             violatesConstraint = false;
                         }
                     }
-                }
-                else {
-                    if (totalTeeth % 16 == 0) {
-                        cost += ASSIGNMENT_COST_FULL_1D;
-                        if (include2DConnections) {
-                            violatesConstraint = false;
-                        }
-                    }
-                    else if (totalTeeth % 16 == 8) {
-                        cost += ASSIGNMENT_COST_HALF_1D;
-                        if (include2DConnections && distanceConstraint == 0.5) {
-                            violatesConstraint = false;
-                        }
-                    }
-                    if (driverGear % 8 == 4 && followerGear % 8 == 4) {
+                    if (gearsFitPerpendicularly(driverGear, followerGear)) {
                         cost += ASSIGNMENT_COST_PERPENDICULAR;
                     }
                     var assignmentCost2D = this.get2DFitCost(driverGear, followerGear);
@@ -480,7 +473,7 @@ class SearchTab {
                     if (include2DConnections && assignmentCost2D == ASSIGNMENT_COST_FULL_2D) {
                         violatesConstraint = false;
                     }
-                    else if (include2DConnections && assignmentCost2D < 0 && distanceConstraint == 0.5) {
+                    else if (include2DConnections && assignmentCost2D < 0 && task.distanceConstraint == 0.5) {
                         violatesConstraint = false;
                     }
                 }
@@ -514,15 +507,13 @@ class SearchTab {
     startSearch() {
         var approximateSettings = this.searchParameters.error.getFromDOM();
         this.currentTaskId++;
-        var gears = this.getAvailableGears();
-        var distanceConstraint = this.searchParameters.gearDistance.getFromDOM();
         this.currentTask = {
             exact: !approximateSettings.checked,
             error: approximateSettings.value,
             targetRatio: Fraction.parse(this.searchParameters.targetRatio.getFromDOM()),
-            gears: gears,
-            gearAssignmentCosts: this.getGearAssignmentCosts(gears, distanceConstraint, this.searchParameters.include2DConnections.getFromDOM()),
-            distanceConstraint: distanceConstraint,
+            gears: this.getAvailableGears(),
+            gearAssignmentCosts: {},
+            distanceConstraint: this.searchParameters.gearDistance.getFromDOM(),
             id: this.currentTaskId,
             maxNumberOfResults: this.searchParameters.limitCount.getFromDOM(),
             excludePairsWithFixedGears: this.searchParameters.excludePairsWithFixedGears.getFromDOM(),
@@ -540,6 +531,7 @@ class SearchTab {
             this.currentTask.gearFactors[gear] = factorize(gear);
         }
         this.readFixedSequenceGears(this.currentTask);
+        this.currentTask.gearAssignmentCosts = this.getGearAssignmentCosts(this.currentTask, this.searchParameters.include2DConnections.getFromDOM());
         document.getElementById('resultcount').innerText = "0";
         document.getElementById('result-meta').style.display = 'block';
         document.getElementById('smallest-error-container').style.display = this.currentTask.exact ? 'none' : 'inline';
@@ -946,7 +938,7 @@ class FitGears {
         }
         var step = this.includeHalfUnitsCheckbox.checked ? 0.5 : 1.0;
         var foundAnything = false;
-        if ((this.gear1 - 4) % 8 == 0 && (this.gear2 - 4) % 8 == 0) {
+        if (gearsFitPerpendicularly(this.gear1, this.gear2)) {
             var resultElement = document.createElement('div');
             resultElement.classList.add('sequence');
             resultElement.innerText = "These gears can be connected using perpendicular axles.";
@@ -1192,20 +1184,29 @@ class Fraction {
         }
     }
 }
+function gearsFitPerpendicularly(gear1, gear2) {
+    return (gear1 - 4) % 8 == 0 && (gear2 - 4) % 8 == 0 && gear1 != 140 && gear2 != 140;
+}
+function getGearDistance(gear1, gear2) {
+    if (gear1 == 1 || gear2 == 1) {
+        var useNewStyleWormGear = (gear1 + gear2 + 11) % 8 == 0;
+        return (gear1 + gear2 - 1 + (useNewStyleWormGear ? 12 : 8)) / 16;
+    }
+    else if (gear1 == 140 || gear2 == 140) {
+        return (Math.max(gear1, gear2) - Math.min(gear1, gear2)) / 16;
+    }
+    else {
+        return (gear1 + gear2) / 16;
+    }
+}
 class Connection {
     constructor(gear1, gear2) {
-        this.useNewStyleWormGear = false;
         this.svg1 = null;
         this.svg2 = null;
         this.gear1 = gear1;
         this.gear2 = gear2;
-        if (gear1 == 1 || gear2 == 1) {
-            this.useNewStyleWormGear = (gear1 + gear2 + 11) % 8 == 0;
-            this.distance = (gear1 + gear2 - 1 + (this.useNewStyleWormGear ? 12 : 8)) / 16;
-        }
-        else {
-            this.distance = (gear1 + gear2) / 16;
-        }
+        this.useNewStyleWormGear = (gear1 + gear2 + 11) % 8 == 0;
+        this.distance = getGearDistance(gear1, gear2);
         this.fraction = new Fraction(gear1, gear2);
         this.factor = this.fraction.getDecimal();
     }
@@ -1273,7 +1274,7 @@ class Connection {
         }
         distanceSpan.title = "Distance between axes";
         distanceDiv.appendChild(distanceSpan);
-        if ((this.gear1 - 4) % 8 == 0 && (this.gear2 - 4) % 8 == 0) {
+        if (gearsFitPerpendicularly(this.gear1, this.gear2)) {
             var perpendicular = document.createElement("span");
             perpendicular.innerText = ' or perpendicular';
             perpendicular.title = 'The gears can be placed on perpendicular axles.';
@@ -1736,7 +1737,9 @@ function prepareResult(gearsPrimary, gearsSecondary, parameters) {
     // In addition to that, the result will contain the fixed start and end gear sequences set by the user.
     // There are three types of gear pairs: fixed and fixed, fixed and decided (at the end/beginning of an odd sized fixed sequence)
     // and pairs completely decided by the algorithm. Only th completely decided pairs can be reordered.
-    if (!parameters.gears.includes(1) && gearsPrimary.length + parameters.fixedPrimary.length != gearsSecondary.length + parameters.fixedSecondary.length) {
+    if ((!parameters.gears.includes(1) && gearsPrimary.length + parameters.fixedPrimary.length != gearsSecondary.length + parameters.fixedSecondary.length)
+        || (parameters.excludePairsWithFixedGears && parameters.fixedPrimary.includes(1) && gearsPrimary.length + parameters.fixedPrimary.length > gearsSecondary.length + parameters.fixedSecondary.length)
+        || (parameters.excludePairsWithFixedGears && parameters.fixedSecondary.includes(1) && gearsPrimary.length + parameters.fixedPrimary.length < gearsSecondary.length + parameters.fixedSecondary.length)) {
         return null;
     }
     // Add worm gears if needed
