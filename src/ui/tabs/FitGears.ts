@@ -3,6 +3,16 @@
 
 type HelperGearData = {gear: number, x: number, y: number, distance: number, targetDistance: number};
 
+function getConnectionScore(x: number, y: number): number {
+    if (x % 1 == 0 && y % 1 == 0) {
+        return 3;
+    } else if (x % 1 == 0 || y % 1 == 0) {
+        return 1;
+    } else {
+        return 0;
+    }
+}
+
 class FitGears {
     private gear1: number | null = null;
     private gear2: number | null = null;
@@ -14,6 +24,8 @@ class FitGears {
     private readonly maximumErrorTextbox: HTMLInputElement;
 
     private suppressUpdate: boolean = false;
+
+    private resultElements: Array<[HTMLDivElement, number]> = [];
 
     constructor() {
         this.gear1Button = document.getElementById("gear-button1") as HTMLButtonElement;
@@ -110,6 +122,7 @@ class FitGears {
         var step = this.includeHalfUnitsCheckbox.checked ? 0.5 : 1.0;
 
         var foundAnything = false;
+        this.resultElements = [];
 
         if (gearsFitPerpendicularly(this.gear1, this.gear2)) {
             var resultElement = document.createElement('div');
@@ -136,6 +149,7 @@ class FitGears {
         }
 
         var foundSoultionWithHelperGear = false;
+        this.resultElements = [];
 
         if (this.gear1 != 140 && this.gear2 != 140) {
             for (var helperGear of HELPER_GEARS) {
@@ -198,8 +212,6 @@ class FitGears {
         if (this.gear1 == null || this.gear2 == null) {
             return;
         }
-
-        var error = totalDistance - targetDistance;
 
         var resultElement = document.createElement('div');
         resultElement.classList.add('sequence');
@@ -277,6 +289,23 @@ class FitGears {
             resultElement.appendChild(resultText);
         }
 
+        var score = getConnectionScore(x, y);
+        if (helperGearData != null) {
+            score *= 4;
+            score += getConnectionScore(helperGearData.x, helperGearData.y);
+            score += getConnectionScore(x - helperGearData.x, y - helperGearData.y);
+            score -= helperGearData.gear / 100; // Prefer smaller helper gears if all else is equal
+        }
+
+        for (var index = 0; index < this.resultElements.length; index++) {
+            if (score > this.resultElements[index][1]) {
+                this.resultsContainer.insertBefore(resultElement, this.resultElements[index][0]);
+                this.resultElements.splice(index, 0, [resultElement, score]);
+                return;
+            }
+        }
+
+        this.resultElements.push([resultElement, score]);
         this.resultsContainer.appendChild(resultElement);
     }
 
