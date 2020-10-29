@@ -189,6 +189,10 @@ class SearchTab {
 
     private get2DFitCost(gear1: number, gear2: number): number {
         var targetDistance = (gear1 + gear2) / 16;
+        if (gear1 == 140 || gear2 == 140) {
+            targetDistance -= (gear1 + gear2 - 140) * 2 / 16;
+        }
+        
         var maxError = DEFAULT_FIT_ERROR / 8;
 
         var lowestCost = 0;
