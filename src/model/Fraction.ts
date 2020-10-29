@@ -16,7 +16,7 @@ class Fraction {
         }
 
         if (reduce) {
-            var n = greatestCommonDenominator(this.a, this.b);
+            const n = greatestCommonDenominator(this.a, this.b);
             this.a /= n;
             this.b /= n;
         }
@@ -43,24 +43,24 @@ class Fraction {
     }
 
     public createDiv() {
-        var result = document.createElement("div");
+        const result = document.createElement("div");
         result.classList.add("fraction");
 
         if (this.b == 1) {
-            var integer = document.createElement("div");
+            let integer = document.createElement("div");
             integer.classList.add("integer");
             integer.innerText = this.a.toString();
             result.appendChild(integer);
         } else {
-            var container = document.createElement("div");
+            const container = document.createElement("div");
             container.classList.add("fraction-container");
             
-            var nominator = document.createElement("div");
+            const nominator = document.createElement("div");
             nominator.classList.add("nominator");
             nominator.innerText = this.a.toString();
             container.appendChild(nominator);
 
-            var denominator = document.createElement("div");
+            const denominator = document.createElement("div");
             denominator.classList.add("denominator");
             denominator.innerText = this.b.toString();
             container.appendChild(denominator);
@@ -68,7 +68,7 @@ class Fraction {
             result.appendChild(container);
         }
 
-        var decimal = document.createElement("div");
+        const decimal = document.createElement("div");
         decimal.classList.add("decimal");
         decimal.innerText = this.getDecimal(5).toString();
         result.appendChild(decimal);
@@ -77,7 +77,7 @@ class Fraction {
 
     public static parse(value: string): Fraction {
         if (value.includes('/')) {
-            var parts = value.split('/');
+            const parts = value.split('/');
             return new Fraction(Number.parseFloat(parts[0].trim()), Number.parseFloat(parts[1].trim()));
         } else {
             return new Fraction(Number.parseFloat(value.trim()));

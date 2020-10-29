@@ -31,11 +31,11 @@ class GearSVGGenerator {
     }
 
     createDecoration() {
-        var xExtension = 0;
-        var yExtension = 0;
-        var extensionSize = 0.5;
+        let xExtension = 0;
+        let yExtension = 0;
+        let extensionSize = 0.5;
 
-        var hasAxleHole = true;
+        let hasAxleHole = true;
 
         switch (this.teeth) {
             case 20:
@@ -79,8 +79,8 @@ class GearSVGGenerator {
                 break;
             case 40:
                 yExtension = 2;
-                for (var x = -1; x < 2; x += 2) {
-                    for (var y = -1; y < 2; y += 2) {
+                for (let x = -1; x < 2; x += 2) {
+                    for (let y = -1; y < 2; y += 2) {
                         this.addCircle(x * 4, y * 4);
                         this.addCircle(x * 12, y * 4);
                         this.addCircle(x * 4, y * 12);
@@ -117,16 +117,16 @@ class GearSVGGenerator {
     }
 
     private createTeeth(n: number, cut=false, invert=false) {
-        var vertices: Array<[number, number]> = [];
+        const vertices: Array<[number, number]> = [];
 
-        var radiusPitch = n / 2;
-        var radiusInner = radiusPitch - 1.2 * (invert ? -1 : 1);
-        var radiusOuter = radiusPitch + 0.85 * (invert ? -1 : 1);
-        var radiusIntermediate = radiusInner + 0.9 * (invert ? -1 : 1);
+        const radiusPitch = n / 2;
+        const radiusInner = radiusPitch - 1.2 * (invert ? -1 : 1);
+        const radiusOuter = radiusPitch + 0.85 * (invert ? -1 : 1);
+        const radiusIntermediate = radiusInner + 0.9 * (invert ? -1 : 1);
     
-        for (var i = 0; i < n; i++) {
-            var fraction = 2 * Math.PI / n;
-            var angle = i * fraction;
+        for (let i = 0; i < n; i++) {
+            const fraction = 2 * Math.PI / n;
+            const angle = i * fraction;
     
             vertices.push(getOnCircle(angle - fraction * 0.29, radiusInner));
             vertices.push(getOnCircle(angle - fraction * 0.25, radiusIntermediate));
@@ -145,7 +145,7 @@ class GearSVGGenerator {
 
     addPolygon(vertices: Array<[number, number]>) {    
         this.pathStrings.push("M " + vertices[0][0] + " " + vertices[0][1]);
-        for (var i = 1; i < vertices.length; i++) {
+        for (let i = 1; i < vertices.length; i++) {
             const vertex = vertices[i];
             this.pathStrings.push("L " + vertex[0] + " " + vertex[1]);
         }
@@ -160,7 +160,7 @@ class GearSVGGenerator {
     }
 
     createCutout(radiusInner: number, radiusOuter: number, margin=0.8) {
-        const inner = Math.sqrt(Math.pow(radiusInner, 2.0) - Math.pow(margin, 2.0));
+        let inner = Math.sqrt(Math.pow(radiusInner, 2.0) - Math.pow(margin, 2.0));
         const outer = Math.sqrt(Math.pow(radiusOuter, 2.0) - Math.pow(margin, 2.0));
 
         this.pathStrings.push("M " + margin + ", " + outer);
@@ -192,7 +192,7 @@ class GearSVGGenerator {
         const a = 1.78 / 2;
         const b = 4.78 / 2;
         const c = extensionSize / 2;
-        var vertices: Array<[number, number]> = [
+        const vertices: Array<[number, number]> = [
             [x - b, y - a],
 
             [x - b, y - c],
@@ -235,8 +235,8 @@ class GearSVGGenerator {
     }
 
     private createSVG(): SVGSVGElement {
-        var svg = document.createElementNS(SVG_NAMESPACE, "svg");    
-        var path = document.createElementNS(SVG_NAMESPACE, "path");    
+        const svg = document.createElementNS(SVG_NAMESPACE, "svg");    
+        const path = document.createElementNS(SVG_NAMESPACE, "path");    
     
         path.setAttribute("d", this.pathStrings.join(' '));
     
@@ -259,10 +259,10 @@ class GearSVGGenerator {
         const stepCount = newStyle ? 4.8 : 7;
         const yStep = 3.2;
     
-        var vertices = [];
+        const vertices = [];
     
-        var teethOffset = newStyle ? -0.34 : -0.125;
-        for (var i = 0; i < stepCount; i++) {
+        const teethOffset = newStyle ? -0.34 : -0.125;
+        for (let i = 0; i < stepCount; i++) {
             vertices.push([-rxOuter, -ry + i * yStep + yStep * (0.0 + teethOffset)]);
             vertices.push([-rxOuter, -ry + i * yStep + yStep * (0.25 + teethOffset)]);
             vertices.push([-rxInner, -ry + i * yStep + yStep * (0.5 + teethOffset)]);
@@ -274,7 +274,7 @@ class GearSVGGenerator {
         vertices.push([-rxOuter, -ry + stepCount * yStep]);
         vertices.push([rxInner, -ry + stepCount * yStep]);
     
-        for (var i = 0; i < stepCount; i++) {
+        for (let i = 0; i < stepCount; i++) {
             vertices.push([rxInner, -ry + (stepCount - i) * yStep - yStep * 0.125]);
             vertices.push([+rxOuter, -ry + (stepCount - i) * yStep - yStep * 0.375]);
             vertices.push([rxOuter, -ry + (stepCount - i) * yStep - yStep * 0.625]);
@@ -288,13 +288,13 @@ class GearSVGGenerator {
         
         vertices.push([+rxInner, -ry]);
     
-        var stringVertices = [];
-        for (var vertex of vertices) {
+        const stringVertices = [];
+        for (const vertex of vertices) {
             stringVertices.push(vertex[0] + "," + vertex[1]);
         }
     
-        var svg = document.createElementNS(SVG_NAMESPACE, "svg");    
-        var polygon = document.createElementNS(SVG_NAMESPACE, "polygon");    
+        const svg = document.createElementNS(SVG_NAMESPACE, "svg");    
+        const polygon = document.createElementNS(SVG_NAMESPACE, "polygon");    
     
         polygon.setAttribute("points", stringVertices.join(' '));
     

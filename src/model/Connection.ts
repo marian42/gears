@@ -4,7 +4,7 @@ function gearsFitPerpendicularly(gear1: number, gear2: number): boolean {
 
 function getGearDistance(gear1: number, gear2: number): number {
     if (gear1 == 1 || gear2 == 1) {
-        var useNewStyleWormGear = (gear1 + gear2 + 11) % 8 == 0;
+        const useNewStyleWormGear = (gear1 + gear2 + 11) % 8 == 0;
         return (gear1 + gear2 - 1 + (useNewStyleWormGear ? 12 : 8)) / 16;
     } else if (gear1 == 140 || gear2 == 140) {
         return (Math.max(gear1, gear2) - Math.min(gear1, gear2)) / 16;
@@ -37,13 +37,13 @@ class Connection {
     }
 
     public createDiv(animate=true, animationDuration=4, reverse=false) {
-        var result = document.createElement("div");
+        const result = document.createElement("div");
         result.setAttribute("class", "connection");
     
-        var table = document.createElement("table");
-        var row = document.createElement("tr");
+        const table = document.createElement("table");
+        let row = document.createElement("tr");
     
-        var cell = document.createElement("td");
+        let cell = document.createElement("td");
         if (this.gear1 == 1) {
             this.svg1 = GearSVGGenerator.createWormGearSVG(this.useNewStyleWormGear);
             cell.appendChild(this.svg1);
@@ -92,8 +92,8 @@ class Connection {
         table.appendChild(row);
         result.appendChild(table);
     
-        var distanceDiv = document.createElement("div");
-        var distanceSpan = document.createElement("span");
+        const distanceDiv = document.createElement("div");
+        const distanceSpan = document.createElement("span");
         distanceDiv.classList.add("distance");
         distanceSpan.innerText = this.distance + (this.distance == 1 ? " unit" : " units");
         if (this.distance % 1 == 0) {
@@ -106,19 +106,19 @@ class Connection {
         distanceSpan.title = "Distance between axes";
         distanceDiv.appendChild(distanceSpan);
         if (gearsFitPerpendicularly(this.gear1, this.gear2)) {
-            var perpendicular = document.createElement("span");
+            const perpendicular = document.createElement("span");
             perpendicular.innerText = ' or perpendicular';
             perpendicular.title = 'The gears can be placed on perpendicular axles.';
             distanceDiv.appendChild(perpendicular);
         }
 
         if (this.gear1 != 1 && this.gear2 != 1) {
-            var solutionCount = 0;
-            var fullSolution = null;
-            var halfSolution = null;
+            let solutionCount = 0;
+            let fullSolution: [number, number] | null = null;
+            let halfSolution: [number, number] | null = null;
 
-            var radius1 = this.gear1 / 16;
-            var radius2 = this.gear2 / 16;
+            let radius1 = this.gear1 / 16;
+            let radius2 = this.gear2 / 16;
 
             if (this.gear1 == 140) {
                 radius1 -= radius2 * 2;
@@ -126,22 +126,22 @@ class Connection {
                 radius2 -= radius1 * 2;
             }
 
-            var targetDistance = radius1 + radius2;
-            var maxError = DEFAULT_FIT_ERROR / 8;
+            const targetDistance = radius1 + radius2;
+            const maxError = DEFAULT_FIT_ERROR / 8;
 
-            var step = 0.5;
+            const step = 0.5;
             if (searchTab !== null && searchTab!.currentTask !== null) {
                 searchTab!.currentTask!.distanceConstraint == 1 ? 1 : 0.5;
             }
 
-            for (var y = 0; y <= Math.ceil(targetDistance); y += step) {
-                var x = Math.round((Math.sqrt(Math.pow(targetDistance, 2) - Math.pow(y, 2))) / step) * step;
+            for (let y = 0; y <= Math.ceil(targetDistance); y += step) {
+                const x = Math.round((Math.sqrt(Math.pow(targetDistance, 2) - Math.pow(y, 2))) / step) * step;
                 if (y == 0 || Number.isNaN(x) || x < y) {
                     continue;
                 }
     
-                var totalDistance = Math.sqrt(Math.pow(x, 2) + Math.pow(y, 2));
-                var error = totalDistance - targetDistance;
+                const totalDistance = Math.sqrt(Math.pow(x, 2) + Math.pow(y, 2));
+                const error = totalDistance - targetDistance;
                 if (Math.abs(error) > maxError) {
                     continue;
                 }
@@ -156,11 +156,11 @@ class Connection {
             }
 
             if (solutionCount > 0) {
-                var orSpan = document.createElement("span");
+                const orSpan = document.createElement("span");
                 orSpan.innerText = " or ";
                 orSpan.classList.add("result-bad");
                 distanceDiv.appendChild(orSpan);
-                var fitSpan = document.createElement("span");
+                const fitSpan = document.createElement("span");
                 if (fullSolution != null) {
                     fitSpan.innerText = fullSolution[0] + " ✕ " + fullSolution[1];
                     solutionCount--;
@@ -197,7 +197,7 @@ class Connection {
     }
 
     private showFitGearsTab() {
-        var includeHalfUnits = true;
+        let includeHalfUnits = true;
         if (searchTab !== null && searchTab.currentTask !== null) {
             includeHalfUnits = searchTab!.currentTask!.distanceConstraint != 1;
         }

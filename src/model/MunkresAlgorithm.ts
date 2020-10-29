@@ -20,7 +20,7 @@ class MunkresAlgorithm {
 
     constructor(costMatrix: Matrix) {
         this.matrix = [];
-        for (var row of costMatrix) {
+        for (const row of costMatrix) {
             this.matrix.push(row.slice());
         }
         
@@ -28,29 +28,29 @@ class MunkresAlgorithm {
 
         this.rowsCovered = [];
         this.columnsCovered = [];
-        for (var i = 0; i < this.size; i++) {
+        for (let i = 0; i < this.size; i++) {
             this.rowsCovered.push(false);
             this.columnsCovered.push(false);
         }
         this.path = [];
-        for (var i = 0; i < this.size * 2; i++) {
+        for (let i = 0; i < this.size * 2; i++) {
             this.path.push([0, 0]);
         }
         this.zero0 = [0, 0];
 
         this.state = new Array<Array<State>>(this.size);
-        for (var i = 0; i < this.size; i++) {
+        for (let i = 0; i < this.size; i++) {
             this.state[i] = new Array<State>(this.size);
-            for (var j = 0; j < this.size; j++) {
+            for (let j = 0; j < this.size; j++) {
                 this.state[i][j] = State.None;
             }
         }
     };
 
     run(): Array<[number, number]> {
-        var nextStep = 1;
+        let nextStep = 1;
 
-        var stepImplementations: {[step: number]: () => number } = [
+        const stepImplementations: {[step: number]: () => number } = [
             this.step1,
             this.step2,
             this.step3,
@@ -63,9 +63,9 @@ class MunkresAlgorithm {
             nextStep = stepImplementations[nextStep - 1].apply(this);
         }
 
-        var selectedIndices: Array<[number, number]> = [];
-        for (var i = 0; i < this.size; i++) {
-            for (var j = 0; j < this.size; j++) {
+        const selectedIndices: Array<[number, number]> = [];
+        for (let i = 0; i < this.size; i++) {
+            for (let j = 0; j < this.size; j++) {
                 if (this.state[i][j] == State.Starred) {
                     selectedIndices.push([i, j]);
                 }
@@ -76,9 +76,9 @@ class MunkresAlgorithm {
     }
     
     private step1() {
-        for (var i = 0; i < this.size; i++) {
-            var rowMinimum = Math.min.apply(Math, this.matrix[i]);
-            for (var j = 0; j < this.size; j++) {
+        for (let i = 0; i < this.size; i++) {
+            const rowMinimum = Math.min.apply(Math, this.matrix[i]);
+            for (let j = 0; j < this.size; j++) {
                 this.matrix[i][j] -= rowMinimum;
             }
         }
@@ -87,8 +87,8 @@ class MunkresAlgorithm {
     };
 
     private step2() {
-        for (var i = 0; i < this.size; i++) {
-            for (var j = 0; j < this.size; j++) {
+        for (let i = 0; i < this.size; i++) {
+            for (let j = 0; j < this.size; j++) {
                 if (this.matrix[i][j] == 0 && !this.rowsCovered[i] && !this.columnsCovered[j]) {
                     this.state[i][j] = State.Starred;
                     this.rowsCovered[i] = true;
@@ -104,10 +104,10 @@ class MunkresAlgorithm {
     };
 
     private step3() {
-        var count = 0;
+        let count = 0;
 
-        for (var i = 0; i < this.size; i++) {
-            for (var j = 0; j < this.size; j++) {
+        for (let i = 0; i < this.size; i++) {
+            for (let j = 0; j < this.size; j++) {
                 if (this.state[i][j] == State.Starred && this.columnsCovered[j] == false) {
                     this.columnsCovered[j] = true;
                     count++;
@@ -124,7 +124,7 @@ class MunkresAlgorithm {
 
     private step4() {
         while (true) {
-            var [row, column] = this.findAZero();
+            let [row, column] = this.findAZero();
 
             if (row < 0) {
                 return 6;
@@ -132,7 +132,7 @@ class MunkresAlgorithm {
 
             this.state[row][column] = State.Primed;
 
-            var starredColumn = this.findStarInRow(row);
+            const starredColumn = this.findStarInRow(row);
             if (starredColumn >= 0) {
                 column = starredColumn;
                 this.rowsCovered[row] = true;
@@ -145,15 +145,15 @@ class MunkresAlgorithm {
     };
 
     private step5() {
-        var count = 0;
+        let count = 0;
 
         this.path[count][0] = this.zero0[0];
         this.path[count][1] = this.zero0[1];
 
-        var done = false;
+        let done = false;
 
         while (!done) {
-            var row = this.findStarInColumn(this.path[count][1]);
+            const row = this.findStarInColumn(this.path[count][1]);
             if (row >= 0) {
                 count++;
                 this.path[count][0] = row;
@@ -163,7 +163,7 @@ class MunkresAlgorithm {
             }
 
             if (!done) {
-                var column = this.findPrimeInRow(this.path[count][0]);
+                const column = this.findPrimeInRow(this.path[count][0]);
                 count++;
                 this.path[count][0] = this.path[count - 1][0];
                 this.path[count][1] = column;
@@ -177,10 +177,10 @@ class MunkresAlgorithm {
     };
     
     private step6() {
-        var smallestUncovered = this.findSmallestUncovered();
+        const smallestUncovered = this.findSmallestUncovered();
 
-        for (var i = 0; i < this.size; i++) {
-            for (var j = 0; j < this.size; j++) {
+        for (let i = 0; i < this.size; i++) {
+            for (let j = 0; j < this.size; j++) {
                 if (this.rowsCovered[i]) {
                     this.matrix[i][j] += smallestUncovered;
                 }
@@ -194,10 +194,10 @@ class MunkresAlgorithm {
     };
 
     private findSmallestUncovered() {
-        var result = ASSIGNMENT_COST_FORBIDDEN;
+        let result = ASSIGNMENT_COST_FORBIDDEN;
 
-        for (var i = 0; i < this.size; i++) {
-            for (var j = 0; j < this.size; j++) {
+        for (let i = 0; i < this.size; i++) {
+            for (let j = 0; j < this.size; j++) {
                 if (!this.rowsCovered[i] && !this.columnsCovered[j] && result > this.matrix[i][j]) {
                     result = this.matrix[i][j];
                 }
@@ -208,8 +208,8 @@ class MunkresAlgorithm {
     };
     
     private findAZero(): [number, number] {
-        for (var i = 0; i < this.size; ++i) {
-            for (var j = 0; j < this.size; ++j) {
+        for (let i = 0; i < this.size; i++) {
+            for (let j = 0; j < this.size; j++) {
                 if (this.matrix[i][j] == 0 && !this.rowsCovered[i] && !this.columnsCovered[j]) {
                     return [i, j];
                 }
@@ -220,7 +220,7 @@ class MunkresAlgorithm {
     };
 
     private findStarInRow(row: number) {
-        for (var j = 0; j < this.size; j++) {
+        for (let j = 0; j < this.size; j++) {
             if (this.state[row][j] == State.Starred) {
                 return j;
             }
@@ -230,7 +230,7 @@ class MunkresAlgorithm {
     };
 
     private findStarInColumn(column: number) {
-        for (var i = 0; i < this.size; i++) {
+        for (let i = 0; i < this.size; i++) {
             if (this.state[i][column] == State.Starred) {
                 return i;
             }
@@ -240,7 +240,7 @@ class MunkresAlgorithm {
     };
 
     private findPrimeInRow(row: number) {
-        for (var j = 0; j < this.size; j++) {
+        for (let j = 0; j < this.size; j++) {
             if (this.state[row][j] == State.Primed) {
                 return j;
             }
@@ -250,22 +250,22 @@ class MunkresAlgorithm {
     };
 
     private convertPath(count: number) {
-        for (var i = 0; i <= count; i++) {
-            var [x, y] = this.path[i];
+        for (let i = 0; i <= count; i++) {
+            const [x, y] = this.path[i];
             this.state[x][y] = (this.state[x][y] == State.Starred) ? State.None : State.Starred;
         }
     };
 
     private resetCovered() {
-        for (var i = 0; i < this.size; i++) {
+        for (let i = 0; i < this.size; i++) {
             this.rowsCovered[i] = false;
             this.columnsCovered[i] = false;
         }
     };
 
     private resetPrimes() {
-        for (var i = 0; i < this.size; i++) {
-            for (var j = 0; j < this.size; j++) {
+        for (let i = 0; i < this.size; i++) {
+            for (let j = 0; j < this.size; j++) {
                 if (this.state[i][j] == State.Primed) {
                     this.state[i][j] = State.None;
                 }

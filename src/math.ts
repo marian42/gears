@@ -21,9 +21,9 @@ function isApproximatelyInteger(number: number) {
 }
 
 function factorize(number: number): number[] {
-    var result: number[] = [];
-    for (var i = 2; i <= number; i++) {
-        var value = 0;
+    const result: number[] = [];
+    for (let i = 2; i <= number; i++) {
+        let value = 0;
         while (number % i == 0) {
             value += 1;
             number /= i;

@@ -16,7 +16,7 @@ abstract class SearchParameter<T> {
     protected abstract fromString(value: string): T;
 
     public getUrlKeyValuePairFromDOM(): string | null {
-        var value = this.getFromDOM();
+        const value = this.getFromDOM();
         if (JSON.stringify(value) == JSON.stringify(this.defaultValue)) {
             return null;
         } else {
@@ -116,10 +116,10 @@ class GearListSearchParameter extends InputElementSearchParameter<number[]> {
         return value.join(", ");
     }
     protected fromString(value: string): number[] {
-        var items = value.split(",");
-        var result: number[] = [];
-        for (var item of items) {
-            var gear = Number.parseInt(item.trim());
+        let items = value.split(",");
+        const result: number[] = [];
+        for (let item of items) {
+            const gear = Number.parseInt(item.trim());
             if (!Number.isNaN(gear)) {
                 result.push(gear);
             }
@@ -160,7 +160,7 @@ class CheckboxedSearchParameter<T> extends SearchParameter<CheckableValue<T>> {
     }
 
     public getUrlKeyValuePairFromDOM(): string | null {
-        var value = this.getFromDOM();
+        const value = this.getFromDOM();
         if (!value.checked) {
             return null;
         } else if (JSON.stringify(value.value) == JSON.stringify(this.targetSearchParameter.defaultValue)) {

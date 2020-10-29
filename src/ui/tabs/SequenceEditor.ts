@@ -48,7 +48,7 @@ class SequenceEditor {
         this.clear();
         this.updateAnimation();
 
-        var sequenceEditor = this
+        const sequenceEditor = this
         this.addButton.addEventListener('click', function(event) {
             gearPicker.show(sequenceEditor.addGear.bind(sequenceEditor), sequenceEditor.addButtonContainer);
         });
@@ -73,7 +73,7 @@ class SequenceEditor {
     private addGear(gear: number) {
         if (this.danglingGear == null) {
             this.danglingGear = gear;
-            var div = new Connection(gear, 1).createDiv(this.animationEnabled, this.animationDuration / this.resultFraction.getDecimal(), this.connections.length % 2 == 1);
+            const div = new Connection(gear, 1).createDiv(this.animationEnabled, this.animationDuration / this.resultFraction.getDecimal(), this.connections.length % 2 == 1);
             div.classList.add('hide-second');
             
             if (this.connections.length >= 1) {
@@ -81,7 +81,7 @@ class SequenceEditor {
             }            
             this.connectionContainer.appendChild(div);
         } else {
-            var connection = new Connection(this.danglingGear, gear);
+            const connection = new Connection(this.danglingGear, gear);
             this.danglingGear = null;
 
             this.connectionContainer.removeChild(this.connectionContainer.lastChild!);
@@ -97,8 +97,8 @@ class SequenceEditor {
     }
 
     private getGears() {
-        var gears = [];
-        for (var connection of this.connections) {
+        const gears = [];
+        for (const connection of this.connections) {
             gears.push(connection.gear1);
             gears.push(connection.gear2);
         }
@@ -124,16 +124,16 @@ class SequenceEditor {
 
     public setSequence(gears: number[]) {
         this.clear();
-        for (var gear of gears) {
+        for (const gear of gears) {
             this.addGear(gear);
         }
     }
 
     private updateAnimation() {
-        var fraction = this.startFraction;
+        let fraction = this.startFraction;
         this.animationEnabled = this.animateCheckbox.checked;
         this.animationDuration = 60 / parseFloat(this.animateRpmInput.value);
-        for (var connection of this.connections) {
+        for (const connection of this.connections) {
             connection.updateAnimation(this.animationEnabled, this.animationDuration / fraction.getDecimal());
             fraction = fraction.multiply(connection.fraction);
         }
@@ -144,10 +144,10 @@ class SequenceEditor {
     }
 
     loadUrlParameters(parameters: ParsedUrlParameters) {
-        var gearStrings = parameters["seq"].split(',');
-        var gears = [];
-        for (var gearString of gearStrings) {
-            var gear = parseInt(gearString.trim());
+        const gearStrings = parameters["seq"].split(',');
+        const gears = [];
+        for (const gearString of gearStrings) {
+            const gear = parseInt(gearString.trim());
             if (Number.isInteger(gear)) {
                 gears.push(gear);
             }

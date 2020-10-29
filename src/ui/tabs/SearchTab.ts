@@ -64,15 +64,15 @@ class SearchParameters {
     ];
 
     public applyUrlParametersToForm(parameters: ParsedUrlParameters) {
-        for (var item of this.items) {
+        for (let item of this.items) {
             item.setFromUrl(parameters);
         }
     }
 
     public getUrlParametersFromForm(): string {
-        var parts: string[] = [];
-        for (var item of this.items) {
-            var part = item.getUrlKeyValuePairFromDOM();
+        const parts: string[] = [];
+        for (let item of this.items) {
+            const part = item.getUrlKeyValuePairFromDOM();
             if (part !== null) {
                 parts.push(part);
             }
@@ -84,7 +84,7 @@ class SearchParameters {
     }
 
     public advancedParametersUsed(parameters: ParsedUrlParameters): boolean {
-        for (var item of this.advancedParameters) {
+        for (let item of this.advancedParameters) {
             if (!item.isDefault(parameters)) {
                 return true;
             }
@@ -93,7 +93,7 @@ class SearchParameters {
     }
 
     public applyDefaults() {
-        for (var item of this.items) {
+        for (let item of this.items) {
             item.setInDom(item.defaultValue);
         }
     }
@@ -128,14 +128,14 @@ class SearchTab {
     }
 
     private getAvailableGears(): number[] {
-        var result: number[] = [];
+        let result: number[] = [];
 
-        var standardGears = this.searchParameters.standardGears.getFromDOM();
+        const standardGears = this.searchParameters.standardGears.getFromDOM();
         if (standardGears.checked) {
             result = result.concat(standardGears.value);
         }
     
-        var customGears = this.searchParameters.customGears.getFromDOM();
+        const customGears = this.searchParameters.customGears.getFromDOM();
         if (customGears.checked) {
             result = result.concat(customGears.value);
         }
@@ -145,8 +145,8 @@ class SearchTab {
 
     private onReceiveWorkerMessage(event: MessageEvent) {
         if (event.data.id == this.currentTaskId) {
-            var connections = [];
-            for (var [gear1, gear2] of event.data.sequence) {
+            const connections = [];
+            for (const [gear1, gear2] of event.data.sequence) {
                 connections.push(new Connection(gear1, gear2));
             }
             this.currentTask!.solutionList!.add(new Solution(connections, this.currentTask!));
@@ -165,7 +165,7 @@ class SearchTab {
         currentTask.fixedSecondary = [];
         currentTask.fixedPrimaryFactor = 1;
         currentTask.fixedSecondaryFactor = 1;
-        for (var i = 0; i < currentTask.startSequence.length; i++) {
+        for (let i = 0; i < currentTask.startSequence.length; i++) {
             if (i % 2 == 0) {
                 currentTask.fixedPrimary.push(currentTask.startSequence[i]);
                 currentTask.fixedPrimaryFactor *= currentTask.startSequence[i];
@@ -174,7 +174,7 @@ class SearchTab {
                 currentTask.fixedSecondaryFactor *= currentTask.startSequence[i];
             }
         }
-        for (var i = 0; i < currentTask.endSequence.length; i++) {
+        for (let i = 0; i < currentTask.endSequence.length; i++) {
             if ((currentTask.endSequence.length - 1 - i) % 2 == 1) {
                 currentTask.fixedPrimary.push(currentTask.endSequence[i]);
                 currentTask.fixedPrimaryFactor *= currentTask.endSequence[i];
@@ -188,23 +188,23 @@ class SearchTab {
     }
 
     private get2DFitCost(gear1: number, gear2: number): number {
-        var targetDistance = (gear1 + gear2) / 16;
+        let targetDistance = (gear1 + gear2) / 16;
         if (gear1 == 140 || gear2 == 140) {
             targetDistance -= (gear1 + gear2 - 140) * 2 / 16;
         }
-        
-        var maxError = DEFAULT_FIT_ERROR / 8;
 
-        var lowestCost = 0;
+        const maxError = DEFAULT_FIT_ERROR / 8;
 
-        for (var y = 0; y <= Math.ceil(targetDistance); y += 0.5) {
-            var x = Math.round((Math.sqrt(Math.pow(targetDistance, 2) - Math.pow(y, 2))) / 0.5) * 0.5;
+        let lowestCost = 0;
+
+        for (let y = 0; y <= Math.ceil(targetDistance); y += 0.5) {
+            const x = Math.round((Math.sqrt(Math.pow(targetDistance, 2) - Math.pow(y, 2))) / 0.5) * 0.5;
             if (x == 0 || y == 0 || Number.isNaN(x) || x < y) {
                 continue;
             }
 
-            var totalDistance = Math.sqrt(Math.pow(x, 2) + Math.pow(y, 2));
-            var error = totalDistance - targetDistance;
+            const totalDistance = Math.sqrt(Math.pow(x, 2) + Math.pow(y, 2));
+            const error = totalDistance - targetDistance;
             if (Math.abs(error) > maxError) {
                 continue;
             }
@@ -221,8 +221,8 @@ class SearchTab {
     }
 
     private getGearAssignmentCosts(task: Task, include2DConnections: boolean): GearAssignmentCostTable {
-        var result: GearAssignmentCostTable = {};
-        var availableGears = task.gears.slice();
+        const result: GearAssignmentCostTable = {};
+        const availableGears = task.gears.slice();
 
         if (task.startSequence.length % 2 == 1 && !availableGears.includes(task.startSequence[task.startSequence.length - 1])) {
             availableGears.push(task.startSequence[task.startSequence.length - 1]);
@@ -231,19 +231,19 @@ class SearchTab {
             availableGears.push(task.endSequence[0]);
         }
 
-        for (var driverGear of availableGears) {
+        for (const driverGear of availableGears) {
             result[driverGear] = {};
 
-            for (var followerGear of availableGears) {
-                var cost = 0;
-                var totalTeeth = driverGear + followerGear;
+            for (const followerGear of availableGears) {
+                let cost = 0;
+                const totalTeeth = driverGear + followerGear;
 
-                var violatesConstraint = (task.distanceConstraint == null) ? false : (totalTeeth % 16 * task.distanceConstraint) != 0; 
+                let violatesConstraint = (task.distanceConstraint == null) ? false : (totalTeeth % 16 * task.distanceConstraint) != 0; 
 
                 if ((driverGear == 1 && followerGear == 1) || (driverGear == 140 && followerGear == 140)) {
                     cost = ASSIGNMENT_COST_FORBIDDEN;
                 } else {
-                    var distance = getGearDistance(driverGear, followerGear);
+                    const distance = getGearDistance(driverGear, followerGear);
                     if (distance % 1 == 0) {
                         cost += ASSIGNMENT_COST_FULL_1D;
                         violatesConstraint = false;
@@ -258,7 +258,7 @@ class SearchTab {
                         cost += ASSIGNMENT_COST_PERPENDICULAR;
                     }
 
-                    var assignmentCost2D = this.get2DFitCost(driverGear, followerGear);
+                    const assignmentCost2D = this.get2DFitCost(driverGear, followerGear);
                     cost += assignmentCost2D;
 
                     if (include2DConnections && assignmentCost2D == ASSIGNMENT_COST_FULL_2D) {
@@ -279,7 +279,7 @@ class SearchTab {
     }
 
     private handleTaskTimeout() {
-        var taskId = this.currentTaskId;
+        const taskId = this.currentTaskId;
         setTimeout(function(this: SearchTab) {
             if (this.currentTask!.id == taskId && this.currentWorker != null) {
                 this.stopSearch();
@@ -288,8 +288,8 @@ class SearchTab {
     }
 
     private checkForMissingFactors(task: Task) {
-        var availableFactors = getGearFactorsSet(task.gears, task.gearFactors!);
-        var missingFactors = getMissingPrimeFactors(task.searchRatio!, availableFactors);
+        const availableFactors = getGearFactorsSet(task.gears, task.gearFactors!);
+        const missingFactors = getMissingPrimeFactors(task.searchRatio!, availableFactors);
         if (missingFactors.length != 0) {
             this.resultDiv.innerText = '\nNo exact solution is available because these gears are missing:\n\n'
                 + missingFactors.join('\n')
@@ -300,7 +300,7 @@ class SearchTab {
     }
 
     private startSearch() {
-        var approximateSettings = this.searchParameters.error.getFromDOM() as CheckableValue<number>;        
+        const approximateSettings = this.searchParameters.error.getFromDOM() as CheckableValue<number>;        
         this.currentTaskId++;
 
         this.currentTask = {
@@ -324,7 +324,7 @@ class SearchTab {
             fixedSecondaryFactor: null
         };
         
-        for (var gear of this.currentTask.gears) {
+        for (const gear of this.currentTask.gears) {
             this.currentTask.gearFactors[gear] = factorize(gear);
         }
 

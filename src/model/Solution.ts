@@ -10,9 +10,9 @@ class Solution {
     constructor(sequence: Connection[], task: Task) {
         this.connections = sequence;
         this.task = task;
-        var currentFraction = new Fraction(1);
+        let currentFraction = new Fraction(1);
         this.fractions = [currentFraction];
-        for (var connection of this.connections) {
+        for (const connection of this.connections) {
             currentFraction = currentFraction.multiply(connection.fraction);
             this.fractions.push(currentFraction);
         }
@@ -23,11 +23,11 @@ class Solution {
     }
 
     public createDiv(): HTMLDivElement {
-        var div = document.createElement("div");
+        const div = document.createElement("div");
         div.classList.add("sequence");
         div.appendChild(this.fractions[0].createDiv());
 
-        for (var i = 0; i < this.connections.length; i++) {
+        for (let i = 0; i < this.connections.length; i++) {
             div.appendChild(this.connections[i].createDiv(searchTab.animationSettings.enabled, searchTab.animationSettings.duration / this.fractions[i].getDecimal(), i % 2 == 1));
             div.appendChild(this.fractions[i + 1].createDiv());
 
@@ -45,15 +45,15 @@ class Solution {
             }
         }
 
-        var infoDiv = document.createElement("div");
+        let infoDiv = document.createElement("div");
         infoDiv.classList.add("info");
         div.appendChild(infoDiv);
         if (!this.task.exact) {
-            var errorSpan = document.createElement('span');
+            const errorSpan = document.createElement('span');
             errorSpan.innerText = 'Error: ' + this.error!.toPrecision(3) + ' ';
             infoDiv.appendChild(errorSpan);
         }
-        var permalink = document.createElement('a');
+        const permalink = document.createElement('a');
         permalink.innerText = 'Permalink';
         permalink.title = 'Permanent link to this solution';
         permalink.href = this.getPermalink();
@@ -63,14 +63,14 @@ class Solution {
     }
 
     public updateAnimation() {
-        for (var i = 0; i < this.connections.length; i++) {
+        for (let i = 0; i < this.connections.length; i++) {
             this.connections[i].updateAnimation(searchTab.animationSettings.enabled, searchTab.animationSettings.duration / this.fractions[i].getDecimal());
         }
     }
 
     private getPermalink() {
-        var gears = [];
-        for (var connection of this.connections) {
+        const gears = [];
+        for (const connection of this.connections) {
             gears.push(connection.gear1);
             gears.push(connection.gear2);
         }

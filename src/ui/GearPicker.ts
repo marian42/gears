@@ -18,7 +18,7 @@ class GearPicker {
 
         this.element.addEventListener('focusout', function(this: GearPicker, event: FocusEvent) {
             setTimeout(function(this: GearPicker) {
-                var comparePosition = this.element.compareDocumentPosition(document.activeElement!);
+                const comparePosition = this.element.compareDocumentPosition(document.activeElement!);
                 if (this.active && comparePosition != 0 && comparePosition != 20) {
                     this.select(null);
                 }
@@ -30,8 +30,8 @@ class GearPicker {
         });
 
         this.gearInput!.addEventListener('keyup', function(this: GearPicker, event: KeyboardEvent) {
-            var gear = parseFloat(this.gearInput!.value);
-            var showPreview = Number.isInteger(gear) && (gear == 1 || gear >= 8);
+            const gear = parseFloat(this.gearInput!.value);
+            const showPreview = Number.isInteger(gear) && (gear == 1 || gear >= 8);
 
             this.gearPreviewContainer!.style.display = showPreview ? 'block' : 'none';
             this.gearCatalog!.style.display =  showPreview ? 'none' : 'block';
@@ -48,7 +48,7 @@ class GearPicker {
 
         this.gearInput!.addEventListener('keydown', function(this: GearPicker, event: KeyboardEvent) {
             this.gearPreviewContainer!.innerText = '';
-            var gear = parseFloat(this.gearInput!.value);
+            const gear = parseFloat(this.gearInput!.value);
             if (event.keyCode == 13 && Number.isInteger(gear) && (gear == 1 || gear >= 8)) {
                 this.select(gear);
                 event.preventDefault();
@@ -56,7 +56,7 @@ class GearPicker {
         }.bind(this));
 
         this.gearPreviewContainer!.addEventListener('click', function(this: GearPicker, event: MouseEvent) {
-            var gear = parseFloat(this.gearInput!.value);
+            const gear = parseFloat(this.gearInput!.value);
             if (Number.isInteger(gear) && (gear == 1 || gear >= 8)) {
                 this.select(gear);
             }
@@ -89,7 +89,7 @@ class GearPicker {
     }
 
     private prepareElement() {
-        var element = document.createElement('div');
+        const element = document.createElement('div');
         element.classList.add('gear-selector');
         element.setAttribute('tabindex', "0");
         element.style.display = 'none';
@@ -108,16 +108,16 @@ class GearPicker {
     }
 
     private prepareGearCatalog() {
-        var sequenceEditor = this;
+        const sequenceEditor = this;
         for (const gear of [1, 8, 16, 24, 40, 12, 20, 28, 36, 56, 60]) {
-            var span = document.createElement('span');
+            const span = document.createElement('span');
             span.classList.add('catalog-gear');
             if (gear == 1) {
                 span.appendChild(GearSVGGenerator.createWormGearSVG());
             } else {
                 span.appendChild(GearSVGGenerator.createGearSVG(gear));
             }
-            var teethDiv = document.createElement('div');
+            const teethDiv = document.createElement('div');
             teethDiv.classList.add('teeth');
             teethDiv.innerText = gear.toString();
             span.appendChild(teethDiv);
@@ -129,8 +129,4 @@ class GearPicker {
             this.gearCatalog!.appendChild(span);
         }
     }
-}
-
-if (typeof document !== 'undefined') {
-    var gearPicker = new GearPicker();
 }

@@ -13,15 +13,15 @@ class SolutionList {
     }
 
     public add(solution: Solution) {
-        var count = solution.connections.length;
+        const count = solution.connections.length;
         if (!(count in this.solutions)) {
-            var sizeContainer = document.createElement('div');
-            var headline = document.createElement('h2');
+            const sizeContainer = document.createElement('div');
+            const headline = document.createElement('h2');
             headline.innerText = 'Solutions with ' + count + (count > 1 ? ' connections' : ' connection');
             sizeContainer.appendChild(headline);
 
-            var done = false;
-            for (var i = count -1; i > 0; i--) {
+            let done = false;
+            for (let i = count -1; i > 0; i--) {
                 if (i in this.sizeContainers) {
                     this.container.insertBefore(sizeContainer, this.sizeContainers[i].nextSibling);
                     done = true;
@@ -40,8 +40,8 @@ class SolutionList {
             this.sizeContainers[count].appendChild(solution.createDiv());
             this.solutions[count].push(solution);
         } else {
-            var inserted = false;
-            for (var i = 0; i < this.solutions[count].length; i++) {
+            let inserted = false;
+            for (let i = 0; i < this.solutions[count].length; i++) {
                 if (this.solutions[count][i].error! > solution.error!) {
                     this.sizeContainers[count].insertBefore(solution.createDiv(), this.solutions[count][i].domObject);
                     this.solutions[count].splice(i, 0, solution);
@@ -63,8 +63,8 @@ class SolutionList {
     }
 
     updateAnimation() {
-        for (var count in this.solutions) {
-            for (var solution of this.solutions[count]) {
+        for (const count in this.solutions) {
+            for (const solution of this.solutions[count]) {
                 solution.updateAnimation();
             }
         }
