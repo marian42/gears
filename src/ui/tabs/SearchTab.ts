@@ -216,8 +216,16 @@ class SearchTab {
         return lowestCost;
     }
 
-    private getGearAssignmentCosts(availableGears: number[], distanceConstraint: number | null, include2DConnections: boolean): GearAssignmentCostTable {
+    private getGearAssignmentCosts(task: Task, include2DConnections: boolean): GearAssignmentCostTable {
         var result: GearAssignmentCostTable = {};
+        var availableGears = task.gears.slice();
+
+        if (task.startSequence.length % 2 == 1 && !availableGears.includes(task.startSequence[task.startSequence.length - 1])) {
+            availableGears.push(task.startSequence[task.startSequence.length - 1]);
+        }
+        if (task.endSequence.length % 2 == 1 && !availableGears.includes(task.endSequence[0])) {
+            availableGears.push(task.endSequence[0]);
+        }
 
         for (var driverGear of availableGears) {
             result[driverGear] = {};
@@ -226,7 +234,7 @@ class SearchTab {
                 var cost = 0;
                 var totalTeeth = driverGear + followerGear;
 
-                var violatesConstraint = (distanceConstraint == null) ? false : (totalTeeth % 16 * distanceConstraint) != 0; 
+                var violatesConstraint = (task.distanceConstraint == null) ? false : (totalTeeth % 16 * task.distanceConstraint) != 0; 
 
                 if ((driverGear == 1 && followerGear == 1) || (driverGear == 140 && followerGear == 140)) {
                     cost = ASSIGNMENT_COST_FORBIDDEN;
@@ -237,7 +245,7 @@ class SearchTab {
                         violatesConstraint = false;
                     } else if (remainingGear % 16 == 0 || remainingGear % 16 == 12) {
                         cost += ASSIGNMENT_COST_HALF_1D;
-                        if (distanceConstraint == 0.5) {
+                        if (task.distanceConstraint == 0.5) {
                             violatesConstraint = false;
                         }
                     }
@@ -249,7 +257,7 @@ class SearchTab {
                         }
                     } else if (totalTeeth % 16 == 8) {
                         cost += ASSIGNMENT_COST_HALF_1D;
-                        if (include2DConnections && distanceConstraint == 0.5) {
+                        if (include2DConnections && task.distanceConstraint == 0.5) {
                             violatesConstraint = false;
                         }
                     }
@@ -261,7 +269,7 @@ class SearchTab {
 
                     if (include2DConnections && assignmentCost2D == ASSIGNMENT_COST_FULL_2D) {
                         violatesConstraint = false;
-                    } else if (include2DConnections && assignmentCost2D < 0 && distanceConstraint == 0.5) {
+                    } else if (include2DConnections && assignmentCost2D < 0 && task.distanceConstraint == 0.5) {
                         violatesConstraint = false;
                     } 
                 }
@@ -300,16 +308,14 @@ class SearchTab {
     private startSearch() {
         var approximateSettings = this.searchParameters.error.getFromDOM() as CheckableValue<number>;        
         this.currentTaskId++;
-        var gears = this.getAvailableGears();
-        var distanceConstraint = this.searchParameters.gearDistance.getFromDOM();
 
         this.currentTask = {
             exact: !approximateSettings.checked,
             error: approximateSettings.value,
             targetRatio: Fraction.parse(this.searchParameters.targetRatio.getFromDOM()),
-            gears: gears,
-            gearAssignmentCosts: this.getGearAssignmentCosts(gears, distanceConstraint, this.searchParameters.include2DConnections.getFromDOM()),
-            distanceConstraint: distanceConstraint,
+            gears: this.getAvailableGears(),
+            gearAssignmentCosts: {},
+            distanceConstraint: this.searchParameters.gearDistance.getFromDOM(),
             id: this.currentTaskId,
             maxNumberOfResults: this.searchParameters.limitCount.getFromDOM(),
             excludePairsWithFixedGears: this.searchParameters.excludePairsWithFixedGears.getFromDOM(),
@@ -330,6 +336,8 @@ class SearchTab {
 
         this.readFixedSequenceGears(this.currentTask);
 
+        this.currentTask.gearAssignmentCosts = this.getGearAssignmentCosts(this.currentTask, this.searchParameters.include2DConnections.getFromDOM());
+        
         document.getElementById('resultcount')!.innerText = "0";
         document.getElementById('result-meta')!.style.display = 'block';
         document.getElementById('smallest-error-container')!.style.display = this.currentTask.exact ? 'none' : 'inline';
