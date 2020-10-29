@@ -238,32 +238,22 @@ class SearchTab {
 
                 if ((driverGear == 1 && followerGear == 1) || (driverGear == 140 && followerGear == 140)) {
                     cost = ASSIGNMENT_COST_FORBIDDEN;
-                } else if (driverGear == 1 || followerGear == 1) {
-                    var remainingGear = totalTeeth - 1;
-                    if (remainingGear % 16 == 8 || remainingGear % 16 == 4) {
+                } else {
+                    var distance = getGearDistance(driverGear, followerGear);
+                    if (distance % 1 == 0) {
                         cost += ASSIGNMENT_COST_FULL_1D;
                         violatesConstraint = false;
-                    } else if (remainingGear % 16 == 0 || remainingGear % 16 == 12) {
+                    } else if (distance % 0.5 == 0) {
                         cost += ASSIGNMENT_COST_HALF_1D;
                         if (task.distanceConstraint == 0.5) {
                             violatesConstraint = false;
                         }
                     }
-                } else {
-                    if (totalTeeth % 16 == 0) {
-                        cost += ASSIGNMENT_COST_FULL_1D;
-                        if (include2DConnections) {
-                            violatesConstraint = false;
-                        }
-                    } else if (totalTeeth % 16 == 8) {
-                        cost += ASSIGNMENT_COST_HALF_1D;
-                        if (include2DConnections && task.distanceConstraint == 0.5) {
-                            violatesConstraint = false;
-                        }
-                    }
+
                     if (gearsFitPerpendicularly(driverGear, followerGear)) {
                         cost += ASSIGNMENT_COST_PERPENDICULAR;
                     }
+
                     var assignmentCost2D = this.get2DFitCost(driverGear, followerGear);
                     cost += assignmentCost2D;
 

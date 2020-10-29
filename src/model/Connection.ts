@@ -2,11 +2,22 @@ function gearsFitPerpendicularly(gear1: number, gear2: number): boolean {
     return (gear1 - 4) % 8 == 0 && (gear2 - 4) % 8 == 0 && gear1 != 140 && gear2 != 140;
 }
 
+function getGearDistance(gear1: number, gear2: number): number {
+    if (gear1 == 1 || gear2 == 1) {
+        var useNewStyleWormGear = (gear1 + gear2 + 11) % 8 == 0;
+        return (gear1 + gear2 - 1 + (useNewStyleWormGear ? 12 : 8)) / 16;
+    } else if (gear1 == 140 || gear2 == 140) {
+        return (Math.max(gear1, gear2) - Math.min(gear1, gear2)) / 16;
+    } else {
+        return (gear1 + gear2) / 16;
+    }
+}
+
 class Connection {
     public readonly gear1: number;
     public readonly gear2: number;
 
-    private readonly useNewStyleWormGear: boolean = false;
+    private readonly useNewStyleWormGear: boolean;
     public readonly distance: number;
 
     public readonly fraction: Fraction;
@@ -18,12 +29,8 @@ class Connection {
     constructor(gear1: number, gear2: number) {
         this.gear1 = gear1;
         this.gear2 = gear2;
-        if (gear1 == 1 || gear2 == 1) {
-            this.useNewStyleWormGear = (gear1 + gear2 + 11) % 8 == 0;
-            this.distance = (gear1 + gear2 - 1 + (this.useNewStyleWormGear ? 12 : 8)) / 16;
-        } else {
-            this.distance = (gear1 + gear2) / 16;
-        }
+        this.useNewStyleWormGear = (gear1 + gear2 + 11) % 8 == 0;
+        this.distance = getGearDistance(gear1, gear2);
 
         this.fraction = new Fraction(gear1, gear2);
         this.factor = this.fraction.getDecimal();
