@@ -261,7 +261,7 @@ class SearchTab {
                             violatesConstraint = false;
                         }
                     }
-                    if (driverGear % 8 == 4 && followerGear % 8 == 4) {
+                    if (gearsFitPerpendicularly(driverGear, followerGear)) {
                         cost += ASSIGNMENT_COST_PERPENDICULAR;
                     }
                     var assignmentCost2D = this.get2DFitCost(driverGear, followerGear);

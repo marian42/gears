@@ -1,3 +1,7 @@
+function gearsFitPerpendicularly(gear1: number, gear2: number): boolean {
+    return (gear1 - 4) % 8 == 0 && (gear2 - 4) % 8 == 0 && gear1 != 140 && gear2 != 140;
+}
+
 class Connection {
     public readonly gear1: number;
     public readonly gear2: number;
@@ -94,7 +98,7 @@ class Connection {
         }
         distanceSpan.title = "Distance between axes";
         distanceDiv.appendChild(distanceSpan);
-        if ((this.gear1 - 4) % 8 == 0 && (this.gear2 - 4) % 8 == 0) {
+        if (gearsFitPerpendicularly(this.gear1, this.gear2)) {
             var perpendicular = document.createElement("span");
             perpendicular.innerText = ' or perpendicular';
             perpendicular.title = 'The gears can be placed on perpendicular axles.';

@@ -111,7 +111,7 @@ class FitGears {
 
         var foundAnything = false;
 
-        if ((this.gear1 - 4) % 8 == 0 && (this.gear2 - 4) % 8 == 0) {
+        if (gearsFitPerpendicularly(this.gear1, this.gear2)) {
             var resultElement = document.createElement('div');
             resultElement.classList.add('sequence');
             resultElement.innerText = "These gears can be connected using perpendicular axles.";
