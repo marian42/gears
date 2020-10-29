@@ -168,6 +168,10 @@ class FitGears {
                         if (Math.abs(error) > maxError) {
                             continue;
                         }
+
+                        if (this.gear2 == helperGear && y % 1 == 0 && x % 1 == 0) {
+                            continue;
+                        }
             
                         if (!foundSoultionWithHelperGear) {
                             var headline = document.createElement('h2');
