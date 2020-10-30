@@ -10,14 +10,14 @@ class SolutionList {
         this.task = task;
     }
     add(solution) {
-        var count = solution.connections.length;
+        const count = solution.connections.length;
         if (!(count in this.solutions)) {
-            var sizeContainer = document.createElement('div');
-            var headline = document.createElement('h2');
+            const sizeContainer = document.createElement('div');
+            const headline = document.createElement('h2');
             headline.innerText = 'Solutions with ' + count + (count > 1 ? ' connections' : ' connection');
             sizeContainer.appendChild(headline);
-            var done = false;
-            for (var i = count - 1; i > 0; i--) {
+            let done = false;
+            for (let i = count - 1; i > 0; i--) {
                 if (i in this.sizeContainers) {
                     this.container.insertBefore(sizeContainer, this.sizeContainers[i].nextSibling);
                     done = true;
@@ -35,8 +35,8 @@ class SolutionList {
             this.solutions[count].push(solution);
         }
         else {
-            var inserted = false;
-            for (var i = 0; i < this.solutions[count].length; i++) {
+            let inserted = false;
+            for (let i = 0; i < this.solutions[count].length; i++) {
                 if (this.solutions[count][i].error > solution.error) {
                     this.sizeContainers[count].insertBefore(solution.createDiv(), this.solutions[count][i].domObject);
                     this.solutions[count].splice(i, 0, solution);
@@ -57,8 +57,8 @@ class SolutionList {
         }
     }
     updateAnimation() {
-        for (var count in this.solutions) {
-            for (var solution of this.solutions[count]) {
+        for (const count in this.solutions) {
+            for (const solution of this.solutions[count]) {
                 solution.updateAnimation();
             }
         }
@@ -70,7 +70,7 @@ class SearchParameter {
         this.urlKey = urlKey;
     }
     getUrlKeyValuePairFromDOM() {
-        var value = this.getFromDOM();
+        const value = this.getFromDOM();
         if (JSON.stringify(value) == JSON.stringify(this.defaultValue)) {
             return null;
         }
@@ -158,10 +158,10 @@ class GearListSearchParameter extends InputElementSearchParameter {
         return value.join(", ");
     }
     fromString(value) {
-        var items = value.split(",");
-        var result = [];
-        for (var item of items) {
-            var gear = Number.parseInt(item.trim());
+        let items = value.split(",");
+        const result = [];
+        for (let item of items) {
+            const gear = Number.parseInt(item.trim());
             if (!Number.isNaN(gear)) {
                 result.push(gear);
             }
@@ -192,7 +192,7 @@ class CheckboxedSearchParameter extends SearchParameter {
         throw new Error("Method not implemented.");
     }
     getUrlKeyValuePairFromDOM() {
-        var value = this.getFromDOM();
+        const value = this.getFromDOM();
         if (!value.checked) {
             return null;
         }
@@ -310,14 +310,14 @@ class SearchParameters {
         ];
     }
     applyUrlParametersToForm(parameters) {
-        for (var item of this.items) {
+        for (let item of this.items) {
             item.setFromUrl(parameters);
         }
     }
     getUrlParametersFromForm() {
-        var parts = [];
-        for (var item of this.items) {
-            var part = item.getUrlKeyValuePairFromDOM();
+        const parts = [];
+        for (let item of this.items) {
+            const part = item.getUrlKeyValuePairFromDOM();
             if (part !== null) {
                 parts.push(part);
             }
@@ -328,7 +328,7 @@ class SearchParameters {
         return "?" + parts.join("&");
     }
     advancedParametersUsed(parameters) {
-        for (var item of this.advancedParameters) {
+        for (let item of this.advancedParameters) {
             if (!item.isDefault(parameters)) {
                 return true;
             }
@@ -336,7 +336,7 @@ class SearchParameters {
         return false;
     }
     applyDefaults() {
-        for (var item of this.items) {
+        for (let item of this.items) {
             item.setInDom(item.defaultValue);
         }
     }
@@ -357,12 +357,12 @@ class SearchTab {
         this.searchParameters.applyDefaults();
     }
     getAvailableGears() {
-        var result = [];
-        var standardGears = this.searchParameters.standardGears.getFromDOM();
+        let result = [];
+        const standardGears = this.searchParameters.standardGears.getFromDOM();
         if (standardGears.checked) {
             result = result.concat(standardGears.value);
         }
-        var customGears = this.searchParameters.customGears.getFromDOM();
+        const customGears = this.searchParameters.customGears.getFromDOM();
         if (customGears.checked) {
             result = result.concat(customGears.value);
         }
@@ -370,8 +370,8 @@ class SearchTab {
     }
     onReceiveWorkerMessage(event) {
         if (event.data.id == this.currentTaskId) {
-            var connections = [];
-            for (var [gear1, gear2] of event.data.sequence) {
+            const connections = [];
+            for (const [gear1, gear2] of event.data.sequence) {
                 connections.push(new Connection(gear1, gear2));
             }
             this.currentTask.solutionList.add(new Solution(connections, this.currentTask));
@@ -387,7 +387,7 @@ class SearchTab {
         currentTask.fixedSecondary = [];
         currentTask.fixedPrimaryFactor = 1;
         currentTask.fixedSecondaryFactor = 1;
-        for (var i = 0; i < currentTask.startSequence.length; i++) {
+        for (let i = 0; i < currentTask.startSequence.length; i++) {
             if (i % 2 == 0) {
                 currentTask.fixedPrimary.push(currentTask.startSequence[i]);
                 currentTask.fixedPrimaryFactor *= currentTask.startSequence[i];
@@ -397,7 +397,7 @@ class SearchTab {
                 currentTask.fixedSecondaryFactor *= currentTask.startSequence[i];
             }
         }
-        for (var i = 0; i < currentTask.endSequence.length; i++) {
+        for (let i = 0; i < currentTask.endSequence.length; i++) {
             if ((currentTask.endSequence.length - 1 - i) % 2 == 1) {
                 currentTask.fixedPrimary.push(currentTask.endSequence[i]);
                 currentTask.fixedPrimaryFactor *= currentTask.endSequence[i];
@@ -410,16 +410,19 @@ class SearchTab {
         currentTask.searchRatio = currentTask.targetRatio.multiply(new Fraction(currentTask.fixedSecondaryFactor, currentTask.fixedPrimaryFactor));
     }
     get2DFitCost(gear1, gear2) {
-        var targetDistance = (gear1 + gear2) / 16;
-        var maxError = DEFAULT_FIT_ERROR / 8;
-        var lowestCost = 0;
-        for (var y = 0; y <= Math.ceil(targetDistance); y += 0.5) {
-            var x = Math.round((Math.sqrt(Math.pow(targetDistance, 2) - Math.pow(y, 2))) / 0.5) * 0.5;
+        let targetDistance = (gear1 + gear2) / 16;
+        if (gear1 == 140 || gear2 == 140) {
+            targetDistance -= (gear1 + gear2 - 140) * 2 / 16;
+        }
+        const maxError = DEFAULT_FIT_ERROR / 8;
+        let lowestCost = 0;
+        for (let y = 0; y <= Math.ceil(targetDistance); y += 0.5) {
+            const x = Math.round((Math.sqrt(Math.pow(targetDistance, 2) - Math.pow(y, 2))) / 0.5) * 0.5;
             if (x == 0 || y == 0 || Number.isNaN(x) || x < y) {
                 continue;
             }
-            var totalDistance = Math.sqrt(Math.pow(x, 2) + Math.pow(y, 2));
-            var error = totalDistance - targetDistance;
+            const totalDistance = Math.sqrt(Math.pow(x, 2) + Math.pow(y, 2));
+            const error = totalDistance - targetDistance;
             if (Math.abs(error) > maxError) {
                 continue;
             }
@@ -436,25 +439,25 @@ class SearchTab {
         return lowestCost;
     }
     getGearAssignmentCosts(task, include2DConnections) {
-        var result = {};
-        var availableGears = task.gears.slice();
+        const result = {};
+        const availableGears = task.gears.slice();
         if (task.startSequence.length % 2 == 1 && !availableGears.includes(task.startSequence[task.startSequence.length - 1])) {
             availableGears.push(task.startSequence[task.startSequence.length - 1]);
         }
         if (task.endSequence.length % 2 == 1 && !availableGears.includes(task.endSequence[0])) {
             availableGears.push(task.endSequence[0]);
         }
-        for (var driverGear of availableGears) {
+        for (const driverGear of availableGears) {
             result[driverGear] = {};
-            for (var followerGear of availableGears) {
-                var cost = 0;
-                var totalTeeth = driverGear + followerGear;
-                var violatesConstraint = (task.distanceConstraint == null) ? false : (totalTeeth % 16 * task.distanceConstraint) != 0;
+            for (const followerGear of availableGears) {
+                let cost = 0;
+                const totalTeeth = driverGear + followerGear;
+                let violatesConstraint = (task.distanceConstraint == null) ? false : (totalTeeth % 16 * task.distanceConstraint) != 0;
                 if ((driverGear == 1 && followerGear == 1) || (driverGear == 140 && followerGear == 140)) {
                     cost = ASSIGNMENT_COST_FORBIDDEN;
                 }
                 else {
-                    var distance = getGearDistance(driverGear, followerGear);
+                    const distance = getGearDistance(driverGear, followerGear);
                     if (distance % 1 == 0) {
                         cost += ASSIGNMENT_COST_FULL_1D;
                         violatesConstraint = false;
@@ -468,7 +471,7 @@ class SearchTab {
                     if (gearsFitPerpendicularly(driverGear, followerGear)) {
                         cost += ASSIGNMENT_COST_PERPENDICULAR;
                     }
-                    var assignmentCost2D = this.get2DFitCost(driverGear, followerGear);
+                    const assignmentCost2D = this.get2DFitCost(driverGear, followerGear);
                     cost += assignmentCost2D;
                     if (include2DConnections && assignmentCost2D == ASSIGNMENT_COST_FULL_2D) {
                         violatesConstraint = false;
@@ -486,7 +489,7 @@ class SearchTab {
         return result;
     }
     handleTaskTimeout() {
-        var taskId = this.currentTaskId;
+        const taskId = this.currentTaskId;
         setTimeout(function () {
             if (this.currentTask.id == taskId && this.currentWorker != null) {
                 this.stopSearch();
@@ -494,8 +497,8 @@ class SearchTab {
         }.bind(this), parseInt(document.getElementById('limitTime').value) * 1000);
     }
     checkForMissingFactors(task) {
-        var availableFactors = getGearFactorsSet(task.gears, task.gearFactors);
-        var missingFactors = getMissingPrimeFactors(task.searchRatio, availableFactors);
+        const availableFactors = getGearFactorsSet(task.gears, task.gearFactors);
+        const missingFactors = getMissingPrimeFactors(task.searchRatio, availableFactors);
         if (missingFactors.length != 0) {
             this.resultDiv.innerText = '\nNo exact solution is available because these gears are missing:\n\n'
                 + missingFactors.join('\n')
@@ -505,7 +508,7 @@ class SearchTab {
         return false;
     }
     startSearch() {
-        var approximateSettings = this.searchParameters.error.getFromDOM();
+        const approximateSettings = this.searchParameters.error.getFromDOM();
         this.currentTaskId++;
         this.currentTask = {
             exact: !approximateSettings.checked,
@@ -527,7 +530,7 @@ class SearchTab {
             fixedPrimaryFactor: null,
             fixedSecondaryFactor: null
         };
-        for (var gear of this.currentTask.gears) {
+        for (const gear of this.currentTask.gears) {
             this.currentTask.gearFactors[gear] = factorize(gear);
         }
         this.readFixedSequenceGears(this.currentTask);
@@ -623,10 +626,10 @@ class GearSVGGenerator {
         return this.gearCache[n].createSVG();
     }
     createDecoration() {
-        var xExtension = 0;
-        var yExtension = 0;
-        var extensionSize = 0.5;
-        var hasAxleHole = true;
+        let xExtension = 0;
+        let yExtension = 0;
+        let extensionSize = 0.5;
+        let hasAxleHole = true;
         switch (this.teeth) {
             case 20:
                 xExtension = 1.6;
@@ -669,8 +672,8 @@ class GearSVGGenerator {
                 break;
             case 40:
                 yExtension = 2;
-                for (var x = -1; x < 2; x += 2) {
-                    for (var y = -1; y < 2; y += 2) {
+                for (let x = -1; x < 2; x += 2) {
+                    for (let y = -1; y < 2; y += 2) {
                         this.addCircle(x * 4, y * 4);
                         this.addCircle(x * 12, y * 4);
                         this.addCircle(x * 4, y * 12);
@@ -706,14 +709,14 @@ class GearSVGGenerator {
         }
     }
     createTeeth(n, cut = false, invert = false) {
-        var vertices = [];
-        var radiusPitch = n / 2;
-        var radiusInner = radiusPitch - 1.2 * (invert ? -1 : 1);
-        var radiusOuter = radiusPitch + 0.85 * (invert ? -1 : 1);
-        var radiusIntermediate = radiusInner + 0.9 * (invert ? -1 : 1);
-        for (var i = 0; i < n; i++) {
-            var fraction = 2 * Math.PI / n;
-            var angle = i * fraction;
+        const vertices = [];
+        const radiusPitch = n / 2;
+        const radiusInner = radiusPitch - 1.2 * (invert ? -1 : 1);
+        const radiusOuter = radiusPitch + 0.85 * (invert ? -1 : 1);
+        const radiusIntermediate = radiusInner + 0.9 * (invert ? -1 : 1);
+        for (let i = 0; i < n; i++) {
+            const fraction = 2 * Math.PI / n;
+            const angle = i * fraction;
             vertices.push(getOnCircle(angle - fraction * 0.29, radiusInner));
             vertices.push(getOnCircle(angle - fraction * 0.25, radiusIntermediate));
             vertices.push(getOnCircle(angle - fraction * 0.11, radiusOuter));
@@ -728,7 +731,7 @@ class GearSVGGenerator {
     }
     addPolygon(vertices) {
         this.pathStrings.push("M " + vertices[0][0] + " " + vertices[0][1]);
-        for (var i = 1; i < vertices.length; i++) {
+        for (let i = 1; i < vertices.length; i++) {
             const vertex = vertices[i];
             this.pathStrings.push("L " + vertex[0] + " " + vertex[1]);
         }
@@ -741,7 +744,7 @@ class GearSVGGenerator {
         this.pathStrings.push("a " + r + "," + r + " 0 1, 0 " + (-diameter) + ",0");
     }
     createCutout(radiusInner, radiusOuter, margin = 0.8) {
-        const inner = Math.sqrt(Math.pow(radiusInner, 2.0) - Math.pow(margin, 2.0));
+        let inner = Math.sqrt(Math.pow(radiusInner, 2.0) - Math.pow(margin, 2.0));
         const outer = Math.sqrt(Math.pow(radiusOuter, 2.0) - Math.pow(margin, 2.0));
         this.pathStrings.push("M " + margin + ", " + outer);
         this.pathStrings.push("A " + radiusOuter + " " + radiusOuter + " 0 0 0 " + outer + ", " + margin);
@@ -768,7 +771,7 @@ class GearSVGGenerator {
         const a = 1.78 / 2;
         const b = 4.78 / 2;
         const c = extensionSize / 2;
-        var vertices = [
+        const vertices = [
             [x - b, y - a],
             [x - b, y - c],
             [x - b - xExtension, y - c],
@@ -801,8 +804,8 @@ class GearSVGGenerator {
         this.addPolygon(vertices);
     }
     createSVG() {
-        var svg = document.createElementNS(SVG_NAMESPACE, "svg");
-        var path = document.createElementNS(SVG_NAMESPACE, "path");
+        const svg = document.createElementNS(SVG_NAMESPACE, "svg");
+        const path = document.createElementNS(SVG_NAMESPACE, "path");
         path.setAttribute("d", this.pathStrings.join(' '));
         svg.appendChild(path);
         svg.setAttribute("height", (this.radiusOuter * 2 * PIXELS_PER_MM).toString());
@@ -820,9 +823,9 @@ class GearSVGGenerator {
         const ry = newStyle ? 4 : 8;
         const stepCount = newStyle ? 4.8 : 7;
         const yStep = 3.2;
-        var vertices = [];
-        var teethOffset = newStyle ? -0.34 : -0.125;
-        for (var i = 0; i < stepCount; i++) {
+        const vertices = [];
+        const teethOffset = newStyle ? -0.34 : -0.125;
+        for (let i = 0; i < stepCount; i++) {
             vertices.push([-rxOuter, -ry + i * yStep + yStep * (0.0 + teethOffset)]);
             vertices.push([-rxOuter, -ry + i * yStep + yStep * (0.25 + teethOffset)]);
             vertices.push([-rxInner, -ry + i * yStep + yStep * (0.5 + teethOffset)]);
@@ -833,7 +836,7 @@ class GearSVGGenerator {
         }
         vertices.push([-rxOuter, -ry + stepCount * yStep]);
         vertices.push([rxInner, -ry + stepCount * yStep]);
-        for (var i = 0; i < stepCount; i++) {
+        for (let i = 0; i < stepCount; i++) {
             vertices.push([rxInner, -ry + (stepCount - i) * yStep - yStep * 0.125]);
             vertices.push([+rxOuter, -ry + (stepCount - i) * yStep - yStep * 0.375]);
             vertices.push([rxOuter, -ry + (stepCount - i) * yStep - yStep * 0.625]);
@@ -844,12 +847,12 @@ class GearSVGGenerator {
             vertices.pop();
         }
         vertices.push([+rxInner, -ry]);
-        var stringVertices = [];
-        for (var vertex of vertices) {
+        const stringVertices = [];
+        for (const vertex of vertices) {
             stringVertices.push(vertex[0] + "," + vertex[1]);
         }
-        var svg = document.createElementNS(SVG_NAMESPACE, "svg");
-        var polygon = document.createElementNS(SVG_NAMESPACE, "polygon");
+        const svg = document.createElementNS(SVG_NAMESPACE, "svg");
+        const polygon = document.createElementNS(SVG_NAMESPACE, "polygon");
         polygon.setAttribute("points", stringVertices.join(' '));
         svg.appendChild(polygon);
         svg.setAttribute("height", (ry * 2 * PIXELS_PER_MM).toString());
@@ -862,11 +865,23 @@ class GearSVGGenerator {
 GearSVGGenerator.gearCache = {};
 ///<reference path="../../config.ts" />
 ///<reference path="../gears/GearSVGGenerator.ts" />
+function getConnectionScore(x, y) {
+    if (x % 1 == 0 && y % 1 == 0) {
+        return 3;
+    }
+    else if (x % 1 == 0 || y % 1 == 0) {
+        return 1;
+    }
+    else {
+        return 0;
+    }
+}
 class FitGears {
     constructor() {
         this.gear1 = null;
         this.gear2 = null;
         this.suppressUpdate = false;
+        this.resultElements = [];
         this.gear1Button = document.getElementById("gear-button1");
         this.gear2Button = document.getElementById("gear-button2");
         this.resultsContainer = document.getElementById('fit-results-container');
@@ -892,7 +907,7 @@ class FitGears {
         this.gear1 = gear;
         this.gear1Button.innerText = '';
         this.gear1Button.appendChild(GearSVGGenerator.createGearSVG(gear));
-        var description = document.createElement("div");
+        const description = document.createElement("div");
         description.innerText = gear.toString();
         description.classList.add("fit-gear-teeth");
         this.gear1Button.appendChild(description);
@@ -902,7 +917,7 @@ class FitGears {
         this.gear2 = gear;
         this.gear2Button.innerText = '';
         this.gear2Button.appendChild(GearSVGGenerator.createGearSVG(gear));
-        var description = document.createElement("div");
+        const description = document.createElement("div");
         description.innerText = gear.toString();
         description.classList.add("fit-gear-teeth");
         this.gear2Button.appendChild(description);
@@ -922,72 +937,77 @@ class FitGears {
         if (this.suppressUpdate || this.gear1 == null || this.gear2 == null) {
             return;
         }
-        var maxError = Number.parseFloat(this.maximumErrorTextbox.value) / 8;
-        var radius1 = this.gear1 / 16;
-        var radius2 = this.gear2 / 16;
+        const maxError = Number.parseFloat(this.maximumErrorTextbox.value) / 8;
+        let radius1 = this.gear1 / 16;
+        let radius2 = this.gear2 / 16;
         if (this.gear1 == 140) {
             radius1 -= radius2 * 2;
         }
         else if (this.gear2 == 140) {
             radius2 -= radius1 * 2;
         }
-        var targetDistance = radius1 + radius2;
+        const targetDistance = radius1 + radius2;
         this.resultsContainer.innerText = '';
         if (this.gear1 == 1 || this.gear2 == 1) {
             return;
         }
-        var step = this.includeHalfUnitsCheckbox.checked ? 0.5 : 1.0;
-        var foundAnything = false;
+        const step = this.includeHalfUnitsCheckbox.checked ? 0.5 : 1.0;
+        let foundAnything = false;
+        this.resultElements = [];
         if (gearsFitPerpendicularly(this.gear1, this.gear2)) {
-            var resultElement = document.createElement('div');
+            const resultElement = document.createElement('div');
             resultElement.classList.add('sequence');
             resultElement.innerText = "These gears can be connected using perpendicular axles.";
             this.resultsContainer.appendChild(resultElement);
             foundAnything = true;
         }
-        for (var y = 0; y <= Math.ceil(targetDistance); y += step) {
-            var x = Math.round((Math.sqrt(Math.pow(targetDistance, 2) - Math.pow(y, 2))) / step) * step;
+        for (let y = 0; y <= Math.ceil(targetDistance); y += step) {
+            const x = Math.round((Math.sqrt(Math.pow(targetDistance, 2) - Math.pow(y, 2))) / step) * step;
             if (Number.isNaN(x) || x < y) {
                 continue;
             }
-            var totalDistance = Math.sqrt(Math.pow(x, 2) + Math.pow(y, 2));
-            var error = totalDistance - targetDistance;
+            const totalDistance = Math.sqrt(Math.pow(x, 2) + Math.pow(y, 2));
+            const error = totalDistance - targetDistance;
             if (Math.abs(error) > maxError) {
                 continue;
             }
             foundAnything = true;
             this.addResult(x, y, totalDistance, targetDistance);
         }
-        var foundSoultionWithHelperGear = false;
+        let foundSoultionWithHelperGear = false;
+        this.resultElements = [];
         if (this.gear1 != 140 && this.gear2 != 140) {
-            for (var helperGear of HELPER_GEARS) {
-                var helperRadius = helperGear / 16;
-                var targetHelperDistance = radius1 + helperRadius;
-                for (var helperY = 0; helperY <= Math.ceil(targetHelperDistance); helperY += step) {
-                    var helperX = Math.round((Math.sqrt(Math.pow(targetHelperDistance, 2) - Math.pow(helperY, 2))) / step) * step;
+            for (const helperGear of HELPER_GEARS) {
+                const helperRadius = helperGear / 16;
+                const targetHelperDistance = radius1 + helperRadius;
+                for (let helperY = 0; helperY <= Math.ceil(targetHelperDistance); helperY += step) {
+                    const helperX = Math.round((Math.sqrt(Math.pow(targetHelperDistance, 2) - Math.pow(helperY, 2))) / step) * step;
                     if (Number.isNaN(helperX) || helperX < helperY) {
                         continue;
                     }
-                    var helperDistance = Math.sqrt(Math.pow(helperX, 2) + Math.pow(helperY, 2));
+                    const helperDistance = Math.sqrt(Math.pow(helperX, 2) + Math.pow(helperY, 2));
                     if (Math.abs(helperDistance - targetHelperDistance) > maxError) {
                         continue;
                     }
                     if (this.gear1 == helperGear && helperY % 1 == 0 && helperX % 1 == 0) {
                         continue;
                     }
-                    var targetDistance = helperRadius + radius2;
-                    for (var y = 0; y <= Math.ceil(targetDistance); y += step) {
-                        var x = Math.round((Math.sqrt(Math.pow(targetDistance, 2) - Math.pow(y, 2))) / step) * step;
+                    const targetDistance = helperRadius + radius2;
+                    for (let y = 0; y <= Math.ceil(targetDistance); y += step) {
+                        const x = Math.round((Math.sqrt(Math.pow(targetDistance, 2) - Math.pow(y, 2))) / step) * step;
                         if (Number.isNaN(x) || x < y) {
                             continue;
                         }
-                        var totalDistance = Math.sqrt(Math.pow(x, 2) + Math.pow(y, 2));
-                        var error = totalDistance - targetDistance;
+                        const totalDistance = Math.sqrt(Math.pow(x, 2) + Math.pow(y, 2));
+                        const error = totalDistance - targetDistance;
                         if (Math.abs(error) > maxError) {
                             continue;
                         }
+                        if (this.gear2 == helperGear && y % 1 == 0 && x % 1 == 0) {
+                            continue;
+                        }
                         if (!foundSoultionWithHelperGear) {
-                            var headline = document.createElement('h2');
+                            const headline = document.createElement('h2');
                             headline.innerText = 'Solutions with helper gear';
                             this.resultsContainer.appendChild(headline);
                         }
@@ -1008,46 +1028,45 @@ class FitGears {
         if (this.gear1 == null || this.gear2 == null) {
             return;
         }
-        var error = totalDistance - targetDistance;
-        var resultElement = document.createElement('div');
+        const resultElement = document.createElement('div');
         resultElement.classList.add('sequence');
-        var fitBox = document.createElement('div');
+        const fitBox = document.createElement('div');
         fitBox.classList.add('fit-box');
-        var margin = 1.5 * 8 * PIXELS_PER_MM;
-        var gearSVG1 = GearSVGGenerator.createGearSVG(this.gear1);
-        var svgSize1 = gearSVG1.width.baseVal.value;
+        const margin = 1.5 * 8 * PIXELS_PER_MM;
+        const gearSVG1 = GearSVGGenerator.createGearSVG(this.gear1);
+        const svgSize1 = gearSVG1.width.baseVal.value;
         gearSVG1.style.left = (margin - svgSize1 / 2) + "px";
         gearSVG1.style.top = (margin - svgSize1 / 2) + "px";
         fitBox.appendChild(gearSVG1);
-        var gearSVG2 = GearSVGGenerator.createGearSVG(this.gear2);
-        var svgSize2 = gearSVG2.width.baseVal.value;
+        const gearSVG2 = GearSVGGenerator.createGearSVG(this.gear2);
+        const svgSize2 = gearSVG2.width.baseVal.value;
         gearSVG2.style.left = (margin + x * 8 * PIXELS_PER_MM - svgSize2 / 2) + "px";
         gearSVG2.style.top = (margin + y * 8 * PIXELS_PER_MM - svgSize2 / 2) + "px";
         fitBox.appendChild(gearSVG2);
         if (helperGearData !== null) {
-            var helperGearSVG = GearSVGGenerator.createGearSVG(helperGearData.gear);
-            var helperGearSVGSize = helperGearSVG.width.baseVal.value;
+            const helperGearSVG = GearSVGGenerator.createGearSVG(helperGearData.gear);
+            const helperGearSVGSize = helperGearSVG.width.baseVal.value;
             helperGearSVG.style.left = (margin + helperGearData.x * 8 * PIXELS_PER_MM - helperGearSVGSize / 2) + "px";
             helperGearSVG.style.top = (margin + helperGearData.y * 8 * PIXELS_PER_MM - helperGearSVGSize / 2) + "px";
             fitBox.appendChild(helperGearSVG);
-            var helperGearCorrection = this.getGearRotationCorrection(this.gear1, helperGearData.gear, helperGearData.x, helperGearData.y);
+            const helperGearCorrection = this.getGearRotationCorrection(this.gear1, helperGearData.gear, helperGearData.x, helperGearData.y);
             helperGearSVG.style.transform = 'rotate(' + helperGearCorrection + 'deg)';
             gearSVG2.style.transform = 'rotate(' + this.getGearRotationCorrection(helperGearData.gear, this.gear2, x - helperGearData.x, y - helperGearData.y, helperGearCorrection) + 'deg)';
         }
         else {
             gearSVG2.style.transform = 'rotate(' + this.getGearRotationCorrection(this.gear1, this.gear2, x, y) + 'deg)';
         }
-        for (var a = 0; a <= Math.ceil(x); a++) {
-            for (var b = 0; b <= Math.ceil(y); b++) {
-                var holeElement = document.createElement('div');
+        for (let a = 0; a <= Math.ceil(x); a++) {
+            for (let b = 0; b <= Math.ceil(y); b++) {
+                const holeElement = document.createElement('div');
                 holeElement.classList.add('hole');
                 holeElement.style.left = (margin - 2 + a * 8 * PIXELS_PER_MM) + "px";
                 holeElement.style.top = (margin - 2 + b * 8 * PIXELS_PER_MM) + "px";
                 fitBox.appendChild(holeElement);
             }
         }
-        var radius1 = this.gear1 / 16;
-        var radius2 = this.gear2 / 16;
+        const radius1 = this.gear1 / 16;
+        const radius2 = this.gear2 / 16;
         fitBox.style.width = (x * 8 * PIXELS_PER_MM + margin + Math.max(margin, radius2 * 8 * PIXELS_PER_MM + 20)) + "px";
         fitBox.style.height = (y * 8 * PIXELS_PER_MM + margin + Math.max(margin, radius2 * 8 * PIXELS_PER_MM + 20)) + "px";
         resultElement.appendChild(fitBox);
@@ -1057,8 +1076,8 @@ class FitGears {
         else {
             resultElement.appendChild(this.createResultText(helperGearData.x, helperGearData.y, this.gear1 == 140, helperGearData.distance, helperGearData.targetDistance));
             resultElement.appendChild(this.createResultText(x - helperGearData.x, y - helperGearData.y, this.gear2 == 140, totalDistance, targetDistance));
-            var resultText = document.createElement('div');
-            var distancesSpan = document.createElement("span");
+            const resultText = document.createElement('div');
+            const distancesSpan = document.createElement("span");
             distancesSpan.innerText = x + " ✕ " + y;
             if (x % 1 == 0 && y % 1 == 0) {
                 distancesSpan.classList.add("result-good");
@@ -1067,30 +1086,45 @@ class FitGears {
                 distancesSpan.classList.add("result-ok");
             }
             resultText.appendChild(distancesSpan);
-            var textSpan = document.createElement("span");
+            const textSpan = document.createElement("span");
             textSpan.innerText = " total using a " + helperGearData.gear + " teeth helper gear";
             resultText.appendChild(textSpan);
             resultElement.appendChild(resultText);
         }
+        let score = getConnectionScore(x, y);
+        if (helperGearData != null) {
+            score *= 4;
+            score += getConnectionScore(helperGearData.x, helperGearData.y);
+            score += getConnectionScore(x - helperGearData.x, y - helperGearData.y);
+            score -= helperGearData.gear / 100; // Prefer smaller helper gears if all else is equal
+        }
+        for (let index = 0; index < this.resultElements.length; index++) {
+            if (score > this.resultElements[index][1]) {
+                this.resultsContainer.insertBefore(resultElement, this.resultElements[index][0]);
+                this.resultElements.splice(index, 0, [resultElement, score]);
+                return;
+            }
+        }
+        this.resultElements.push([resultElement, score]);
         this.resultsContainer.appendChild(resultElement);
     }
     getGearRotationCorrection(gear1, gear2, x, y, gear1Rotation = 0) {
-        var angle = Math.atan2(y, x);
-        var gear1ToothPosition = (angle / (2 * Math.PI) * gear1 - gear1Rotation * gear1 / 360) % 1;
-        var gear2ToothPosition = ((angle + Math.PI) / (2 * Math.PI) * gear2) % 1;
+        const angle = Math.atan2(y, x);
+        let gear1ToothPosition = (angle / (2 * Math.PI) * gear1 - gear1Rotation * gear1 / 360) % 1;
+        const gear2ToothPosition = ((angle + Math.PI) / (2 * Math.PI) * gear2) % 1;
         if (gear1 == 140 || gear2 == 140) {
             gear1ToothPosition = 1.0 - gear1ToothPosition;
         }
-        var correction = (gear1ToothPosition + gear2ToothPosition + 0.5) % 1; // in teeth
+        const correction = (gear1ToothPosition + gear2ToothPosition + 0.5) % 1; // in teeth
         return correction / gear2 * 360;
     }
     createResultText(x, y, hasBananaGear, totalDistance, targetDistance) {
-        var resultText = document.createElement('div');
-        var error = totalDistance - targetDistance;
+        const resultText = document.createElement('div');
+        let error = totalDistance - targetDistance;
         if (hasBananaGear) {
             error *= -1;
         }
-        var distancesSpan = document.createElement("span");
+        const distancesSpan = document.createElement("span");
         distancesSpan.innerText = x + " ✕ " + y;
         if (x % 1 == 0 && y % 1 == 0) {
             distancesSpan.classList.add("result-good");
@@ -1099,7 +1133,7 @@ class FitGears {
             distancesSpan.classList.add("result-ok");
         }
         resultText.appendChild(distancesSpan);
-        var errorSpan = document.createElement("span");
+        const errorSpan = document.createElement("span");
         if (error == 0) {
             errorSpan.innerText = " (exact fit)";
             errorSpan.classList.add("result-good");
@@ -1124,7 +1158,7 @@ class Fraction {
             this.b = Math.round(this.b);
         }
         if (reduce) {
-            var n = greatestCommonDenominator(this.a, this.b);
+            const n = greatestCommonDenominator(this.a, this.b);
             this.a /= n;
             this.b /= n;
         }
@@ -1147,28 +1181,28 @@ class Fraction {
         return this.a + " / " + this.b;
     }
     createDiv() {
-        var result = document.createElement("div");
+        const result = document.createElement("div");
         result.classList.add("fraction");
         if (this.b == 1) {
-            var integer = document.createElement("div");
+            let integer = document.createElement("div");
             integer.classList.add("integer");
             integer.innerText = this.a.toString();
             result.appendChild(integer);
         }
         else {
-            var container = document.createElement("div");
+            const container = document.createElement("div");
             container.classList.add("fraction-container");
-            var nominator = document.createElement("div");
+            const nominator = document.createElement("div");
             nominator.classList.add("nominator");
             nominator.innerText = this.a.toString();
             container.appendChild(nominator);
-            var denominator = document.createElement("div");
+            const denominator = document.createElement("div");
             denominator.classList.add("denominator");
             denominator.innerText = this.b.toString();
             container.appendChild(denominator);
             result.appendChild(container);
         }
-        var decimal = document.createElement("div");
+        const decimal = document.createElement("div");
         decimal.classList.add("decimal");
         decimal.innerText = this.getDecimal(5).toString();
         result.appendChild(decimal);
@@ -1176,7 +1210,7 @@ class Fraction {
     }
     static parse(value) {
         if (value.includes('/')) {
-            var parts = value.split('/');
+            const parts = value.split('/');
             return new Fraction(Number.parseFloat(parts[0].trim()), Number.parseFloat(parts[1].trim()));
         }
         else {
@@ -1189,7 +1223,7 @@ function gearsFitPerpendicularly(gear1, gear2) {
 }
 function getGearDistance(gear1, gear2) {
     if (gear1 == 1 || gear2 == 1) {
-        var useNewStyleWormGear = (gear1 + gear2 + 11) % 8 == 0;
+        const useNewStyleWormGear = (gear1 + gear2 + 11) % 8 == 0;
         return (gear1 + gear2 - 1 + (useNewStyleWormGear ? 12 : 8)) / 16;
     }
     else if (gear1 == 140 || gear2 == 140) {
@@ -1211,11 +1245,11 @@ class Connection {
         this.factor = this.fraction.getDecimal();
     }
     createDiv(animate = true, animationDuration = 4, reverse = false) {
-        var result = document.createElement("div");
+        const result = document.createElement("div");
         result.setAttribute("class", "connection");
-        var table = document.createElement("table");
-        var row = document.createElement("tr");
-        var cell = document.createElement("td");
+        const table = document.createElement("table");
+        let row = document.createElement("tr");
+        let cell = document.createElement("td");
         if (this.gear1 == 1) {
             this.svg1 = GearSVGGenerator.createWormGearSVG(this.useNewStyleWormGear);
             cell.appendChild(this.svg1);
@@ -1259,8 +1293,8 @@ class Connection {
         row.appendChild(cell);
         table.appendChild(row);
         result.appendChild(table);
-        var distanceDiv = document.createElement("div");
-        var distanceSpan = document.createElement("span");
+        const distanceDiv = document.createElement("div");
+        const distanceSpan = document.createElement("span");
         distanceDiv.classList.add("distance");
         distanceSpan.innerText = this.distance + (this.distance == 1 ? " unit" : " units");
         if (this.distance % 1 == 0) {
@@ -1275,36 +1309,36 @@ class Connection {
         distanceSpan.title = "Distance between axes";
         distanceDiv.appendChild(distanceSpan);
         if (gearsFitPerpendicularly(this.gear1, this.gear2)) {
-            var perpendicular = document.createElement("span");
+            const perpendicular = document.createElement("span");
             perpendicular.innerText = ' or perpendicular';
             perpendicular.title = 'The gears can be placed on perpendicular axles.';
             distanceDiv.appendChild(perpendicular);
         }
         if (this.gear1 != 1 && this.gear2 != 1) {
-            var solutionCount = 0;
-            var fullSolution = null;
-            var halfSolution = null;
-            var radius1 = this.gear1 / 16;
-            var radius2 = this.gear2 / 16;
+            let solutionCount = 0;
+            let fullSolution = null;
+            let halfSolution = null;
+            let radius1 = this.gear1 / 16;
+            let radius2 = this.gear2 / 16;
             if (this.gear1 == 140) {
                 radius1 -= radius2 * 2;
             }
             else if (this.gear2 == 140) {
                 radius2 -= radius1 * 2;
             }
-            var targetDistance = radius1 + radius2;
-            var maxError = DEFAULT_FIT_ERROR / 8;
-            var step = 0.5;
+            const targetDistance = radius1 + radius2;
+            const maxError = DEFAULT_FIT_ERROR / 8;
+            const step = 0.5;
             if (searchTab !== null && searchTab.currentTask !== null) {
                 searchTab.currentTask.distanceConstraint == 1 ? 1 : 0.5;
             }
-            for (var y = 0; y <= Math.ceil(targetDistance); y += step) {
-                var x = Math.round((Math.sqrt(Math.pow(targetDistance, 2) - Math.pow(y, 2))) / step) * step;
+            for (let y = 0; y <= Math.ceil(targetDistance); y += step) {
+                const x = Math.round((Math.sqrt(Math.pow(targetDistance, 2) - Math.pow(y, 2))) / step) * step;
                 if (y == 0 || Number.isNaN(x) || x < y) {
                     continue;
                 }
-                var totalDistance = Math.sqrt(Math.pow(x, 2) + Math.pow(y, 2));
-                var error = totalDistance - targetDistance;
+                const totalDistance = Math.sqrt(Math.pow(x, 2) + Math.pow(y, 2));
+                const error = totalDistance - targetDistance;
                 if (Math.abs(error) > maxError) {
                     continue;
                 }
@@ -1317,11 +1351,11 @@ class Connection {
                 }
             }
             if (solutionCount > 0) {
-                var orSpan = document.createElement("span");
+                const orSpan = document.createElement("span");
                 orSpan.innerText = " or ";
                 orSpan.classList.add("result-bad");
                 distanceDiv.appendChild(orSpan);
-                var fitSpan = document.createElement("span");
+                const fitSpan = document.createElement("span");
                 if (fullSolution != null) {
                     fitSpan.innerText = fullSolution[0] + " ✕ " + fullSolution[1];
                     solutionCount--;
@@ -1355,7 +1389,7 @@ class Connection {
         this.svg2.firstChild.style.animationPlayState = enabled ? 'running' : 'paused';
     }
     showFitGearsTab() {
-        var includeHalfUnits = true;
+        let includeHalfUnits = true;
         if (searchTab !== null && searchTab.currentTask !== null) {
             includeHalfUnits = searchTab.currentTask.distanceConstraint != 1;
         }
@@ -1391,7 +1425,7 @@ class SequenceEditor {
         this.animateRpmInput = document.getElementById('editor-animate-rpm');
         this.clear();
         this.updateAnimation();
-        var sequenceEditor = this;
+        const sequenceEditor = this;
         this.addButton.addEventListener('click', function (event) {
             gearPicker.show(sequenceEditor.addGear.bind(sequenceEditor), sequenceEditor.addButtonContainer);
         });
@@ -1412,7 +1446,7 @@ class SequenceEditor {
     addGear(gear) {
         if (this.danglingGear == null) {
             this.danglingGear = gear;
-            var div = new Connection(gear, 1).createDiv(this.animationEnabled, this.animationDuration / this.resultFraction.getDecimal(), this.connections.length % 2 == 1);
+            const div = new Connection(gear, 1).createDiv(this.animationEnabled, this.animationDuration / this.resultFraction.getDecimal(), this.connections.length % 2 == 1);
             div.classList.add('hide-second');
             if (this.connections.length >= 1) {
                 this.connectionContainer.appendChild(this.resultFraction.createDiv());
@@ -1420,7 +1454,7 @@ class SequenceEditor {
             this.connectionContainer.appendChild(div);
         }
         else {
-            var connection = new Connection(this.danglingGear, gear);
+            const connection = new Connection(this.danglingGear, gear);
             this.danglingGear = null;
             this.connectionContainer.removeChild(this.connectionContainer.lastChild);
             this.connectionContainer.appendChild(connection.createDiv(this.animationEnabled, this.animationDuration / this.resultFraction.getDecimal(), this.connections.length % 2 == 1));
@@ -1432,8 +1466,8 @@ class SequenceEditor {
         this.addButton.focus();
     }
     getGears() {
-        var gears = [];
-        for (var connection of this.connections) {
+        const gears = [];
+        for (const connection of this.connections) {
             gears.push(connection.gear1);
             gears.push(connection.gear2);
         }
@@ -1456,15 +1490,15 @@ class SequenceEditor {
     }
     setSequence(gears) {
         this.clear();
-        for (var gear of gears) {
+        for (const gear of gears) {
             this.addGear(gear);
         }
     }
     updateAnimation() {
-        var fraction = this.startFraction;
+        let fraction = this.startFraction;
         this.animationEnabled = this.animateCheckbox.checked;
         this.animationDuration = 60 / parseFloat(this.animateRpmInput.value);
-        for (var connection of this.connections) {
+        for (const connection of this.connections) {
             connection.updateAnimation(this.animationEnabled, this.animationDuration / fraction.getDecimal());
             fraction = fraction.multiply(connection.fraction);
         }
@@ -1473,10 +1507,10 @@ class SequenceEditor {
         this.setSequence(this.getGears().reverse());
     }
     loadUrlParameters(parameters) {
-        var gearStrings = parameters["seq"].split(',');
-        var gears = [];
-        for (var gearString of gearStrings) {
-            var gear = parseInt(gearString.trim());
+        const gearStrings = parameters["seq"].split(',');
+        const gears = [];
+        for (const gearString of gearStrings) {
+            const gear = parseInt(gearString.trim());
             if (Number.isInteger(gear)) {
                 gears.push(gear);
             }
@@ -1486,15 +1520,130 @@ class SequenceEditor {
         }
     }
 }
+///<reference path="./gears/GearSVGGenerator.ts" />
+class GearPicker {
+    constructor() {
+        this.selectedGear = null;
+        this.callback = null;
+        this.active = false;
+        this.gearInput = null;
+        this.gearPreviewContainer = null;
+        this.gearCatalog = null;
+        this.element = this.prepareElement();
+        this.prepareGearCatalog();
+        this.element.addEventListener('focusout', function (event) {
+            setTimeout(function () {
+                const comparePosition = this.element.compareDocumentPosition(document.activeElement);
+                if (this.active && comparePosition != 0 && comparePosition != 20) {
+                    this.select(null);
+                }
+            }.bind(this), 0);
+        }.bind(this));
+        this.element.addEventListener('click', function (event) {
+            event.stopPropagation();
+        });
+        this.gearInput.addEventListener('keyup', function (event) {
+            const gear = parseFloat(this.gearInput.value);
+            const showPreview = Number.isInteger(gear) && (gear == 1 || gear >= 8);
+            this.gearPreviewContainer.style.display = showPreview ? 'block' : 'none';
+            this.gearCatalog.style.display = showPreview ? 'none' : 'block';
+            if (showPreview) {
+                this.gearPreviewContainer.innerText = '';
+                if (gear == 1) {
+                    this.gearPreviewContainer.appendChild(GearSVGGenerator.createWormGearSVG());
+                }
+                else if (gear > 7 && gear <= 170) {
+                    this.gearPreviewContainer.appendChild(GearSVGGenerator.createGearSVG(gear));
+                }
+            }
+        }.bind(this));
+        this.gearInput.addEventListener('keydown', function (event) {
+            this.gearPreviewContainer.innerText = '';
+            const gear = parseFloat(this.gearInput.value);
+            if (event.keyCode == 13 && Number.isInteger(gear) && (gear == 1 || gear >= 8)) {
+                this.select(gear);
+                event.preventDefault();
+            }
+        }.bind(this));
+        this.gearPreviewContainer.addEventListener('click', function (event) {
+            const gear = parseFloat(this.gearInput.value);
+            if (Number.isInteger(gear) && (gear == 1 || gear >= 8)) {
+                this.select(gear);
+            }
+        }.bind(this));
+    }
+    show(callback, parent = null) {
+        if (parent !== null) {
+            parent.appendChild(this.element);
+        }
+        this.callback = callback;
+        this.element.style.display = 'block';
+        this.gearInput.value = '';
+        this.gearInput.focus();
+        this.gearPreviewContainer.style.display = 'none';
+        this.gearCatalog.style.display = 'block';
+        this.active = true;
+    }
+    select(gear) {
+        this.active = false;
+        this.element.style.display = 'none';
+        document.body.appendChild(this.element);
+        this.selectedGear = gear;
+        if (gear !== null && this.callback !== null) {
+            this.callback(gear);
+        }
+    }
+    prepareElement() {
+        const element = document.createElement('div');
+        element.classList.add('gear-selector');
+        element.setAttribute('tabindex', "0");
+        element.style.display = 'none';
+        this.gearInput = document.createElement('input');
+        this.gearInput.type = 'text';
+        this.gearInput.placeholder = 'number of teeth';
+        element.appendChild(this.gearInput);
+        this.gearPreviewContainer = document.createElement('div');
+        this.gearPreviewContainer.classList.add('catalog-gear');
+        this.gearPreviewContainer.style.display = 'none';
+        element.appendChild(this.gearPreviewContainer);
+        this.gearCatalog = document.createElement('div');
+        this.gearCatalog.classList.add('catalog');
+        element.appendChild(this.gearCatalog);
+        return element;
+    }
+    prepareGearCatalog() {
+        const sequenceEditor = this;
+        for (const gear of [1, 8, 16, 24, 40, 12, 20, 28, 36, 56, 60]) {
+            const span = document.createElement('span');
+            span.classList.add('catalog-gear');
+            if (gear == 1) {
+                span.appendChild(GearSVGGenerator.createWormGearSVG());
+            }
+            else {
+                span.appendChild(GearSVGGenerator.createGearSVG(gear));
+            }
+            const teethDiv = document.createElement('div');
+            teethDiv.classList.add('teeth');
+            teethDiv.innerText = gear.toString();
+            span.appendChild(teethDiv);
+            span.addEventListener('click', function (event) {
+                this.select(gear);
+            }.bind(this));
+            this.gearCatalog.appendChild(span);
+        }
+    }
+}
 ///<reference path="./ui/tabs/SearchTab.ts" />
 ///<reference path="./ui/tabs/FitGears.ts" />
 ///<reference path="./ui/tabs/SequenceEditor.ts" />
+///<reference path="./ui/GearPicker.ts" />
 if (typeof document !== 'undefined') { // This is not run in worker threads
     var searchTab = new SearchTab();
     var fitGears = new FitGears();
     var sequenceEditor = new SequenceEditor(document.getElementById('sequence-editor'));
+    var gearPicker = new GearPicker();
     function loadUrlParameters() {
-        var parameters = {};
+        const parameters = {};
         window.location.href.replace(/[?&]+([^=&]+)=([^&]*)/gi, function (m, key, value) {
             parameters[key] = decodeURI(value);
             return '';
@@ -1533,9 +1682,9 @@ function isApproximatelyInteger(number) {
     return Math.abs(number - Math.round(number)) < 1e-8;
 }
 function factorize(number) {
-    var result = [];
-    for (var i = 2; i <= number; i++) {
-        var value = 0;
+    const result = [];
+    for (let i = 2; i <= number; i++) {
+        let value = 0;
         while (number % i == 0) {
             value += 1;
             number /= i;
@@ -1545,31 +1694,31 @@ function factorize(number) {
     return result;
 }
 function getTeethProduct(gearTeeth, gearCounts) {
-    var result = 1;
-    for (var i = 0; i < gearTeeth.length; i++) {
+    let result = 1;
+    for (let i = 0; i < gearTeeth.length; i++) {
         result *= Math.pow(gearTeeth[i], gearCounts[i]);
     }
     return result;
 }
 function getResult(gearTeeth, gearCounts) {
-    var result = [];
-    for (var i = 0; i < gearTeeth.length; i++) {
-        for (var j = 0; j < gearCounts[i]; j++) {
+    const result = [];
+    for (let i = 0; i < gearTeeth.length; i++) {
+        for (let j = 0; j < gearCounts[i]; j++) {
             result.push(gearTeeth[i]);
         }
     }
     return result;
 }
 function getMissingPrimeFactors(targetRatio, availableFactors) {
-    var result = [];
-    var numeratorFactors = factorize(targetRatio.a);
-    for (var i = 0; i < numeratorFactors.length; i++) {
+    const result = [];
+    const numeratorFactors = factorize(targetRatio.a);
+    for (let i = 0; i < numeratorFactors.length; i++) {
         if (numeratorFactors[i] > 0 && !availableFactors.includes(i + 2)) {
             result.push(i + 2);
         }
     }
-    var denominatorFactors = factorize(targetRatio.b);
-    for (var i = 0; i < denominatorFactors.length; i++) {
+    const denominatorFactors = factorize(targetRatio.b);
+    for (let i = 0; i < denominatorFactors.length; i++) {
         if (denominatorFactors[i] > 0 && !availableFactors.includes(i + 2)) {
             result.push(i + 2);
         }
@@ -1577,9 +1726,9 @@ function getMissingPrimeFactors(targetRatio, availableFactors) {
     return result;
 }
 function getGearFactorsSet(gears, gearFactors) {
-    var gearFactorsSet = new Set();
-    for (var gear of gears) {
-        for (var i = 0; i < gearFactors[gear].length; i++) {
+    const gearFactorsSet = new Set();
+    for (const gear of gears) {
+        for (let i = 0; i < gearFactors[gear].length; i++) {
             if (gearFactors[gear][i] > 0) {
                 gearFactorsSet.add(i + 2);
             }
@@ -1589,17 +1738,17 @@ function getGearFactorsSet(gears, gearFactors) {
 }
 // Returns an iterator over all numbers that can be made with the given factors
 function* getHammingSequence(bases) {
-    var queues = {};
-    for (var base of bases) {
+    const queues = {};
+    for (const base of bases) {
         queues[base] = [];
     }
-    var nextResult = 1;
+    let nextResult = 1;
     while (true) {
         yield nextResult;
         for (const base in queues) {
             queues[base].push(nextResult * Number.parseInt(base));
         }
-        var smallestNextQueueItem = null;
+        let smallestNextQueueItem = null;
         for (const base in queues) {
             if (smallestNextQueueItem == null || queues[base][0] < smallestNextQueueItem) {
                 smallestNextQueueItem = queues[base][0];
@@ -1615,20 +1764,20 @@ function* getHammingSequence(bases) {
 }
 function findGears(target, availableGears, gearFactors) {
     const targetFactors = factorize(target);
-    var gearTeeth = [];
-    var gearMaxCounts = [];
-    var availableFactors = new Set();
-    for (var gear of availableGears) {
+    const gearTeeth = [];
+    const gearMaxCounts = [];
+    const availableFactors = new Set();
+    for (const gear of availableGears) {
         const factors = gearFactors[gear];
         if (factors.length > targetFactors.length) {
             continue;
         }
-        var maxOccurances = null;
-        for (var i = 0; i < factors.length; i++) {
+        let maxOccurances = null;
+        for (let i = 0; i < factors.length; i++) {
             if (factors[i] == 0) {
                 continue;
             }
-            var maxOccurancesThisFactor = Math.floor(targetFactors[i] / factors[i]);
+            const maxOccurancesThisFactor = Math.floor(targetFactors[i] / factors[i]);
             if (maxOccurances === null || maxOccurancesThisFactor < maxOccurances) {
                 maxOccurances = maxOccurancesThisFactor;
             }
@@ -1639,28 +1788,28 @@ function findGears(target, availableGears, gearFactors) {
         if (maxOccurances > 0) {
             gearTeeth.push(gear);
             gearMaxCounts.push(maxOccurances);
-            for (var i = 0; i < factors.length; i++) {
+            for (let i = 0; i < factors.length; i++) {
                 if (factors[i] != 0) {
                     availableFactors.add(i);
                 }
             }
         }
     }
-    for (var i = 0; i < targetFactors.length; i++) {
+    for (let i = 0; i < targetFactors.length; i++) {
         if (targetFactors[i] != 0 && !availableFactors.has(i)) {
             // The target number contains prime factors that are not in any of the available gears.
             return [];
         }
     }
-    var gearCounts = Array(gearTeeth.length).fill(0);
-    var result = [];
+    const gearCounts = Array(gearTeeth.length).fill(0);
+    const result = [];
     while (true) {
-        var teethProduct = getTeethProduct(gearTeeth, gearCounts);
+        const teethProduct = getTeethProduct(gearTeeth, gearCounts);
         if (teethProduct == target) {
             result.push(getResult(gearTeeth, gearCounts));
         }
         gearCounts[0] += 1;
-        var position = 0;
+        let position = 0;
         while (true) {
             if (gearCounts[position] <= gearMaxCounts[position]) {
                 break;
@@ -1675,7 +1824,7 @@ function findGears(target, availableGears, gearFactors) {
     }
 }
 function* findSolutionsExact(parameters) {
-    var availableFactors = getGearFactorsSet(parameters.gears, parameters.gearFactors);
+    const availableFactors = getGearFactorsSet(parameters.gears, parameters.gearFactors);
     if (parameters.excludePairsWithFixedGears) {
         var availableGearsPrimary = parameters.gears.filter(gear => !parameters.fixedSecondary.includes(gear));
         var availableGearsSecondary = parameters.gears.filter(gear => !parameters.fixedPrimary.includes(gear));
@@ -1684,23 +1833,23 @@ function* findSolutionsExact(parameters) {
         var availableGearsPrimary = parameters.gears;
         var availableGearsSecondary = parameters.gears;
     }
-    var hammingIterator = getHammingSequence(availableFactors);
+    const hammingIterator = getHammingSequence(availableFactors);
     while (true) {
-        var currentRatio = parameters.searchRatio.extend(hammingIterator.next().value);
-        var solutionsPrimary = findGears(currentRatio.a, availableGearsPrimary, parameters.gearFactors);
+        const currentRatio = parameters.searchRatio.extend(hammingIterator.next().value);
+        const solutionsPrimary = findGears(currentRatio.a, availableGearsPrimary, parameters.gearFactors);
         if (solutionsPrimary.length == 0) {
             continue;
         }
-        for (var solutionPrimary of solutionsPrimary) {
-            var solutionsSecondary = findGears(currentRatio.b, availableGearsSecondary.filter(gear => !solutionPrimary.includes(gear)), parameters.gearFactors);
-            for (var solutionSecondary of solutionsSecondary) {
+        for (const solutionPrimary of solutionsPrimary) {
+            const solutionsSecondary = findGears(currentRatio.b, availableGearsSecondary.filter(gear => !solutionPrimary.includes(gear)), parameters.gearFactors);
+            for (const solutionSecondary of solutionsSecondary) {
                 yield [solutionPrimary, solutionSecondary];
             }
         }
     }
 }
 function* findSolutionsApproximate(parameters) {
-    var targetRatio = parameters.searchRatio.getDecimal();
+    const targetRatio = parameters.searchRatio.getDecimal();
     if (parameters.excludePairsWithFixedGears) {
         var availableGearsPrimary = parameters.gears.filter(gear => gear != 1 && !parameters.fixedSecondary.includes(gear));
         var availableGearsSecondary = parameters.gears.filter(gear => gear != 1 && !parameters.fixedPrimary.includes(gear));
@@ -1709,23 +1858,23 @@ function* findSolutionsApproximate(parameters) {
         var availableGearsPrimary = parameters.gears.filter(gear => gear != 1);
         var availableGearsSecondary = availableGearsPrimary;
     }
-    var hammingIterator = getHammingSequence(availableGearsPrimary);
+    const hammingIterator = getHammingSequence(availableGearsPrimary);
     while (true) {
-        var primaryValue = hammingIterator.next().value;
-        var solutionsPrimary = findGears(primaryValue, availableGearsPrimary, parameters.gearFactors);
+        const primaryValue = hammingIterator.next().value;
+        const solutionsPrimary = findGears(primaryValue, availableGearsPrimary, parameters.gearFactors);
         if (solutionsPrimary.length == 0) {
             continue;
         }
-        var denominatorMin = Math.ceil(primaryValue / targetRatio * (1.0 - parameters.error));
-        var denominatorMax = Math.floor(primaryValue / targetRatio * (1.0 + parameters.error));
+        const denominatorMin = Math.ceil(primaryValue / targetRatio * (1.0 - parameters.error));
+        const denominatorMax = Math.floor(primaryValue / targetRatio * (1.0 + parameters.error));
         if (denominatorMin > denominatorMax) {
             continue;
         }
-        for (var solutionPrimary of solutionsPrimary) {
-            var remainingGears = availableGearsSecondary.filter(gear => !solutionPrimary.includes(gear));
-            for (var secondaryValue = denominatorMin; secondaryValue <= denominatorMax; secondaryValue++) {
-                var solutionsSecondary = findGears(secondaryValue, remainingGears, parameters.gearFactors);
-                for (var solutionSecondary of solutionsSecondary) {
+        for (const solutionPrimary of solutionsPrimary) {
+            const remainingGears = availableGearsSecondary.filter(gear => !solutionPrimary.includes(gear));
+            for (let secondaryValue = denominatorMin; secondaryValue <= denominatorMax; secondaryValue++) {
+                const solutionsSecondary = findGears(secondaryValue, remainingGears, parameters.gearFactors);
+                for (const solutionSecondary of solutionsSecondary) {
                     yield [solutionPrimary, solutionSecondary];
                 }
             }
@@ -1756,12 +1905,12 @@ function prepareResult(gearsPrimary, gearsSecondary, parameters) {
     if (parameters.endSequence.length % 2 == 1) {
         gearsSecondary.push(parameters.endSequence[0]);
     }
-    var lastItemIndex = gearsPrimary.length - 1;
+    const lastItemIndex = gearsPrimary.length - 1;
     // Run Munkres algorithm
-    var costMatrix = [];
-    for (var gear1 of gearsPrimary) {
-        var row = [];
-        for (var gear2 of gearsSecondary) {
+    const costMatrix = [];
+    for (const gear1 of gearsPrimary) {
+        const row = [];
+        for (const gear2 of gearsSecondary) {
             row.push(parameters.gearAssignmentCosts[gear1][gear2]);
         }
         costMatrix.push(row);
@@ -1769,20 +1918,20 @@ function prepareResult(gearsPrimary, gearsSecondary, parameters) {
     if (parameters.startSequence.length % 2 == 1 && parameters.endSequence.length % 2 == 1) {
         costMatrix[lastItemIndex][lastItemIndex] = ASSIGNMENT_COST_FORBIDDEN;
     }
-    var munkres = new MunkresAlgorithm(costMatrix);
-    var assignments = munkres.run();
+    const munkres = new MunkresAlgorithm(costMatrix);
+    const assignments = munkres.run();
     // Assemble sequence
-    var sequenceStart = [];
-    var sequenceReorderable = [];
-    var sequenceEnd = [];
-    for (var i = 0; i < parameters.startSequence.length - 1; i += 2) {
+    const sequenceStart = [];
+    const sequenceReorderable = [];
+    const sequenceEnd = [];
+    for (let i = 0; i < parameters.startSequence.length - 1; i += 2) {
         sequenceStart.push([parameters.startSequence[i], parameters.startSequence[i + 1]]);
     }
-    for (var [index1, index2] of assignments) {
+    for (const [index1, index2] of assignments) {
         if (costMatrix[index1][index2] == ASSIGNMENT_COST_FORBIDDEN) {
             return null;
         }
-        var gearPair = [gearsPrimary[index1], gearsSecondary[index2]];
+        const gearPair = [gearsPrimary[index1], gearsSecondary[index2]];
         if (parameters.startSequence.length % 2 == 1 && index1 == lastItemIndex) {
             sequenceStart.push(gearPair); // append at the end
         }
@@ -1793,20 +1942,20 @@ function prepareResult(gearsPrimary, gearsSecondary, parameters) {
             sequenceReorderable.push(gearPair); // order doesn't matter here
         }
     }
-    for (var i = parameters.endSequence.length % 2; i < parameters.endSequence.length; i += 2) {
+    for (let i = parameters.endSequence.length % 2; i < parameters.endSequence.length; i += 2) {
         sequenceEnd.push([parameters.endSequence[i], parameters.endSequence[i + 1]]);
     }
     sequenceReorderable.sort(function (a, b) { return Math.sign(a[0] / a[1] - b[0] / b[1]); });
     return sequenceStart.concat(sequenceReorderable, sequenceEnd);
 }
 self.onmessage = function (event) {
-    var parameters = event.data;
+    const parameters = event.data;
     parameters.targetRatio = new Fraction(parameters.targetRatio.a, parameters.targetRatio.b);
     parameters.searchRatio = new Fraction(parameters.searchRatio.a, parameters.searchRatio.b);
-    var iterator = parameters.exact ? findSolutionsExact(parameters) : findSolutionsApproximate(parameters);
+    let iterator = parameters.exact ? findSolutionsExact(parameters) : findSolutionsApproximate(parameters);
     while (true) {
-        var [primaryGears, secondaryGears] = iterator.next().value;
-        var result = prepareResult(primaryGears, secondaryGears, parameters);
+        const [primaryGears, secondaryGears] = iterator.next().value;
+        const result = prepareResult(primaryGears, secondaryGears, parameters);
         if (result != null) {
             const workerGlobalContext = self;
             workerGlobalContext.postMessage({
@@ -1826,33 +1975,33 @@ var State;
 class MunkresAlgorithm {
     constructor(costMatrix) {
         this.matrix = [];
-        for (var row of costMatrix) {
+        for (const row of costMatrix) {
             this.matrix.push(row.slice());
         }
         this.size = this.matrix.length;
         this.rowsCovered = [];
         this.columnsCovered = [];
-        for (var i = 0; i < this.size; i++) {
+        for (let i = 0; i < this.size; i++) {
             this.rowsCovered.push(false);
             this.columnsCovered.push(false);
         }
         this.path = [];
-        for (var i = 0; i < this.size * 2; i++) {
+        for (let i = 0; i < this.size * 2; i++) {
             this.path.push([0, 0]);
         }
         this.zero0 = [0, 0];
         this.state = new Array(this.size);
-        for (var i = 0; i < this.size; i++) {
+        for (let i = 0; i < this.size; i++) {
             this.state[i] = new Array(this.size);
-            for (var j = 0; j < this.size; j++) {
+            for (let j = 0; j < this.size; j++) {
                 this.state[i][j] = State.None;
             }
         }
     }
     ;
     run() {
-        var nextStep = 1;
-        var stepImplementations = [
+        let nextStep = 1;
+        const stepImplementations = [
             this.step1,
             this.step2,
             this.step3,
@@ -1863,9 +2012,9 @@ class MunkresAlgorithm {
         while (nextStep != -1) {
             nextStep = stepImplementations[nextStep - 1].apply(this);
         }
-        var selectedIndices = [];
-        for (var i = 0; i < this.size; i++) {
-            for (var j = 0; j < this.size; j++) {
+        const selectedIndices = [];
+        for (let i = 0; i < this.size; i++) {
+            for (let j = 0; j < this.size; j++) {
                 if (this.state[i][j] == State.Starred) {
                     selectedIndices.push([i, j]);
                 }
@@ -1874,9 +2023,9 @@ class MunkresAlgorithm {
         return selectedIndices;
     }
     step1() {
-        for (var i = 0; i < this.size; i++) {
-            var rowMinimum = Math.min.apply(Math, this.matrix[i]);
-            for (var j = 0; j < this.size; j++) {
+        for (let i = 0; i < this.size; i++) {
+            const rowMinimum = Math.min.apply(Math, this.matrix[i]);
+            for (let j = 0; j < this.size; j++) {
                 this.matrix[i][j] -= rowMinimum;
             }
         }
@@ -1884,8 +2033,8 @@ class MunkresAlgorithm {
     }
     ;
     step2() {
-        for (var i = 0; i < this.size; i++) {
-            for (var j = 0; j < this.size; j++) {
+        for (let i = 0; i < this.size; i++) {
+            for (let j = 0; j < this.size; j++) {
                 if (this.matrix[i][j] == 0 && !this.rowsCovered[i] && !this.columnsCovered[j]) {
                     this.state[i][j] = State.Starred;
                     this.rowsCovered[i] = true;
@@ -1899,9 +2048,9 @@ class MunkresAlgorithm {
     }
     ;
     step3() {
-        var count = 0;
-        for (var i = 0; i < this.size; i++) {
-            for (var j = 0; j < this.size; j++) {
+        let count = 0;
+        for (let i = 0; i < this.size; i++) {
+            for (let j = 0; j < this.size; j++) {
                 if (this.state[i][j] == State.Starred && this.columnsCovered[j] == false) {
                     this.columnsCovered[j] = true;
                     count++;
@@ -1918,12 +2067,12 @@ class MunkresAlgorithm {
     ;
     step4() {
         while (true) {
-            var [row, column] = this.findAZero();
+            let [row, column] = this.findAZero();
             if (row < 0) {
                 return 6;
             }
             this.state[row][column] = State.Primed;
-            var starredColumn = this.findStarInRow(row);
+            const starredColumn = this.findStarInRow(row);
             if (starredColumn >= 0) {
                 column = starredColumn;
                 this.rowsCovered[row] = true;
@@ -1937,12 +2086,12 @@ class MunkresAlgorithm {
     }
     ;
     step5() {
-        var count = 0;
+        let count = 0;
         this.path[count][0] = this.zero0[0];
         this.path[count][1] = this.zero0[1];
-        var done = false;
+        let done = false;
         while (!done) {
-            var row = this.findStarInColumn(this.path[count][1]);
+            const row = this.findStarInColumn(this.path[count][1]);
             if (row >= 0) {
                 count++;
                 this.path[count][0] = row;
@@ -1952,7 +2101,7 @@ class MunkresAlgorithm {
                 done = true;
             }
             if (!done) {
-                var column = this.findPrimeInRow(this.path[count][0]);
+                const column = this.findPrimeInRow(this.path[count][0]);
                 count++;
                 this.path[count][0] = this.path[count - 1][0];
                 this.path[count][1] = column;
@@ -1965,9 +2114,9 @@ class MunkresAlgorithm {
     }
     ;
     step6() {
-        var smallestUncovered = this.findSmallestUncovered();
-        for (var i = 0; i < this.size; i++) {
-            for (var j = 0; j < this.size; j++) {
+        const smallestUncovered = this.findSmallestUncovered();
+        for (let i = 0; i < this.size; i++) {
+            for (let j = 0; j < this.size; j++) {
                 if (this.rowsCovered[i]) {
                     this.matrix[i][j] += smallestUncovered;
                 }
@@ -1980,9 +2129,9 @@ class MunkresAlgorithm {
     }
     ;
     findSmallestUncovered() {
-        var result = ASSIGNMENT_COST_FORBIDDEN;
-        for (var i = 0; i < this.size; i++) {
-            for (var j = 0; j < this.size; j++) {
+        let result = ASSIGNMENT_COST_FORBIDDEN;
+        for (let i = 0; i < this.size; i++) {
+            for (let j = 0; j < this.size; j++) {
                 if (!this.rowsCovered[i] && !this.columnsCovered[j] && result > this.matrix[i][j]) {
                     result = this.matrix[i][j];
                 }
@@ -1992,8 +2141,8 @@ class MunkresAlgorithm {
     }
     ;
     findAZero() {
-        for (var i = 0; i < this.size; ++i) {
-            for (var j = 0; j < this.size; ++j) {
+        for (let i = 0; i < this.size; i++) {
+            for (let j = 0; j < this.size; j++) {
                 if (this.matrix[i][j] == 0 && !this.rowsCovered[i] && !this.columnsCovered[j]) {
                     return [i, j];
                 }
@@ -2003,7 +2152,7 @@ class MunkresAlgorithm {
     }
     ;
     findStarInRow(row) {
-        for (var j = 0; j < this.size; j++) {
+        for (let j = 0; j < this.size; j++) {
             if (this.state[row][j] == State.Starred) {
                 return j;
             }
@@ -2012,7 +2161,7 @@ class MunkresAlgorithm {
     }
     ;
     findStarInColumn(column) {
-        for (var i = 0; i < this.size; i++) {
+        for (let i = 0; i < this.size; i++) {
             if (this.state[i][column] == State.Starred) {
                 return i;
             }
@@ -2021,7 +2170,7 @@ class MunkresAlgorithm {
     }
     ;
     findPrimeInRow(row) {
-        for (var j = 0; j < this.size; j++) {
+        for (let j = 0; j < this.size; j++) {
             if (this.state[row][j] == State.Primed) {
                 return j;
             }
@@ -2030,22 +2179,22 @@ class MunkresAlgorithm {
     }
     ;
     convertPath(count) {
-        for (var i = 0; i <= count; i++) {
-            var [x, y] = this.path[i];
+        for (let i = 0; i <= count; i++) {
+            const [x, y] = this.path[i];
             this.state[x][y] = (this.state[x][y] == State.Starred) ? State.None : State.Starred;
         }
     }
     ;
     resetCovered() {
-        for (var i = 0; i < this.size; i++) {
+        for (let i = 0; i < this.size; i++) {
             this.rowsCovered[i] = false;
             this.columnsCovered[i] = false;
         }
     }
     ;
     resetPrimes() {
-        for (var i = 0; i < this.size; i++) {
-            for (var j = 0; j < this.size; j++) {
+        for (let i = 0; i < this.size; i++) {
+            for (let j = 0; j < this.size; j++) {
                 if (this.state[i][j] == State.Primed) {
                     this.state[i][j] = State.None;
                 }
@@ -2060,9 +2209,9 @@ class Solution {
         this.domObject = null;
         this.connections = sequence;
         this.task = task;
-        var currentFraction = new Fraction(1);
+        let currentFraction = new Fraction(1);
         this.fractions = [currentFraction];
-        for (var connection of this.connections) {
+        for (const connection of this.connections) {
             currentFraction = currentFraction.multiply(connection.fraction);
             this.fractions.push(currentFraction);
         }
@@ -2072,10 +2221,10 @@ class Solution {
         }
     }
     createDiv() {
-        var div = document.createElement("div");
+        const div = document.createElement("div");
         div.classList.add("sequence");
         div.appendChild(this.fractions[0].createDiv());
-        for (var i = 0; i < this.connections.length; i++) {
+        for (let i = 0; i < this.connections.length; i++) {
             div.appendChild(this.connections[i].createDiv(searchTab.animationSettings.enabled, searchTab.animationSettings.duration / this.fractions[i].getDecimal(), i % 2 == 1));
             div.appendChild(this.fractions[i + 1].createDiv());
             if (i * 2 < this.task.startSequence.length) {
@@ -2091,15 +2240,15 @@ class Solution {
                 this.connections[i].svg2.classList.add("fixed");
             }
         }
-        var infoDiv = document.createElement("div");
+        let infoDiv = document.createElement("div");
         infoDiv.classList.add("info");
         div.appendChild(infoDiv);
         if (!this.task.exact) {
-            var errorSpan = document.createElement('span');
+            const errorSpan = document.createElement('span');
             errorSpan.innerText = 'Error: ' + this.error.toPrecision(3) + ' ';
             infoDiv.appendChild(errorSpan);
         }
-        var permalink = document.createElement('a');
+        const permalink = document.createElement('a');
         permalink.innerText = 'Permalink';
         permalink.title = 'Permanent link to this solution';
         permalink.href = this.getPermalink();
@@ -2108,133 +2257,17 @@ class Solution {
         return div;
     }
     updateAnimation() {
-        for (var i = 0; i < this.connections.length; i++) {
+        for (let i = 0; i < this.connections.length; i++) {
             this.connections[i].updateAnimation(searchTab.animationSettings.enabled, searchTab.animationSettings.duration / this.fractions[i].getDecimal());
         }
     }
     getPermalink() {
-        var gears = [];
-        for (var connection of this.connections) {
+        const gears = [];
+        for (const connection of this.connections) {
             gears.push(connection.gear1);
             gears.push(connection.gear2);
         }
         return '?seq=' + gears.join(',');
     }
-}
-///<reference path="./gears/GearSVGGenerator.ts" />
-class GearPicker {
-    constructor() {
-        this.selectedGear = null;
-        this.callback = null;
-        this.active = false;
-        this.gearInput = null;
-        this.gearPreviewContainer = null;
-        this.gearCatalog = null;
-        this.element = this.prepareElement();
-        this.prepareGearCatalog();
-        this.element.addEventListener('focusout', function (event) {
-            setTimeout(function () {
-                var comparePosition = this.element.compareDocumentPosition(document.activeElement);
-                if (this.active && comparePosition != 0 && comparePosition != 20) {
-                    this.select(null);
-                }
-            }.bind(this), 0);
-        }.bind(this));
-        this.element.addEventListener('click', function (event) {
-            event.stopPropagation();
-        });
-        this.gearInput.addEventListener('keyup', function (event) {
-            var gear = parseFloat(this.gearInput.value);
-            var showPreview = Number.isInteger(gear) && (gear == 1 || gear >= 8);
-            this.gearPreviewContainer.style.display = showPreview ? 'block' : 'none';
-            this.gearCatalog.style.display = showPreview ? 'none' : 'block';
-            if (showPreview) {
-                this.gearPreviewContainer.innerText = '';
-                if (gear == 1) {
-                    this.gearPreviewContainer.appendChild(GearSVGGenerator.createWormGearSVG());
-                }
-                else if (gear > 7 && gear <= 170) {
-                    this.gearPreviewContainer.appendChild(GearSVGGenerator.createGearSVG(gear));
-                }
-            }
-        }.bind(this));
-        this.gearInput.addEventListener('keydown', function (event) {
-            this.gearPreviewContainer.innerText = '';
-            var gear = parseFloat(this.gearInput.value);
-            if (event.keyCode == 13 && Number.isInteger(gear) && (gear == 1 || gear >= 8)) {
-                this.select(gear);
-                event.preventDefault();
-            }
-        }.bind(this));
-        this.gearPreviewContainer.addEventListener('click', function (event) {
-            var gear = parseFloat(this.gearInput.value);
-            if (Number.isInteger(gear) && (gear == 1 || gear >= 8)) {
-                this.select(gear);
-            }
-        }.bind(this));
-    }
-    show(callback, parent = null) {
-        if (parent !== null) {
-            parent.appendChild(this.element);
-        }
-        this.callback = callback;
-        this.element.style.display = 'block';
-        this.gearInput.value = '';
-        this.gearInput.focus();
-        this.gearPreviewContainer.style.display = 'none';
-        this.gearCatalog.style.display = 'block';
-        this.active = true;
-    }
-    select(gear) {
-        this.active = false;
-        this.element.style.display = 'none';
-        document.body.appendChild(this.element);
-        this.selectedGear = gear;
-        if (gear !== null && this.callback !== null) {
-            this.callback(gear);
-        }
-    }
-    prepareElement() {
-        var element = document.createElement('div');
-        element.classList.add('gear-selector');
-        element.setAttribute('tabindex', "0");
-        element.style.display = 'none';
-        this.gearInput = document.createElement('input');
-        this.gearInput.type = 'text';
-        this.gearInput.placeholder = 'number of teeth';
-        element.appendChild(this.gearInput);
-        this.gearPreviewContainer = document.createElement('div');
-        this.gearPreviewContainer.classList.add('catalog-gear');
-        this.gearPreviewContainer.style.display = 'none';
-        element.appendChild(this.gearPreviewContainer);
-        this.gearCatalog = document.createElement('div');
-        this.gearCatalog.classList.add('catalog');
-        element.appendChild(this.gearCatalog);
-        return element;
-    }
-    prepareGearCatalog() {
-        var sequenceEditor = this;
-        for (const gear of [1, 8, 16, 24, 40, 12, 20, 28, 36, 56, 60]) {
-            var span = document.createElement('span');
-            span.classList.add('catalog-gear');
-            if (gear == 1) {
-                span.appendChild(GearSVGGenerator.createWormGearSVG());
-            }
-            else {
-                span.appendChild(GearSVGGenerator.createGearSVG(gear));
-            }
-            var teethDiv = document.createElement('div');
-            teethDiv.classList.add('teeth');
-            teethDiv.innerText = gear.toString();
-            span.appendChild(teethDiv);
-            span.addEventListener('click', function (event) {
-                this.select(gear);
-            }.bind(this));
-            this.gearCatalog.appendChild(span);
-        }
-    }
-}
-if (typeof document !== 'undefined') {
-    var gearPicker = new GearPicker();
 }
 //# sourceMappingURL=app.js.map
