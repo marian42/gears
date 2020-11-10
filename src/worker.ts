@@ -1,3 +1,7 @@
+type UnorderedGears = [number[], number[]]; // Can have different number of primary and secondary gears, matching undecided
+type OrderedGears = Array<[number, number]>; // Same number of primary and secondary gears, matching decided
+
+
 function getTeethProduct(gearTeeth: number[], gearCounts: number[]) {
     let result = 1;
     for (let i = 0; i < gearTeeth.length; i++) {
@@ -146,7 +150,7 @@ function findGears(target: number, availableGears: number[], gearFactors: GearFa
     }
 }
 
-function* findSolutionsExact(parameters: Task): Generator<[number[], number[]], void, null> {    
+function* findSolutionsExact(parameters: Task): Generator<UnorderedGears, void, null> {    
     const availableFactors = getGearFactorsSet(parameters.gears, parameters.gearFactors!);
 
     if (parameters.excludePairsWithFixedGears) {
@@ -175,7 +179,7 @@ function* findSolutionsExact(parameters: Task): Generator<[number[], number[]], 
     }
 }
 
-function* findSolutionsApproximate(parameters: Task): Generator<[number[], number[]], void, null> {
+function* findSolutionsApproximate(parameters: Task): Generator<UnorderedGears, void, null> {
     const targetRatio = parameters.searchRatio!.getDecimal();
     
     if (parameters.excludePairsWithFixedGears) {
@@ -215,12 +219,14 @@ function* findSolutionsApproximate(parameters: Task): Generator<[number[], numbe
     }
 }
 
-function prepareResult(gearsPrimary: number[], gearsSecondary: number[], parameters: Task): Array<[number, number]> | null {
+function prepareResult(unorderedGears: UnorderedGears, parameters: Task): OrderedGears | null {
     // gearsPrimary and gearsSecondary contain gears decided by the algorithm.
     // In addition to that, the result will contain the fixed start and end gear sequences set by the user.
     // There are three types of gear pairs: fixed and fixed, fixed and decided (at the end/beginning of an odd sized fixed sequence)
     // and pairs completely decided by the algorithm. Only th completely decided pairs can be reordered.
     
+    var [gearsPrimary, gearsSecondary] = unorderedGears;
+
     if ((!parameters.gears.includes(1) && gearsPrimary.length + parameters.fixedPrimary!.length != gearsSecondary.length + parameters.fixedSecondary!.length)
     || (parameters.excludePairsWithFixedGears && parameters.fixedPrimary!.includes(1) && gearsPrimary.length + parameters.fixedPrimary!.length > gearsSecondary.length + parameters.fixedSecondary!.length)
     || (parameters.excludePairsWithFixedGears && parameters.fixedSecondary!.includes(1) && gearsPrimary.length + parameters.fixedPrimary!.length < gearsSecondary.length + parameters.fixedSecondary!.length)) {
@@ -262,9 +268,9 @@ function prepareResult(gearsPrimary: number[], gearsSecondary: number[], paramet
     const assignments = munkres.run();
     
     // Assemble sequence
-    const sequenceStart: Array<[number, number]> = [];
-    const sequenceReorderable: Array<[number, number]> = [];
-    const sequenceEnd: Array<[number, number]> = [];
+    const sequenceStart: OrderedGears = [];
+    const sequenceReorderable: OrderedGears = [];
+    const sequenceEnd: OrderedGears = [];
 
     for (let i = 0; i < parameters.startSequence.length - 1; i += 2) {
         sequenceStart.push([parameters.startSequence[i], parameters.startSequence[i + 1]]);
@@ -301,15 +307,15 @@ self.onmessage = function(event: MessageEvent) {
     let iterator = parameters.exact ? findSolutionsExact(parameters) : findSolutionsApproximate(parameters);
 
     while (true) {
-        const [primaryGears, secondaryGears] = iterator.next().value as [number[], number[]];
+        const unorderedGears = iterator.next().value as UnorderedGears;
         
-        const result = prepareResult(primaryGears, secondaryGears, parameters);
+        const orderedGears = prepareResult(unorderedGears, parameters);
         
-        if (result != null) {
+        if (orderedGears != null) {
             const workerGlobalContext: Worker = self as any;
             workerGlobalContext.postMessage({
                 id: parameters.id,
-                sequence: result
+                sequence: orderedGears
             });
         }
     }
