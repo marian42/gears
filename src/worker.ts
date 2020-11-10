@@ -1,20 +1,36 @@
 type UnorderedGears = [number[], number[]]; // Can have different number of primary and secondary gears, matching undecided
 type OrderedGears = Array<[number, number]>; // Same number of primary and secondary gears, matching decided
 
+type UnorderedGearsWithDifferentials = {
+    left1: number[],
+    left2: number[],
+    right1: number[],
+    right2: number[]
+};
 
-function getTeethProduct(gearTeeth: number[], gearCounts: number[]) {
+type OrderedGearsWithDifferentials = { 
+    primaryLeft: OrderedGears,
+    secondaryLeft: OrderedGears,
+    sharedSequence: OrderedGears,
+    primaryRight: OrderedGears,
+    secondaryRight: OrderedGears
+ }
+
+
+function getGearProduct(domain: number[], gearCounts: number[]) {
     let result = 1;
-    for (let i = 0; i < gearTeeth.length; i++) {
-        result *= Math.pow(gearTeeth[i], gearCounts[i]);
+    for (let i = 0; i < domain.length; i++) {
+        result *= Math.pow(domain[i], gearCounts[i]);
     }
     return result;
 }
 
-function getResult(gearTeeth: number[], gearCounts: number[]): number[] {
+// Converts the domain + counts representation to a list of actual gears (that includes duplicates)
+function getGears(domain: number[], gearCounts: number[]): number[] {
     const result = [];
-    for (let i = 0; i < gearTeeth.length; i++) {
+    for (let i = 0; i < domain.length; i++) {
         for (let j = 0; j < gearCounts[i]; j++) {
-            result.push(gearTeeth[i]);
+            result.push(domain[i]);
         }
     }
     return result;
@@ -82,13 +98,19 @@ function* getHammingSequence(bases: number[]) {
     }
 }
 
+// Returns a list of gear multisets that can be made with availableGears and have a teeth product equal to target
 function findGears(target: number, availableGears: number[], gearFactors: GearFactorsDict): number[][] {
     const targetFactors = factorize(target);
 
-    const gearTeeth: number[] = [];
+    const domain: number[] = []; // Gears used, will be a subset of availableGears, indices will refer to the order in this array.
     const gearMaxCounts: number[] = [];
     const availableFactors: Set<number> = new Set();
 
+    // Use prime factors to determine an upper bound of usage count for each gear.
+    // Example: If the target contains the prime factor 2 four times (ie is divisible by 2^4),
+    // a gear that contains the prime factor 2 only twice (ie. is divisible by 2^2, but not by 2^3),
+    // can be used at most twice. Similarly, if a gear has a prime factor that isn't present
+    // in the target, it can't be used at all.
     for (const gear of availableGears) {
         const factors = gearFactors[gear];
         if (factors.length > targetFactors.length) {
@@ -108,7 +130,7 @@ function findGears(target: number, availableGears: number[], gearFactors: GearFa
             }
         }
         if (maxOccurances! > 0) {
-            gearTeeth.push(gear);
+            domain.push(gear);
             gearMaxCounts.push(maxOccurances!);
             for (let i = 0; i < factors.length; i++) {
                 if (factors[i] != 0) {
@@ -125,13 +147,13 @@ function findGears(target: number, availableGears: number[], gearFactors: GearFa
         }
     }
 
-    const gearCounts = Array(gearTeeth.length).fill(0);
+    const gearCounts = Array(domain.length).fill(0);
     const result = [];
 
     while (true) {
-        const teethProduct = getTeethProduct(gearTeeth, gearCounts);
+        const teethProduct = getGearProduct(domain, gearCounts);
         if (teethProduct == target) {
-            result.push(getResult(gearTeeth, gearCounts));
+            result.push(getGears(domain, gearCounts));
         }
 
         gearCounts[0] += 1;
@@ -150,6 +172,27 @@ function findGears(target: number, availableGears: number[], gearFactors: GearFa
     }
 }
 
+function* findGearSequences(searchRatio: Fraction, availableGears: number[], availableGearsPrimary: number[], availableGearsSecondary: number[], gearFactors: GearFactorsDict): Generator<UnorderedGears, void, null> {
+    const availableFactors = getGearFactorsSet(availableGears, gearFactors);
+    const hammingIterator = getHammingSequence(availableFactors);
+
+    while (true) {
+        const currentRatio = searchRatio.extend(hammingIterator.next().value as number);
+
+        const solutionsPrimary = findGears(currentRatio.a, availableGearsPrimary, gearFactors);
+
+        if (solutionsPrimary.length == 0) {
+            continue;
+        }
+        for (const solutionPrimary of solutionsPrimary) {
+            const solutionsSecondary = findGears(currentRatio.b, availableGearsSecondary.filter(gear => !solutionPrimary.includes(gear)), gearFactors);
+            for (const solutionSecondary of solutionsSecondary) {
+                yield [solutionPrimary, solutionSecondary];
+            }
+        }
+    }
+}
+
 function* findSolutionsExact(parameters: Task): Generator<UnorderedGears, void, null> {    
     const availableFactors = getGearFactorsSet(parameters.gears, parameters.gearFactors!);
 
@@ -158,24 +201,13 @@ function* findSolutionsExact(parameters: Task): Generator<UnorderedGears, void, 
         var availableGearsSecondary = parameters.gears.filter(gear => !parameters.fixedPrimary!.includes(gear));
     } else {
         var availableGearsPrimary = parameters.gears;
-        var availableGearsSecondary = parameters.gears;    
+        var availableGearsSecondary = parameters.gears;
     }
 
-    const hammingIterator = getHammingSequence(availableFactors);
+    const iterator = findGearSequences(parameters.searchRatio!, parameters.gears, availableGearsPrimary, availableGearsSecondary, parameters.gearFactors);
+
     while (true) {
-        const currentRatio = parameters.searchRatio!.extend(hammingIterator.next().value as number);
-
-        const solutionsPrimary = findGears(currentRatio.a, availableGearsPrimary, parameters.gearFactors!);
-
-        if (solutionsPrimary.length == 0) {
-            continue;
-        }
-        for (const solutionPrimary of solutionsPrimary) {
-            const solutionsSecondary = findGears(currentRatio.b, availableGearsSecondary.filter(gear => !solutionPrimary.includes(gear)), parameters.gearFactors!);
-            for (const solutionSecondary of solutionsSecondary) {
-                yield [solutionPrimary, solutionSecondary];
-            }
-        }
+        yield iterator.next().value as UnorderedGears;
     }
 }
 
