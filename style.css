@@ -4,7 +4,7 @@ body {
     color: rgb(63, 63, 63);
 }
 
-.gear path, .worm polygon {
+.gear path, .worm polygon, .differential path {
     fill: #888d91;
 }
 
@@ -20,8 +20,8 @@ body {
     fill: rgb(92, 59, 76);
 }
 
-.differential path {
-    fill: rgb(91, 95, 100);
+.differential {
+    margin: 10px;
 }
 
 .connection {
@@ -109,6 +109,13 @@ body {
 
 .sequence .info {
     padding-top: 8px;
+}
+
+.double-sequence {
+    margin: 10px;
+    padding: 20px;
+    border: 1px solid red;
+    display: inline-block;
 }
 
 form {
