@@ -1,14 +1,43 @@
-class GearSVGGenerator {
+class SVGGenerator {
+    protected pathStrings: string[] = [];
+
+    addPolygon(vertices: Array<[number, number]>) {    
+        this.pathStrings.push("M " + vertices[0][0] + " " + vertices[0][1]);
+        for (let i = 1; i < vertices.length; i++) {
+            const vertex = vertices[i];
+            this.pathStrings.push("L " + vertex[0] + " " + vertex[1]);
+        }
+        this.pathStrings.push("Z");
+    }
+
+    addCircle(x: number, y: number, diameter=5) {
+        const r = diameter / 2;
+        this.pathStrings.push("M " + (x - r) + ", " + y);
+        this.pathStrings.push("a " + r + "," + r + " 0 1, 0 " + diameter + ",0");
+        this.pathStrings.push("a " + r + "," + r + " 0 1, 0 " + (-diameter) + ",0");
+    }
+    
+    protected createSVG(): SVGSVGElement {
+        const svg = document.createElementNS(SVG_NAMESPACE, "svg");    
+        const path = document.createElementNS(SVG_NAMESPACE, "path");    
+    
+        path.setAttribute("d", this.pathStrings.join(' '));
+    
+        svg.appendChild(path);
+        return svg;
+    }
+}
+
+class GearSVGGenerator extends SVGGenerator {
     public readonly teeth: number;
     
     private readonly radiusInner: number;
     private readonly radiusOuter: number;
 
-    private pathStrings: string[] = [];
-
     private static gearCache: { [teeth: number] : GearSVGGenerator; } = {};
 
     constructor(n: number) {
+        super();
         this.teeth = n;
 
         this.radiusInner = n / 2 - 1.2;
@@ -143,23 +172,7 @@ class GearSVGGenerator {
         this.addPolygon(vertices);
     }
 
-    addPolygon(vertices: Array<[number, number]>) {    
-        this.pathStrings.push("M " + vertices[0][0] + " " + vertices[0][1]);
-        for (let i = 1; i < vertices.length; i++) {
-            const vertex = vertices[i];
-            this.pathStrings.push("L " + vertex[0] + " " + vertex[1]);
-        }
-        this.pathStrings.push("Z");
-    }
-
-    addCircle(x: number, y: number, diameter=5) {
-        const r = diameter / 2;
-        this.pathStrings.push("M " + (x - r) + ", " + y);
-        this.pathStrings.push("a " + r + "," + r + " 0 1, 0 " + diameter + ",0");
-        this.pathStrings.push("a " + r + "," + r + " 0 1, 0 " + (-diameter) + ",0");
-    }
-
-    createCutout(radiusInner: number, radiusOuter: number, margin=0.8) {
+    private createCutout(radiusInner: number, radiusOuter: number, margin=0.8) {
         let inner = Math.sqrt(Math.pow(radiusInner, 2.0) - Math.pow(margin, 2.0));
         const outer = Math.sqrt(Math.pow(radiusOuter, 2.0) - Math.pow(margin, 2.0));
 
@@ -188,7 +201,7 @@ class GearSVGGenerator {
         this.pathStrings.push("Z");
     }
 
-    createAxleHole(x = 0, y = 0, xExtension=2, yExtension=0, extensionSize=0.5) {
+    private createAxleHole(x = 0, y = 0, xExtension=2, yExtension=0, extensionSize=0.5) {
         const a = 1.78 / 2;
         const b = 4.78 / 2;
         const c = extensionSize / 2;
@@ -234,13 +247,9 @@ class GearSVGGenerator {
         this.addPolygon(vertices);
     }
 
-    private createSVG(): SVGSVGElement {
-        const svg = document.createElementNS(SVG_NAMESPACE, "svg");    
-        const path = document.createElementNS(SVG_NAMESPACE, "path");    
-    
-        path.setAttribute("d", this.pathStrings.join(' '));
-    
-        svg.appendChild(path);
+    protected createSVG(): SVGSVGElement {
+        const svg = super.createSVG();
+
         svg.setAttribute("height", (this.radiusOuter * 2 * PIXELS_PER_MM).toString());
         svg.setAttribute("width", (this.radiusOuter * 2 * PIXELS_PER_MM).toString());
         svg.setAttribute("viewBox", (-this.radiusOuter) + " " + (-this.radiusOuter) + " " + (2 * this.radiusOuter) + " " + (2 * this.radiusOuter));
@@ -259,7 +268,7 @@ class GearSVGGenerator {
         const stepCount = newStyle ? 4.8 : 7;
         const yStep = 3.2;
     
-        const vertices = [];
+        const vertices: Array<[number, number]> = [];
     
         const teethOffset = newStyle ? -0.34 : -0.125;
         for (let i = 0; i < stepCount; i++) {
@@ -304,5 +313,57 @@ class GearSVGGenerator {
         svg.setAttribute("viewBox", (-rxOuter) + " " + (-ry) + " " + (2 * rxOuter) + " " + (2 * ry));
         svg.classList.add("worm");
         return svg;
+    }
+}
+
+class DifferentialCasingSVGGenerator extends SVGGenerator {
+    private static instance: DifferentialCasingSVGGenerator | null = null;
+
+    constructor() {
+        super();
+        const vertices: Array<[number, number]> = [
+            [8, 0],
+            [8, -1.5],
+            [14, -1.5],
+            [14, -6.5],
+            [11, -6.5],
+            [11, -25.5],
+            [10, -25.5],
+            [10, -30.5],
+            [8, -30.5],
+            [8, -32]
+        ];
+        for (var i = vertices.length - 1; i >= 0; i--) {
+            vertices.push([-vertices[i][0], vertices[i][1]]);
+        }
+        this.addPolygon(vertices);
+        this.addPolygon([
+            [-8.5, -8],
+            [-8.5, -24],
+            [8.5, -24],
+            [8.5, -14.8],
+            [3, -14.8],
+            [3, -17.2],
+            [8.5, -17.2],
+            [8.5, -8],
+        ]);
+    }
+
+    protected createSVG(): SVGSVGElement {
+        const svg = super.createSVG();
+        
+        svg.setAttribute("height", (32 * PIXELS_PER_MM).toString());
+        svg.setAttribute("width", (28 * PIXELS_PER_MM).toString());
+        svg.setAttribute("viewBox", "-14 -32 28 32");
+        svg.classList.add("differential");
+
+        return svg;
+    }
+
+    public static createDifferentialCasing() {
+        if (DifferentialCasingSVGGenerator.instance == null) {
+            DifferentialCasingSVGGenerator.instance = new DifferentialCasingSVGGenerator();
+        }
+        return DifferentialCasingSVGGenerator.instance.createSVG();
     }
 }

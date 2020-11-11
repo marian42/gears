@@ -20,6 +20,10 @@ body {
     fill: rgb(92, 59, 76);
 }
 
+.differential path {
+    fill: rgb(91, 95, 100);
+}
+
 .connection {
     border: 1px solid rgb(167, 167, 167);
     border-radius: 4px;
