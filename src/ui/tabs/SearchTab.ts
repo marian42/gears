@@ -299,6 +299,62 @@ class SearchTab {
         return false;
     }
 
+    private testSequence(sequence: OrderedGears, start: Fraction): [Fraction, string] {
+        var result = "";
+        var ratio = start;
+        for (let [gear1, gear2] of sequence) {
+            ratio = ratio.multiply(new Fraction(gear1, gear2));
+            result += "G" + gear1 + ":G" + gear2 + " (" + ratio.a + " / " + ratio.b + ") -> ";
+        }
+        if (sequence.length == 0) {
+            result = "no gears -> (" + ratio.a + " / " + ratio.b + ") ->";
+        }
+        return [ratio, result];
+    }
+
+    private testDifferential(task: Task) {
+        console.log("test differential");
+        var iterator = findSolutionsWithDifferential(task);
+
+        for (var i = 0; i < 10; i++) {
+            var unordered = iterator.next().value as UnorderedGearsWithDifferentials;
+            console.log(unordered);
+            var result = prepareResultWithDifferential(unordered, task);
+            console.log(result);
+            if (result != null) {
+                var ratio = new Fraction(1);
+                if (result.primaryLeft.length != 0 || result.secondaryLeft.length != 0) {
+                    let [ratio1, line1] = this.testSequence(result.primaryLeft, ratio);
+                    console.log(line1);
+                    let [ratio2, line2] = this.testSequence(result.secondaryLeft, ratio);
+                    console.log(line2);
+                    ratio = ratio1.add(ratio2).divideByFactor(2);
+                    console.log("differential -> " + ratio.a + " / " + ratio.b);
+                }
+                if (result.sharedSequence.length != 0) {
+                    let [ratio1, line1] = this.testSequence(result.sharedSequence, ratio);
+                    ratio = ratio1;
+                    console.log(line1);
+                }
+
+                if (result.primaryRight.length != 0 || result.secondaryRight.length != 0) {
+                    console.log("differential -> ");
+                    var a = this.testSequence(result.primaryRight, new Fraction(1))[0];
+                    var b = this.testSequence(result.secondaryRight, new Fraction(1))[0];
+                    var offset = ratio.multiply(a).subtract(ratio.multiply(b)).divide(a.add(b));
+                    var start1 = ratio.subtract(offset);
+                    let [ratio1, line1] = this.testSequence(result.primaryRight, start1);
+                    console.log("(" + start1.toString() + ") -> " + line1);
+                    var start2 = ratio.add(offset);
+                    let [ratio2, line2] = this.testSequence(result.secondaryRight, start2);
+                    console.log("(" + start2.toString() + ") -> " + line2);
+                }
+                break;
+            }
+            console.log("\n\n");
+        }
+    }
+
     private startSearch() {
         const approximateSettings = this.searchParameters.error.getFromDOM() as CheckableValue<number>;        
         this.currentTaskId++;
@@ -341,10 +397,13 @@ class SearchTab {
             this.currentWorker.terminate();
         }
 
+        this.testDifferential(this.currentTask);
+
         if (this.checkForMissingFactors(this.currentTask)) {
             return;
         }
 
+        /*
         this.currentWorker = new Worker("app.js");
         this.currentWorker.onmessage = this.onReceiveWorkerMessage.bind(this);
         this.currentWorker.postMessage(this.currentTask);
@@ -352,6 +411,7 @@ class SearchTab {
         this.searchingSpan.style.display = "inline";
         this.currentTask.solutionList = new SolutionList(this.resultDiv, this.currentTask);
         this.handleTaskTimeout();
+        */
     }
 
     public stopSearch() {

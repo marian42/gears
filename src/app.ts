@@ -1,3 +1,4 @@
+///<reference path="./model/MunkresAlgorithm.ts" />
 ///<reference path="./ui/tabs/SearchTab.ts" />
 ///<reference path="./ui/tabs/FitGears.ts" />
 ///<reference path="./ui/tabs/SequenceEditor.ts" />

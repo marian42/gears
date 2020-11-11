@@ -1,22 +1,6 @@
 type UnorderedGears = [number[], number[]]; // Can have different number of primary and secondary gears, matching undecided
 type OrderedGears = Array<[number, number]>; // Same number of primary and secondary gears, matching decided
 
-type UnorderedGearsWithDifferentials = {
-    left1: number[],
-    left2: number[],
-    right1: number[],
-    right2: number[]
-};
-
-type OrderedGearsWithDifferentials = { 
-    primaryLeft: OrderedGears,
-    secondaryLeft: OrderedGears,
-    sharedSequence: OrderedGears,
-    primaryRight: OrderedGears,
-    secondaryRight: OrderedGears
- }
-
-
 function getGearProduct(domain: number[], gearCounts: number[]) {
     let result = 1;
     for (let i = 0; i < domain.length; i++) {
@@ -36,24 +20,24 @@ function getGears(domain: number[], gearCounts: number[]): number[] {
     return result;
 }
 
-function getMissingPrimeFactors(targetRatio: Fraction, availableFactors: number[]) {
+function getMissingPrimeFactors(targetRatio: Fraction, availableFactors: Set<number>) {
     const result = [];
     const numeratorFactors = factorize(targetRatio.a);
     for (let i = 0; i < numeratorFactors.length; i++) {
-        if (numeratorFactors[i] > 0 && !availableFactors.includes(i + 2)) {
+        if (numeratorFactors[i] > 0 && !availableFactors.has(i + 2)) {
             result.push(i + 2);
         }
     }
     const denominatorFactors = factorize(targetRatio.b);
     for (let i = 0; i < denominatorFactors.length; i++) {
-        if (denominatorFactors[i] > 0 && !availableFactors.includes(i + 2)) {
+        if (denominatorFactors[i] > 0 && !availableFactors.has(i + 2)) {
             result.push(i + 2);
         }
     }
     return result;
 }
 
-function getGearFactorsSet(gears: number[], gearFactors: GearFactorsDict) {
+function getGearFactorsSet(gears: number[], gearFactors: GearFactorsDict): Set<number> {
     const gearFactorsSet: Set<number> = new Set();
     for (const gear of gears) {
         for (let i = 0; i < gearFactors[gear].length; i++) {
@@ -62,7 +46,7 @@ function getGearFactorsSet(gears: number[], gearFactors: GearFactorsDict) {
             }
         }
     }
-    return Array.from(gearFactorsSet.values());
+    return gearFactorsSet;
 }
 
 // Returns an iterator over all numbers that can be made with the given factors
@@ -100,6 +84,10 @@ function* getHammingSequence(bases: number[]) {
 
 // Returns a list of gear multisets that can be made with availableGears and have a teeth product equal to target
 function findGears(target: number, availableGears: number[], gearFactors: GearFactorsDict): number[][] {
+    if (target == 1) {
+        return [[]];
+    }
+
     const targetFactors = factorize(target);
 
     const domain: number[] = []; // Gears used, will be a subset of availableGears, indices will refer to the order in this array.
@@ -172,9 +160,10 @@ function findGears(target: number, availableGears: number[], gearFactors: GearFa
     }
 }
 
+
 function* findGearSequences(searchRatio: Fraction, availableGears: number[], availableGearsPrimary: number[], availableGearsSecondary: number[], gearFactors: GearFactorsDict): Generator<UnorderedGears, void, null> {
     const availableFactors = getGearFactorsSet(availableGears, gearFactors);
-    const hammingIterator = getHammingSequence(availableFactors);
+    const hammingIterator = getHammingSequence(Array.from(availableFactors));
 
     while (true) {
         const currentRatio = searchRatio.extend(hammingIterator.next().value as number);
@@ -193,9 +182,7 @@ function* findGearSequences(searchRatio: Fraction, availableGears: number[], ava
     }
 }
 
-function* findSolutionsExact(parameters: Task): Generator<UnorderedGears, void, null> {    
-    const availableFactors = getGearFactorsSet(parameters.gears, parameters.gearFactors!);
-
+function* findSolutionsExact(parameters: Task): Generator<UnorderedGears, void, null> {
     if (parameters.excludePairsWithFixedGears) {
         var availableGearsPrimary = parameters.gears.filter(gear => !parameters.fixedSecondary!.includes(gear));
         var availableGearsSecondary = parameters.gears.filter(gear => !parameters.fixedPrimary!.includes(gear));
