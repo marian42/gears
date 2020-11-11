@@ -29,7 +29,6 @@ if (typeof document !== 'undefined') { // This is not run in worker threads
     loadUrlParameters();
 
     window.onpopstate = function(event: PopStateEvent) {
-        console.log("onpopstate");
         searchTab.stopSearch();
         loadUrlParameters();
     }

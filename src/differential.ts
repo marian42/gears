@@ -57,8 +57,6 @@ function* findSolutionsWithDifferential(task: Task): Generator<UnorderedGearsWit
     const usePrimaryDifferential = !canBeMadeWithFactors(primaryTarget, availableFactors);
     const useSecondaryDifferential = !canBeMadeWithFactors(secondaryTarget, availableFactors);
 
-    console.log(usePrimaryDifferential + " - " + useSecondaryDifferential);
-
     const findGearsCache: {[target: number]: number[][]} = {};
 
     while (true) {
@@ -139,9 +137,7 @@ function* findSolutionsWithDifferential(task: Task): Generator<UnorderedGearsWit
                 }
 
                 // TODO skip if a gear is in all four lists
-
-                console.log("offsets: " + primaryOffset + ", " + secondaryOffset);
-                console.log(left1 + ", " + left2 + " - " + right1 + ", " + right2);
+                
                 yield {
                     left1: gearsLeft1[indexLeft1],
                     left2: gearsLeft2[indexLeft2],
@@ -259,9 +255,6 @@ function prepareResultWithDifferential(unorderedGears: UnorderedGearsWithDiffere
         gearsToAdd.push(gear);
         removeOne(gear, remaining);
     }
-
-    console.log("added gears:");
-    console.log(gearsToAdd);
 
     var primaryLeft: UnorderedGears = [unorderedGears.left1.slice(), gearsToAdd.slice()];
     var secondaryLeft: UnorderedGears = [unorderedGears.left2.slice(), gearsToAdd.slice()];
