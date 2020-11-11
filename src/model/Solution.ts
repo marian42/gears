@@ -3,15 +3,15 @@ abstract class Solution {
     public connections: Connection[] = [];
     public domObject: HTMLDivElement | null = null;
     protected abstract task: Task;
+    public abstract readonly numberOfGears: number;
 
     public abstract createDiv(): HTMLDivElement;
     public abstract updateAnimation(): void;
 }
 
 class SequenceSolution extends Solution {
-    private readonly fractions: Fraction[];
-    
     protected task: Task;
+    public readonly numberOfGears: number;
     
     private readonly sequence: OrderedGears;
 
@@ -19,38 +19,38 @@ class SequenceSolution extends Solution {
         super();
         this.task = task;
         this.sequence = sequence;
-        
-        let currentFraction = new Fraction(1);
-        this.fractions = [currentFraction];
-        for (let [gear1, gear2] of this.sequence) {
-            currentFraction = currentFraction.multiply(new Fraction(gear1, gear2));
-            this.fractions.push(currentFraction);
-        }
+        this.numberOfGears = sequence.length * 2;
+
         if (!this.task.exact) {
-            this.error = Math.abs(currentFraction.getDecimal() / this.task.targetRatio.getDecimal() - 1);
+            this.error = Math.abs(getRatio(sequence).getDecimal() / this.task.targetRatio.getDecimal() - 1);
         }
     }
 
     public createDiv(): HTMLDivElement {
         const div = document.createElement("div");
         div.classList.add("sequence");
-        div.appendChild(this.fractions[0].createDiv());
+        var ratio = new Fraction(1);
+        div.appendChild(ratio.createDiv());
 
-        for (let i = 0; i < this.connections.length; i++) {
-            div.appendChild(this.connections[i].createDiv(searchTab.animationSettings.enabled, searchTab.animationSettings.duration / this.fractions[i].getDecimal(), i % 2 == 1));
-            div.appendChild(this.fractions[i + 1].createDiv());
+        for (let i = 0; i < this.sequence.length; i++) {
+            var connection = new Connection(this.sequence[i][0], this.sequence[i][1]);
+            this.connections.push(connection);
+
+            div.appendChild(connection.createDiv(searchTab.animationSettings.enabled, searchTab.animationSettings.duration / ratio.getDecimal(), i % 2 == 1));
+            ratio = ratio.multiply(connection.fraction);
+            div.appendChild(ratio.createDiv());
 
             if (i * 2 < this.task.startSequence.length) {
-                this.connections[i].svg1!.classList.add("fixed");
+                connection.svg1!.classList.add("fixed");
             }
             if (i * 2 + 1 < this.task.startSequence.length) {
-                this.connections[i].svg2!.classList.add("fixed");
+                connection.svg2!.classList.add("fixed");
             }
             if (i * 2 >= this.connections.length * 2 - this.task.endSequence.length) {
-                this.connections[i].svg1!.classList.add("fixed");
+                connection.svg1!.classList.add("fixed");
             }
             if (i * 2 + 1 >= this.connections.length * 2 - this.task.endSequence.length) {
-                this.connections[i].svg2!.classList.add("fixed");
+                connection.svg2!.classList.add("fixed");
             }
         }
 
@@ -59,7 +59,7 @@ class SequenceSolution extends Solution {
         div.appendChild(infoDiv);
         if (!this.task.exact) {
             const errorSpan = document.createElement('span');
-            errorSpan.innerText = 'Error: ' + this.error!.toPrecision(3) + ' ';
+            errorSpan.innerText = 'Error: ' + this.error.toPrecision(3) + ' ';
             infoDiv.appendChild(errorSpan);
         }
         const permalink = document.createElement('a');
@@ -73,7 +73,8 @@ class SequenceSolution extends Solution {
 
     public updateAnimation() {
         for (let i = 0; i < this.connections.length; i++) {
-            this.connections[i].updateAnimation(searchTab.animationSettings.enabled, searchTab.animationSettings.duration / this.fractions[i].getDecimal());
+            // TODO            
+            //this.connections[i].updateAnimation(searchTab.animationSettings.enabled, searchTab.animationSettings.duration / this.fractions[i].getDecimal());
         }
     }
 
@@ -99,6 +100,7 @@ function getRatio(gears: OrderedGears) {
 
 class DifferentialSolution extends Solution {
     private readonly data: OrderedGearsWithDifferentials;
+    public readonly numberOfGears: number;
     
     protected task: Task;
 
@@ -106,6 +108,14 @@ class DifferentialSolution extends Solution {
         super();
         this.data = data;
         this.task = task;
+
+        this.numberOfGears = (data.primaryLeft.length + data.secondaryLeft.length + data.primaryRight.length + data.secondaryRight.length + data.sharedSequence.length) * 2;
+        if (data.primaryLeft.length != 0 || data.secondaryLeft.length != 0) {
+            this.numberOfGears += 4;
+        }
+        if (data.primaryRight.length != 0 || data.secondaryRight.length != 0) {
+            this.numberOfGears += 4;
+        }
     }
 
     private createParallelConnections(sequence1: OrderedGears, sequence2: OrderedGears): HTMLDivElement {

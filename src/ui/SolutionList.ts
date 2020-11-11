@@ -13,11 +13,11 @@ class SolutionList {
     }
 
     public add(solution: Solution) {
-        const count = solution.connections.length;
+        const count = solution.numberOfGears;
         if (!(count in this.solutions)) {
             const sizeContainer = document.createElement('div');
             const headline = document.createElement('h2');
-            headline.innerText = 'Solutions with ' + count + (count > 1 ? ' connections' : ' connection');
+            headline.innerText = 'Solutions with ' + count + " gears";
             sizeContainer.appendChild(headline);
 
             let done = false;
