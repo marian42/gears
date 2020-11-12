@@ -6,7 +6,12 @@ abstract class Solution {
     public abstract readonly numberOfGears: number;
 
     public abstract createDiv(): HTMLDivElement;
-    public abstract updateAnimation(): void;
+
+    public updateAnimation(rotationsPerSecond: number) {
+        for (let connection of this.connections) {
+            connection.updateAnimation(rotationsPerSecond);
+        }
+    }
 }
 
 class SequenceSolution extends Solution {
@@ -36,9 +41,10 @@ class SequenceSolution extends Solution {
 
         for (let i = 0; i < this.sequence.length; i++) {
             var connection = new Connection(this.sequence[i][0], this.sequence[i][1]);
+            connection.rotationSpeed = ratio.getDecimal() * (i % 2 == 0 ? 1 : -1);
             this.connections.push(connection);
 
-            div.appendChild(connection.createDiv(searchTab.animationSettings.enabled, searchTab.animationSettings.duration / ratio.getDecimal(), i % 2 == 1));
+            div.appendChild(connection.createDiv());
             ratio = ratio.multiply(connection.fraction);
             div.appendChild(ratio.createDiv());
 
@@ -73,13 +79,6 @@ class SequenceSolution extends Solution {
 
         this.domObject = solutionDiv;
         return solutionDiv;
-    }
-
-    public updateAnimation() {
-        for (let i = 0; i < this.connections.length; i++) {
-            // TODO            
-            //this.connections[i].updateAnimation(searchTab.animationSettings.enabled, searchTab.animationSettings.duration / this.fractions[i].getDecimal());
-        }
     }
 
     private getPermalink() {
@@ -121,18 +120,15 @@ class DifferentialSolution extends Solution {
             this.numberOfGears += 4;
         }
     }
-
-    private createParallelConnections(sequence1: OrderedGears, sequence2: OrderedGears): HTMLDivElement {
-        const div = document.createElement("div");
-
-        return div;
-    }
-
+    
     private addSequence(gears: OrderedGears, target: HTMLDivElement, ratio: Fraction) {
+        let index = 0;
         for (let [gear1, gear2] of gears) {
             const connection = new Connection(gear1, gear2);
+            connection.rotationSpeed = ratio.getDecimal() * (index % 2 == 0 ? 1 : -1);
+            index++;
             this.connections.push(connection);
-            target.appendChild(connection.createDiv(false));
+            target.appendChild(connection.createDiv());
             ratio = ratio.multiply(connection.fraction);
             target.appendChild(ratio.createDiv());
         }
@@ -213,9 +209,5 @@ class DifferentialSolution extends Solution {
         solutionDiv.appendChild(div);
         this.domObject = solutionDiv;
         return solutionDiv;
-    }
-
-    public updateAnimation(): void {
-        
     }
 }

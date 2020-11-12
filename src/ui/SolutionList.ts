@@ -62,10 +62,10 @@ class SolutionList {
         }
     }
 
-    updateAnimation() {
+    updateAnimation(rotationsPerSecond: number) {
         for (const count in this.solutions) {
             for (const solution of this.solutions[count]) {
-                solution.updateAnimation();
+                solution.updateAnimation(rotationsPerSecond);
             }
         }
     }

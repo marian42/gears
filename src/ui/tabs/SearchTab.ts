@@ -154,6 +154,7 @@ class SearchTab {
             if (this.currentTask!.solutionList!.totalSolutions >= this.currentTask!.maxNumberOfResults) {
                 this.stopSearch();
             }
+            this.updateAnimation();
         }
     }
 
@@ -380,11 +381,10 @@ class SearchTab {
     }
 
     updateAnimation() {
-        this.animationSettings.enabled = this.animateCheckbox.checked;
-        this.animationSettings.duration = 60 / parseFloat(this.rpmTextbox.value);
-
         if (this.currentTask != null) {
-            this.currentTask.solutionList!.updateAnimation();
+            const animationRotationsPerSecond = this.animateCheckbox.checked ? parseFloat(this.rpmTextbox.value) / 60 : 0;
+            console.log(animationRotationsPerSecond);
+            this.currentTask.solutionList!.updateAnimation(animationRotationsPerSecond);
         }
     }
 }

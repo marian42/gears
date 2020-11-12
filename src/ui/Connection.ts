@@ -26,6 +26,8 @@ class Connection {
     public svg1: SVGSVGElement | null = null;
     public svg2: SVGSVGElement | null = null;
 
+    public rotationSpeed = 1;
+
     constructor(gear1: number, gear2: number) {
         this.gear1 = gear1;
         this.gear2 = gear2;
@@ -36,7 +38,7 @@ class Connection {
         this.factor = this.fraction.getDecimal();
     }
 
-    public createDiv(animate=true, animationDuration=4, reverse=false) {
+    public createDiv() {
         const result = document.createElement("div");
         result.setAttribute("class", "connection");
     
@@ -47,14 +49,8 @@ class Connection {
         if (this.gear1 == 1) {
             this.svg1 = GearSVGGenerator.createWormGearSVG(this.useNewStyleWormGear);
             cell.appendChild(this.svg1);
-            if (!reverse) {
-                (this.svg1!.firstChild as SVGElement).style.animationDirection = 'reverse';
-            }
         } else {
             this.svg1 = GearSVGGenerator.createGearSVG(this.gear1);
-            if (reverse) {
-                (this.svg1!.firstChild as SVGElement).style.animationDirection = 'reverse';
-            }
             cell.appendChild(this.svg1);
         }
         row.appendChild(cell);
@@ -69,9 +65,6 @@ class Connection {
                 this.svg2.style.transform = 'rotate(' + (180 / this.gear2) + 'deg)';
             }
             cell.appendChild(this.svg2);
-        }
-        if (!reverse) {
-            (this.svg2.firstChild as SVGElement).style.animationDirection = 'reverse';
         }
         row.appendChild(cell);
     
@@ -184,16 +177,27 @@ class Connection {
             distanceDiv.classList.add("clickable");
             distanceDiv.addEventListener("click", this.showFitGearsTab.bind(this));
         }
-        this.updateAnimation(animate, animationDuration);
         return result;
     }
 
-    public updateAnimation(enabled: boolean, duration: number) {
-        (this.svg1!.firstChild as SVGElement).style.animationDuration = duration + "s";
-        (this.svg1!.firstChild as SVGElement).style.animationPlayState = enabled ? 'running' : 'paused';
-        
-        (this.svg2!.firstChild as SVGElement).style.animationDuration = (duration / this.factor) + "s";
-        (this.svg2!.firstChild as SVGElement).style.animationPlayState = enabled ? 'running' : 'paused';
+    public updateAnimation(rotationsPerSecond: number) {
+        const enabled = rotationsPerSecond != 0;
+
+        const svg1 = this.svg1!.firstChild as SVGElement;
+        const svg2 = this.svg2!.firstChild as SVGElement;
+
+        svg1.style.animationPlayState = enabled ? 'running' : 'paused';
+        svg2.style.animationPlayState = enabled ? 'running' : 'paused';
+
+        if (enabled) {
+            const duration = Math.abs(1.0 / rotationsPerSecond / this.rotationSpeed);
+
+            svg1.style.animationDuration = duration + "s";
+            svg1.style.animationDirection = (rotationsPerSecond * this.rotationSpeed < 0) ? 'reverse' : '';
+            
+            svg2.style.animationDuration = (duration / this.factor) + "s";
+            svg2.style.animationDirection = (rotationsPerSecond * this.rotationSpeed > 0) ? 'reverse' : '';
+        }
     }
 
     private showFitGearsTab() {

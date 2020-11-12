@@ -18,9 +18,6 @@ class SequenceEditor {
     private danglingGear: number | null = null;
     private connections: Connection[] = [];
 
-    private animationEnabled: boolean = false;
-    private animationDuration: number = 0;
-
     constructor(element: HTMLDivElement) {
         this.container = element;
 
@@ -73,7 +70,7 @@ class SequenceEditor {
     private addGear(gear: number) {
         if (this.danglingGear == null) {
             this.danglingGear = gear;
-            const div = new Connection(gear, 1).createDiv(this.animationEnabled, this.animationDuration / this.resultFraction.getDecimal(), this.connections.length % 2 == 1);
+            const div = new Connection(gear, 1).createDiv();
             div.classList.add('hide-second');
             
             if (this.connections.length >= 1) {
@@ -85,7 +82,7 @@ class SequenceEditor {
             this.danglingGear = null;
 
             this.connectionContainer.removeChild(this.connectionContainer.lastChild!);
-            this.connectionContainer.appendChild(connection.createDiv(this.animationEnabled, this.animationDuration / this.resultFraction.getDecimal(), this.connections.length % 2 == 1));
+            this.connectionContainer.appendChild(connection.createDiv());
 
             this.connections.push(connection);
             this.resultFraction = this.resultFraction.multiply(connection.fraction);
@@ -94,6 +91,7 @@ class SequenceEditor {
 
         this.updatePermalink();
         this.addButton.focus();
+        this.updateAnimation();
     }
 
     private getGears() {
@@ -130,12 +128,9 @@ class SequenceEditor {
     }
 
     private updateAnimation() {
-        let fraction = this.startFraction;
-        this.animationEnabled = this.animateCheckbox.checked;
-        this.animationDuration = 60 / parseFloat(this.animateRpmInput.value);
+        const animationRotationsPerSecond = this.animateCheckbox.checked ? parseFloat(this.animateRpmInput.value) / 60 : 0;
         for (const connection of this.connections) {
-            connection.updateAnimation(this.animationEnabled, this.animationDuration / fraction.getDecimal());
-            fraction = fraction.multiply(connection.fraction);
+            connection.updateAnimation(animationRotationsPerSecond);
         }
     }
 
