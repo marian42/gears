@@ -319,39 +319,43 @@ function prepareResult(unorderedGears: UnorderedGears, parameters: Task): Ordere
 }
 
 self.onmessage = function(event: MessageEvent) {
-    const parameters = event.data as Task;
-    parameters.targetRatio = new Fraction(parameters.targetRatio!.a, parameters.targetRatio!.b);
-    parameters.searchRatio = new Fraction(parameters.searchRatio!.a, parameters.searchRatio!.b);
+    const task = event.data as Task;
+    task.targetRatio = new Fraction(task.targetRatio!.a, task.targetRatio!.b);
+    task.searchRatio = new Fraction(task.searchRatio!.a, task.searchRatio!.b);
     
-    let useDifferentials = true;
+    let useDifferentials = false;
+    if (task.exact) {
+        const availableFactors = getGearFactorsSet(task.gears, task.gearFactors!);
+        useDifferentials = !canBeMadeWithFactors(task.searchRatio.a, availableFactors) || !canBeMadeWithFactors(task.searchRatio.b, availableFactors);
+    }
     
     if (useDifferentials) {
-        let iterator = findSolutionsWithDifferential(parameters);
+        let iterator = findSolutionsWithDifferential(task);
 
         while (true) {
             const unorderedGears = iterator.next().value as UnorderedGearsWithDifferentials;            
-            const orderedGears = prepareResultWithDifferential(unorderedGears, parameters);
+            const orderedGears = prepareResultWithDifferential(unorderedGears, task);
             
             if (orderedGears != null) {
                 const workerGlobalContext: Worker = self as any;
                 workerGlobalContext.postMessage({
-                    id: parameters.id,
+                    id: task.id,
                     sequence: orderedGears,
                     usesDifferential: true
                 });
             }
         }
     } else {
-        let iterator = parameters.exact ? findSolutionsExact(parameters) : findSolutionsApproximate(parameters);
+        let iterator = task.exact ? findSolutionsExact(task) : findSolutionsApproximate(task);
     
         while (true) {
             const unorderedGears = iterator.next().value as UnorderedGears;            
-            const orderedGears = prepareResult(unorderedGears, parameters);
+            const orderedGears = prepareResult(unorderedGears, task);
             
             if (orderedGears != null) {
                 const workerGlobalContext: Worker = self as any;
                 workerGlobalContext.postMessage({
-                    id: parameters.id,
+                    id: task.id,
                     sequence: orderedGears,
                     usesDifferential: false
                 });
