@@ -24,6 +24,11 @@ body {
     margin: 10px;
 }
 
+.double-sequence .separator {
+    border-bottom: 1px solid rgb(202, 202, 202);
+    margin-top: 10px;
+}
+
 .connection {
     border: 1px solid rgb(167, 167, 167);
     border-radius: 4px;
@@ -75,6 +80,7 @@ body {
     text-align: center;
     padding: 0 8px;
     margin-top: 10px;
+    margin-bottom: 8px;
 }
 
 .fraction .decimal {
@@ -99,23 +105,38 @@ body {
     padding-bottom: 10px;
 }
 
-.sequence {
+.solution {
     padding-bottom: 10px;
 }
 
-.sequence:not(:last-of-type) {
+.solution:not(:last-of-type) {
     border-bottom: 1px solid rgb(192, 192, 192);
 }
 
-.sequence .info {
-    padding-top: 8px;
+.sequence {
+    display: flex;
+    justify-content: flex-start;
+    align-items: flex-end;
+    flex-wrap: wrap;
+}
+
+.solution .info {
+    padding-top: 10px;
 }
 
 .double-sequence {
     margin: 10px;
-    padding: 20px;
-    border: 1px solid red;
+    padding: 10px;
+    margin-bottom: 0px;
+    border: 1px solid rgb(192, 192, 192);
+    border-radius: 4px;
     display: inline-block;
+}
+
+.double-sequence.left > div {
+    display: flex;
+    justify-content: flex-end;
+    align-items: flex-end;
 }
 
 form {

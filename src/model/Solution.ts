@@ -27,6 +27,8 @@ class SequenceSolution extends Solution {
     }
 
     public createDiv(): HTMLDivElement {
+        const solutionDiv = document.createElement("div");
+        solutionDiv.classList.add("solution");
         const div = document.createElement("div");
         div.classList.add("sequence");
         var ratio = new Fraction(1);
@@ -53,10 +55,11 @@ class SequenceSolution extends Solution {
                 connection.svg2!.classList.add("fixed");
             }
         }
+        solutionDiv.appendChild(div);
 
         let infoDiv = document.createElement("div");
         infoDiv.classList.add("info");
-        div.appendChild(infoDiv);
+        solutionDiv.appendChild(infoDiv);
         if (!this.task.exact) {
             const errorSpan = document.createElement('span');
             errorSpan.innerText = 'Error: ' + this.error.toPrecision(3) + ' ';
@@ -67,8 +70,9 @@ class SequenceSolution extends Solution {
         permalink.title = 'Permanent link to this solution';
         permalink.href = this.getPermalink();
         infoDiv.appendChild(permalink);
-        this.domObject = div;
-        return div;
+
+        this.domObject = solutionDiv;
+        return solutionDiv;
     }
 
     public updateAnimation() {
@@ -146,6 +150,8 @@ class DifferentialSolution extends Solution {
     }
 
     public createDiv(): HTMLDivElement {
+        const solutionDiv = document.createElement("div");
+        solutionDiv.classList.add("solution");
         const div = document.createElement("div");
         div.classList.add("sequence");
         
@@ -159,6 +165,9 @@ class DifferentialSolution extends Solution {
             primarySequenceDiv.appendChild(ratio.createDiv());
             this.addSequence(this.data.primaryLeft, primarySequenceDiv, ratio);
             doubleSequenceDiv.appendChild(primarySequenceDiv);
+            var separator = document.createElement("div");
+            separator.classList.add("separator");
+            doubleSequenceDiv.appendChild(separator);
             var secondarySequenceDiv = document.createElement("div");
             secondarySequenceDiv.appendChild(ratio.createDiv());
             this.addSequence(this.data.secondaryLeft, secondarySequenceDiv, ratio);
@@ -187,11 +196,13 @@ class DifferentialSolution extends Solution {
 
             var doubleSequenceDiv = document.createElement("div");
             doubleSequenceDiv.classList.add("double-sequence");
-            doubleSequenceDiv.classList.add("left");
             var primarySequenceDiv = document.createElement("div");
             primarySequenceDiv.appendChild(ratio1.createDiv());
             this.addSequence(this.data.primaryRight, primarySequenceDiv, ratio1);
             doubleSequenceDiv.appendChild(primarySequenceDiv);
+            var separator = document.createElement("div");
+            separator.classList.add("separator");
+            doubleSequenceDiv.appendChild(separator);
             var secondarySequenceDiv = document.createElement("div");
             secondarySequenceDiv.appendChild(ratio2.createDiv());
             this.addSequence(this.data.secondaryRight, secondarySequenceDiv, ratio2);
@@ -199,12 +210,12 @@ class DifferentialSolution extends Solution {
             div.appendChild(doubleSequenceDiv);
         }
         
-        this.domObject = div;
-        return div;
+        solutionDiv.appendChild(div);
+        this.domObject = solutionDiv;
+        return solutionDiv;
     }
 
     public updateAnimation(): void {
         
     }
-
 }
