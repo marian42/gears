@@ -1,6 +1,6 @@
 
 ///<reference path="../../model/Fraction.ts" />
-///<reference path="../../model/Connection.ts" />
+///<reference path="../Connection.ts" />
 
 class SequenceEditor {
     private readonly container: HTMLDivElement;
