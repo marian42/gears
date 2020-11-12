@@ -20,23 +20,6 @@ function getGears(domain: number[], gearCounts: number[]): number[] {
     return result;
 }
 
-function getMissingPrimeFactors(targetRatio: Fraction, availableFactors: Set<number>) {
-    const result = [];
-    const numeratorFactors = factorize(targetRatio.a);
-    for (let i = 0; i < numeratorFactors.length; i++) {
-        if (numeratorFactors[i] > 0 && !availableFactors.has(i + 2)) {
-            result.push(i + 2);
-        }
-    }
-    const denominatorFactors = factorize(targetRatio.b);
-    for (let i = 0; i < denominatorFactors.length; i++) {
-        if (denominatorFactors[i] > 0 && !availableFactors.has(i + 2)) {
-            result.push(i + 2);
-        }
-    }
-    return result;
-}
-
 function getGearFactorsSet(gears: number[], gearFactors: GearFactorsDict): Set<number> {
     const gearFactorsSet: Set<number> = new Set();
     for (const gear of gears) {

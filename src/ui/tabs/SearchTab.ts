@@ -287,19 +287,6 @@ class SearchTab {
         }.bind(this), parseInt((document.getElementById('limitTime') as HTMLInputElement).value) * 1000);
     }
 
-    private checkForMissingFactors(task: Task) {
-        const availableFactors = getGearFactorsSet(task.gears, task.gearFactors!);
-        const missingFactors = getMissingPrimeFactors(task.searchRatio!, availableFactors);
-        if (missingFactors.length != 0) {
-            this.resultDiv.innerText = '\nNo exact solution is available because these gears are missing:\n\n'
-                + missingFactors.join('\n')
-                + '\n\nConsider searching for approximate results.';
-            this.resultDiv.appendChild(DifferentialCasingSVGGenerator.createDifferentialCasing());
-            return true;
-        }
-        return false;
-    }
-
     private startSearch() {
         const approximateSettings = this.searchParameters.error.getFromDOM() as CheckableValue<number>;        
         this.currentTaskId++;
@@ -341,10 +328,6 @@ class SearchTab {
         if (this.currentWorker != null) {
             this.currentWorker.terminate();
         }
-
-        /*if (this.checkForMissingFactors(this.currentTask)) {
-            return;
-        }*/
         
         this.currentWorker = new Worker("app.js");
         this.currentWorker.onmessage = this.onReceiveWorkerMessage.bind(this);
