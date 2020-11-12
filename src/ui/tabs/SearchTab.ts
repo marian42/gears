@@ -383,7 +383,6 @@ class SearchTab {
     updateAnimation() {
         if (this.currentTask != null) {
             const animationRotationsPerSecond = this.animateCheckbox.checked ? parseFloat(this.rpmTextbox.value) / 60 : 0;
-            console.log(animationRotationsPerSecond);
             this.currentTask.solutionList!.updateAnimation(animationRotationsPerSecond);
         }
     }
