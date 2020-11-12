@@ -1,4 +1,242 @@
 "use strict";
+var State;
+(function (State) {
+    State[State["None"] = 0] = "None";
+    State[State["Starred"] = 1] = "Starred";
+    State[State["Primed"] = 2] = "Primed";
+})(State || (State = {}));
+// Munkres Algorithm aka Hungarian Algorithm based on https://brc2.com/the-algorithm-workshop/
+class MunkresAlgorithm {
+    constructor(costMatrix) {
+        this.matrix = [];
+        for (const row of costMatrix) {
+            this.matrix.push(row.slice());
+        }
+        this.size = this.matrix.length;
+        this.rowsCovered = [];
+        this.columnsCovered = [];
+        for (let i = 0; i < this.size; i++) {
+            this.rowsCovered.push(false);
+            this.columnsCovered.push(false);
+        }
+        this.path = [];
+        for (let i = 0; i < this.size * 2; i++) {
+            this.path.push([0, 0]);
+        }
+        this.zero0 = [0, 0];
+        this.state = new Array(this.size);
+        for (let i = 0; i < this.size; i++) {
+            this.state[i] = new Array(this.size);
+            for (let j = 0; j < this.size; j++) {
+                this.state[i][j] = State.None;
+            }
+        }
+    }
+    ;
+    run() {
+        let nextStep = 1;
+        const stepImplementations = [
+            this.step1,
+            this.step2,
+            this.step3,
+            this.step4,
+            this.step5,
+            this.step6
+        ];
+        while (nextStep != -1) {
+            nextStep = stepImplementations[nextStep - 1].apply(this);
+        }
+        const selectedIndices = [];
+        for (let i = 0; i < this.size; i++) {
+            for (let j = 0; j < this.size; j++) {
+                if (this.state[i][j] == State.Starred) {
+                    selectedIndices.push([i, j]);
+                }
+            }
+        }
+        return selectedIndices;
+    }
+    step1() {
+        for (let i = 0; i < this.size; i++) {
+            const rowMinimum = Math.min.apply(Math, this.matrix[i]);
+            for (let j = 0; j < this.size; j++) {
+                this.matrix[i][j] -= rowMinimum;
+            }
+        }
+        return 2;
+    }
+    ;
+    step2() {
+        for (let i = 0; i < this.size; i++) {
+            for (let j = 0; j < this.size; j++) {
+                if (this.matrix[i][j] == 0 && !this.rowsCovered[i] && !this.columnsCovered[j]) {
+                    this.state[i][j] = State.Starred;
+                    this.rowsCovered[i] = true;
+                    this.columnsCovered[j] = true;
+                    break;
+                }
+            }
+        }
+        this.resetCovered();
+        return 3;
+    }
+    ;
+    step3() {
+        let count = 0;
+        for (let i = 0; i < this.size; i++) {
+            for (let j = 0; j < this.size; j++) {
+                if (this.state[i][j] == State.Starred && this.columnsCovered[j] == false) {
+                    this.columnsCovered[j] = true;
+                    count++;
+                }
+            }
+        }
+        if (count >= this.size) {
+            return -1;
+        }
+        else {
+            return 4;
+        }
+    }
+    ;
+    step4() {
+        while (true) {
+            let [row, column] = this.findAZero();
+            if (row < 0) {
+                return 6;
+            }
+            this.state[row][column] = State.Primed;
+            const starredColumn = this.findStarInRow(row);
+            if (starredColumn >= 0) {
+                column = starredColumn;
+                this.rowsCovered[row] = true;
+                this.columnsCovered[column] = false;
+            }
+            else {
+                this.zero0 = [row, column];
+                return 5;
+            }
+        }
+    }
+    ;
+    step5() {
+        let count = 0;
+        this.path[count][0] = this.zero0[0];
+        this.path[count][1] = this.zero0[1];
+        let done = false;
+        while (!done) {
+            const row = this.findStarInColumn(this.path[count][1]);
+            if (row >= 0) {
+                count++;
+                this.path[count][0] = row;
+                this.path[count][1] = this.path[count - 1][1];
+            }
+            else {
+                done = true;
+            }
+            if (!done) {
+                const column = this.findPrimeInRow(this.path[count][0]);
+                count++;
+                this.path[count][0] = this.path[count - 1][0];
+                this.path[count][1] = column;
+            }
+        }
+        this.convertPath(count);
+        this.resetCovered();
+        this.resetPrimes();
+        return 3;
+    }
+    ;
+    step6() {
+        const smallestUncovered = this.findSmallestUncovered();
+        for (let i = 0; i < this.size; i++) {
+            for (let j = 0; j < this.size; j++) {
+                if (this.rowsCovered[i]) {
+                    this.matrix[i][j] += smallestUncovered;
+                }
+                if (!this.columnsCovered[j]) {
+                    this.matrix[i][j] -= smallestUncovered;
+                }
+            }
+        }
+        return 4;
+    }
+    ;
+    findSmallestUncovered() {
+        let result = ASSIGNMENT_COST_FORBIDDEN;
+        for (let i = 0; i < this.size; i++) {
+            for (let j = 0; j < this.size; j++) {
+                if (!this.rowsCovered[i] && !this.columnsCovered[j] && result > this.matrix[i][j]) {
+                    result = this.matrix[i][j];
+                }
+            }
+        }
+        return result;
+    }
+    ;
+    findAZero() {
+        for (let i = 0; i < this.size; i++) {
+            for (let j = 0; j < this.size; j++) {
+                if (this.matrix[i][j] == 0 && !this.rowsCovered[i] && !this.columnsCovered[j]) {
+                    return [i, j];
+                }
+            }
+        }
+        return [-1, -1];
+    }
+    ;
+    findStarInRow(row) {
+        for (let j = 0; j < this.size; j++) {
+            if (this.state[row][j] == State.Starred) {
+                return j;
+            }
+        }
+        return -1;
+    }
+    ;
+    findStarInColumn(column) {
+        for (let i = 0; i < this.size; i++) {
+            if (this.state[i][column] == State.Starred) {
+                return i;
+            }
+        }
+        return -1;
+    }
+    ;
+    findPrimeInRow(row) {
+        for (let j = 0; j < this.size; j++) {
+            if (this.state[row][j] == State.Primed) {
+                return j;
+            }
+        }
+        return -1;
+    }
+    ;
+    convertPath(count) {
+        for (let i = 0; i <= count; i++) {
+            const [x, y] = this.path[i];
+            this.state[x][y] = (this.state[x][y] == State.Starred) ? State.None : State.Starred;
+        }
+    }
+    ;
+    resetCovered() {
+        for (let i = 0; i < this.size; i++) {
+            this.rowsCovered[i] = false;
+            this.columnsCovered[i] = false;
+        }
+    }
+    ;
+    resetPrimes() {
+        for (let i = 0; i < this.size; i++) {
+            for (let j = 0; j < this.size; j++) {
+                if (this.state[i][j] == State.Primed) {
+                    this.state[i][j] = State.None;
+                }
+            }
+        }
+    }
+    ;
+}
 class SolutionList {
     constructor(container, task) {
         this.solutions = {};
@@ -10,11 +248,11 @@ class SolutionList {
         this.task = task;
     }
     add(solution) {
-        const count = solution.connections.length;
+        const count = solution.numberOfGears;
         if (!(count in this.solutions)) {
             const sizeContainer = document.createElement('div');
             const headline = document.createElement('h2');
-            headline.innerText = 'Solutions with ' + count + (count > 1 ? ' connections' : ' connection');
+            headline.innerText = 'Solutions with ' + count + " gears";
             sizeContainer.appendChild(headline);
             let done = false;
             for (let i = count - 1; i > 0; i--) {
@@ -56,10 +294,10 @@ class SolutionList {
             document.getElementById('smallest-error').innerText = this.smallestError.toPrecision(3);
         }
     }
-    updateAnimation() {
+    updateAnimation(rotationsPerSecond) {
         for (const count in this.solutions) {
             for (const solution of this.solutions[count]) {
-                solution.updateAnimation();
+                solution.updateAnimation(rotationsPerSecond);
             }
         }
     }
@@ -370,14 +608,16 @@ class SearchTab {
     }
     onReceiveWorkerMessage(event) {
         if (event.data.id == this.currentTaskId) {
-            const connections = [];
-            for (const [gear1, gear2] of event.data.sequence) {
-                connections.push(new Connection(gear1, gear2));
+            if (event.data.usesDifferential) {
+                this.currentTask.solutionList.add(new DifferentialSolution(event.data.sequence, this.currentTask));
             }
-            this.currentTask.solutionList.add(new Solution(connections, this.currentTask));
+            else {
+                this.currentTask.solutionList.add(new SequenceSolution(event.data.sequence, this.currentTask));
+            }
             if (this.currentTask.solutionList.totalSolutions >= this.currentTask.maxNumberOfResults) {
                 this.stopSearch();
             }
+            this.updateAnimation();
         }
     }
     readFixedSequenceGears(currentTask) {
@@ -496,17 +736,6 @@ class SearchTab {
             }
         }.bind(this), parseInt(document.getElementById('limitTime').value) * 1000);
     }
-    checkForMissingFactors(task) {
-        const availableFactors = getGearFactorsSet(task.gears, task.gearFactors);
-        const missingFactors = getMissingPrimeFactors(task.searchRatio, availableFactors);
-        if (missingFactors.length != 0) {
-            this.resultDiv.innerText = '\nNo exact solution is available because these gears are missing:\n\n'
-                + missingFactors.join('\n')
-                + '\n\nConsider searching for approximate results.';
-            return true;
-        }
-        return false;
-    }
     startSearch() {
         const approximateSettings = this.searchParameters.error.getFromDOM();
         this.currentTaskId++;
@@ -541,9 +770,6 @@ class SearchTab {
         document.getElementById('smallest-error').innerText = '';
         if (this.currentWorker != null) {
             this.currentWorker.terminate();
-        }
-        if (this.checkForMissingFactors(this.currentTask)) {
-            return;
         }
         this.currentWorker = new Worker("app.js");
         this.currentWorker.onmessage = this.onReceiveWorkerMessage.bind(this);
@@ -583,10 +809,9 @@ class SearchTab {
         this.startSearch();
     }
     updateAnimation() {
-        this.animationSettings.enabled = this.animateCheckbox.checked;
-        this.animationSettings.duration = 60 / parseFloat(this.rpmTextbox.value);
         if (this.currentTask != null) {
-            this.currentTask.solutionList.updateAnimation();
+            const animationRotationsPerSecond = this.animateCheckbox.checked ? parseFloat(this.rpmTextbox.value) / 60 : 0;
+            this.currentTask.solutionList.updateAnimation(animationRotationsPerSecond);
         }
     }
 }
@@ -605,9 +830,35 @@ const ASSIGNMENT_COST_FULL_2D = -12;
 const ASSIGNMENT_COST_HALF_2D = -7;
 const ASSIGNMENT_COST_HALF_FULL_2D = -8;
 const ASSIGNMENT_COST_PERPENDICULAR = -2;
-class GearSVGGenerator {
-    constructor(n) {
+class SVGGenerator {
+    constructor() {
         this.pathStrings = [];
+    }
+    addPolygon(vertices) {
+        this.pathStrings.push("M " + vertices[0][0] + " " + vertices[0][1]);
+        for (let i = 1; i < vertices.length; i++) {
+            const vertex = vertices[i];
+            this.pathStrings.push("L " + vertex[0] + " " + vertex[1]);
+        }
+        this.pathStrings.push("Z");
+    }
+    addCircle(x, y, diameter = 5) {
+        const r = diameter / 2;
+        this.pathStrings.push("M " + (x - r) + ", " + y);
+        this.pathStrings.push("a " + r + "," + r + " 0 1, 0 " + diameter + ",0");
+        this.pathStrings.push("a " + r + "," + r + " 0 1, 0 " + (-diameter) + ",0");
+    }
+    createSVG() {
+        const svg = document.createElementNS(SVG_NAMESPACE, "svg");
+        const path = document.createElementNS(SVG_NAMESPACE, "path");
+        path.setAttribute("d", this.pathStrings.join(' '));
+        svg.appendChild(path);
+        return svg;
+    }
+}
+class GearSVGGenerator extends SVGGenerator {
+    constructor(n) {
+        super();
         this.teeth = n;
         this.radiusInner = n / 2 - 1.2;
         this.radiusOuter = n / 2 + 0.85;
@@ -729,20 +980,6 @@ class GearSVGGenerator {
         }
         this.addPolygon(vertices);
     }
-    addPolygon(vertices) {
-        this.pathStrings.push("M " + vertices[0][0] + " " + vertices[0][1]);
-        for (let i = 1; i < vertices.length; i++) {
-            const vertex = vertices[i];
-            this.pathStrings.push("L " + vertex[0] + " " + vertex[1]);
-        }
-        this.pathStrings.push("Z");
-    }
-    addCircle(x, y, diameter = 5) {
-        const r = diameter / 2;
-        this.pathStrings.push("M " + (x - r) + ", " + y);
-        this.pathStrings.push("a " + r + "," + r + " 0 1, 0 " + diameter + ",0");
-        this.pathStrings.push("a " + r + "," + r + " 0 1, 0 " + (-diameter) + ",0");
-    }
     createCutout(radiusInner, radiusOuter, margin = 0.8) {
         let inner = Math.sqrt(Math.pow(radiusInner, 2.0) - Math.pow(margin, 2.0));
         const outer = Math.sqrt(Math.pow(radiusOuter, 2.0) - Math.pow(margin, 2.0));
@@ -804,10 +1041,7 @@ class GearSVGGenerator {
         this.addPolygon(vertices);
     }
     createSVG() {
-        const svg = document.createElementNS(SVG_NAMESPACE, "svg");
-        const path = document.createElementNS(SVG_NAMESPACE, "path");
-        path.setAttribute("d", this.pathStrings.join(' '));
-        svg.appendChild(path);
+        const svg = super.createSVG();
         svg.setAttribute("height", (this.radiusOuter * 2 * PIXELS_PER_MM).toString());
         svg.setAttribute("width", (this.radiusOuter * 2 * PIXELS_PER_MM).toString());
         svg.setAttribute("viewBox", (-this.radiusOuter) + " " + (-this.radiusOuter) + " " + (2 * this.radiusOuter) + " " + (2 * this.radiusOuter));
@@ -863,6 +1097,52 @@ class GearSVGGenerator {
     }
 }
 GearSVGGenerator.gearCache = {};
+class DifferentialCasingSVGGenerator extends SVGGenerator {
+    constructor() {
+        super();
+        const vertices = [
+            [8, 0],
+            [8, -1.5],
+            [14, -1.5],
+            [14, -6.5],
+            [11, -6.5],
+            [11, -25.5],
+            [10, -25.5],
+            [10, -30.5],
+            [8, -30.5],
+            [8, -32]
+        ];
+        for (var i = vertices.length - 1; i >= 0; i--) {
+            vertices.push([-vertices[i][0], vertices[i][1]]);
+        }
+        this.addPolygon(vertices);
+        this.addPolygon([
+            [-8.5, -8],
+            [-8.5, -24],
+            [8.5, -24],
+            [8.5, -14.8],
+            [3, -14.8],
+            [3, -17.2],
+            [8.5, -17.2],
+            [8.5, -8],
+        ]);
+    }
+    createSVG() {
+        const svg = super.createSVG();
+        svg.setAttribute("height", (32 * PIXELS_PER_MM).toString());
+        svg.setAttribute("width", (28 * PIXELS_PER_MM).toString());
+        svg.setAttribute("viewBox", "-14 -32 28 32");
+        svg.classList.add("differential");
+        return svg;
+    }
+    static createDifferentialCasing() {
+        if (DifferentialCasingSVGGenerator.instance == null) {
+            DifferentialCasingSVGGenerator.instance = new DifferentialCasingSVGGenerator();
+        }
+        return DifferentialCasingSVGGenerator.instance.createSVG();
+    }
+}
+DifferentialCasingSVGGenerator.instance = null;
 ///<reference path="../../config.ts" />
 ///<reference path="../gears/GearSVGGenerator.ts" />
 function getConnectionScore(x, y) {
@@ -1177,6 +1457,24 @@ class Fraction {
     multiply(fraction) {
         return new Fraction(this.a * fraction.a, this.b * fraction.b);
     }
+    divide(fraction) {
+        return new Fraction(this.a * fraction.b, this.b * fraction.a);
+    }
+    divideByFactor(value) {
+        return new Fraction(this.a, this.b * value);
+    }
+    multiplyByFactor(value) {
+        return new Fraction(this.a * value, this.b);
+    }
+    add(fraction) {
+        return new Fraction(this.a * fraction.b + fraction.a * this.b, this.b * fraction.b);
+    }
+    subtract(fraction) {
+        return new Fraction(this.a * fraction.b - fraction.a * this.b, this.b * fraction.b);
+    }
+    inverse() {
+        return new Fraction(this.b, this.a);
+    }
     toString() {
         return this.a + " / " + this.b;
     }
@@ -1237,6 +1535,7 @@ class Connection {
     constructor(gear1, gear2) {
         this.svg1 = null;
         this.svg2 = null;
+        this.rotationSpeed = 1;
         this.gear1 = gear1;
         this.gear2 = gear2;
         this.useNewStyleWormGear = (gear1 + gear2 + 11) % 8 == 0;
@@ -1244,7 +1543,7 @@ class Connection {
         this.fraction = new Fraction(gear1, gear2);
         this.factor = this.fraction.getDecimal();
     }
-    createDiv(animate = true, animationDuration = 4, reverse = false) {
+    createDiv() {
         const result = document.createElement("div");
         result.setAttribute("class", "connection");
         const table = document.createElement("table");
@@ -1253,15 +1552,9 @@ class Connection {
         if (this.gear1 == 1) {
             this.svg1 = GearSVGGenerator.createWormGearSVG(this.useNewStyleWormGear);
             cell.appendChild(this.svg1);
-            if (!reverse) {
-                this.svg1.firstChild.style.animationDirection = 'reverse';
-            }
         }
         else {
             this.svg1 = GearSVGGenerator.createGearSVG(this.gear1);
-            if (reverse) {
-                this.svg1.firstChild.style.animationDirection = 'reverse';
-            }
             cell.appendChild(this.svg1);
         }
         row.appendChild(cell);
@@ -1276,9 +1569,6 @@ class Connection {
                 this.svg2.style.transform = 'rotate(' + (180 / this.gear2) + 'deg)';
             }
             cell.appendChild(this.svg2);
-        }
-        if (!reverse) {
-            this.svg2.firstChild.style.animationDirection = 'reverse';
         }
         row.appendChild(cell);
         table.appendChild(row);
@@ -1379,14 +1669,21 @@ class Connection {
             distanceDiv.classList.add("clickable");
             distanceDiv.addEventListener("click", this.showFitGearsTab.bind(this));
         }
-        this.updateAnimation(animate, animationDuration);
         return result;
     }
-    updateAnimation(enabled, duration) {
-        this.svg1.firstChild.style.animationDuration = duration + "s";
-        this.svg1.firstChild.style.animationPlayState = enabled ? 'running' : 'paused';
-        this.svg2.firstChild.style.animationDuration = (duration / this.factor) + "s";
-        this.svg2.firstChild.style.animationPlayState = enabled ? 'running' : 'paused';
+    updateAnimation(rotationsPerSecond) {
+        const enabled = rotationsPerSecond != 0;
+        const svg1 = this.svg1.firstChild;
+        const svg2 = this.svg2.firstChild;
+        svg1.style.animationPlayState = enabled ? 'running' : 'paused';
+        svg2.style.animationPlayState = enabled ? 'running' : 'paused';
+        if (enabled) {
+            const duration = Math.abs(1.0 / rotationsPerSecond / this.rotationSpeed);
+            svg1.style.animationDuration = duration + "s";
+            svg1.style.animationDirection = (rotationsPerSecond * this.rotationSpeed < 0) ? 'reverse' : '';
+            svg2.style.animationDuration = (duration / this.factor) + "s";
+            svg2.style.animationDirection = (rotationsPerSecond * this.rotationSpeed > 0) ? 'reverse' : '';
+        }
     }
     showFitGearsTab() {
         let includeHalfUnits = true;
@@ -1397,15 +1694,13 @@ class Connection {
     }
 }
 ///<reference path="../../model/Fraction.ts" />
-///<reference path="../../model/Connection.ts" />
+///<reference path="../Connection.ts" />
 class SequenceEditor {
     constructor(element) {
         this.startFraction = new Fraction(1);
         this.resultFraction = new Fraction(1);
         this.danglingGear = null;
         this.connections = [];
-        this.animationEnabled = false;
-        this.animationDuration = 0;
         this.container = element;
         this.startFractionContainer = document.createElement('span');
         this.container.appendChild(this.startFractionContainer);
@@ -1446,7 +1741,7 @@ class SequenceEditor {
     addGear(gear) {
         if (this.danglingGear == null) {
             this.danglingGear = gear;
-            const div = new Connection(gear, 1).createDiv(this.animationEnabled, this.animationDuration / this.resultFraction.getDecimal(), this.connections.length % 2 == 1);
+            const div = new Connection(gear, 1).createDiv();
             div.classList.add('hide-second');
             if (this.connections.length >= 1) {
                 this.connectionContainer.appendChild(this.resultFraction.createDiv());
@@ -1457,13 +1752,14 @@ class SequenceEditor {
             const connection = new Connection(this.danglingGear, gear);
             this.danglingGear = null;
             this.connectionContainer.removeChild(this.connectionContainer.lastChild);
-            this.connectionContainer.appendChild(connection.createDiv(this.animationEnabled, this.animationDuration / this.resultFraction.getDecimal(), this.connections.length % 2 == 1));
+            this.connectionContainer.appendChild(connection.createDiv());
             this.connections.push(connection);
             this.resultFraction = this.resultFraction.multiply(connection.fraction);
             this.updateDom();
         }
         this.updatePermalink();
         this.addButton.focus();
+        this.updateAnimation();
     }
     getGears() {
         const gears = [];
@@ -1495,12 +1791,9 @@ class SequenceEditor {
         }
     }
     updateAnimation() {
-        let fraction = this.startFraction;
-        this.animationEnabled = this.animateCheckbox.checked;
-        this.animationDuration = 60 / parseFloat(this.animateRpmInput.value);
+        const animationRotationsPerSecond = this.animateCheckbox.checked ? parseFloat(this.animateRpmInput.value) / 60 : 0;
         for (const connection of this.connections) {
-            connection.updateAnimation(this.animationEnabled, this.animationDuration / fraction.getDecimal());
-            fraction = fraction.multiply(connection.fraction);
+            connection.updateAnimation(animationRotationsPerSecond);
         }
     }
     reverse() {
@@ -1633,6 +1926,7 @@ class GearPicker {
         }
     }
 }
+///<reference path="./model/MunkresAlgorithm.ts" />
 ///<reference path="./ui/tabs/SearchTab.ts" />
 ///<reference path="./ui/tabs/FitGears.ts" />
 ///<reference path="./ui/tabs/SequenceEditor.ts" />
@@ -1659,68 +1953,23 @@ if (typeof document !== 'undefined') { // This is not run in worker threads
     }
     loadUrlParameters();
     window.onpopstate = function (event) {
-        console.log("onpopstate");
         searchTab.stopSearch();
         loadUrlParameters();
     };
 }
-function getRandomInt(min, max) {
-    return Math.floor(Math.random() * (max - min)) + min;
-}
-function greatestCommonDenominator(a, b) {
-    if (b == 0) {
-        return a;
-    }
-    else {
-        return greatestCommonDenominator(b, a % b);
-    }
-}
-function getOnCircle(angle, radius) {
-    return [Math.cos(angle) * radius, Math.sin(angle) * radius];
-}
-function isApproximatelyInteger(number) {
-    return Math.abs(number - Math.round(number)) < 1e-8;
-}
-function factorize(number) {
-    const result = [];
-    for (let i = 2; i <= number; i++) {
-        let value = 0;
-        while (number % i == 0) {
-            value += 1;
-            number /= i;
-        }
-        result.push(value);
-    }
-    return result;
-}
-function getTeethProduct(gearTeeth, gearCounts) {
+function getGearProduct(domain, gearCounts) {
     let result = 1;
-    for (let i = 0; i < gearTeeth.length; i++) {
-        result *= Math.pow(gearTeeth[i], gearCounts[i]);
+    for (let i = 0; i < domain.length; i++) {
+        result *= Math.pow(domain[i], gearCounts[i]);
     }
     return result;
 }
-function getResult(gearTeeth, gearCounts) {
+// Converts the domain + counts representation to a list of actual gears (that includes duplicates)
+function getGears(domain, gearCounts) {
     const result = [];
-    for (let i = 0; i < gearTeeth.length; i++) {
+    for (let i = 0; i < domain.length; i++) {
         for (let j = 0; j < gearCounts[i]; j++) {
-            result.push(gearTeeth[i]);
-        }
-    }
-    return result;
-}
-function getMissingPrimeFactors(targetRatio, availableFactors) {
-    const result = [];
-    const numeratorFactors = factorize(targetRatio.a);
-    for (let i = 0; i < numeratorFactors.length; i++) {
-        if (numeratorFactors[i] > 0 && !availableFactors.includes(i + 2)) {
-            result.push(i + 2);
-        }
-    }
-    const denominatorFactors = factorize(targetRatio.b);
-    for (let i = 0; i < denominatorFactors.length; i++) {
-        if (denominatorFactors[i] > 0 && !availableFactors.includes(i + 2)) {
-            result.push(i + 2);
+            result.push(domain[i]);
         }
     }
     return result;
@@ -1734,7 +1983,7 @@ function getGearFactorsSet(gears, gearFactors) {
             }
         }
     }
-    return Array.from(gearFactorsSet.values());
+    return gearFactorsSet;
 }
 // Returns an iterator over all numbers that can be made with the given factors
 function* getHammingSequence(bases) {
@@ -1762,11 +2011,20 @@ function* getHammingSequence(bases) {
         }
     }
 }
+// Returns a list of gear multisets that can be made with availableGears and have a teeth product equal to target
 function findGears(target, availableGears, gearFactors) {
+    if (target == 1) {
+        return [[]];
+    }
     const targetFactors = factorize(target);
-    const gearTeeth = [];
+    const domain = []; // Gears used, will be a subset of availableGears, indices will refer to the order in this array.
     const gearMaxCounts = [];
     const availableFactors = new Set();
+    // Use prime factors to determine an upper bound of usage count for each gear.
+    // Example: If the target contains the prime factor 2 four times (ie is divisible by 2^4),
+    // a gear that contains the prime factor 2 only twice (ie. is divisible by 2^2, but not by 2^3),
+    // can be used at most twice. Similarly, if a gear has a prime factor that isn't present
+    // in the target, it can't be used at all.
     for (const gear of availableGears) {
         const factors = gearFactors[gear];
         if (factors.length > targetFactors.length) {
@@ -1786,7 +2044,7 @@ function findGears(target, availableGears, gearFactors) {
             }
         }
         if (maxOccurances > 0) {
-            gearTeeth.push(gear);
+            domain.push(gear);
             gearMaxCounts.push(maxOccurances);
             for (let i = 0; i < factors.length; i++) {
                 if (factors[i] != 0) {
@@ -1801,12 +2059,12 @@ function findGears(target, availableGears, gearFactors) {
             return [];
         }
     }
-    const gearCounts = Array(gearTeeth.length).fill(0);
+    const gearCounts = Array(domain.length).fill(0);
     const result = [];
     while (true) {
-        const teethProduct = getTeethProduct(gearTeeth, gearCounts);
+        const teethProduct = getGearProduct(domain, gearCounts);
         if (teethProduct == target) {
-            result.push(getResult(gearTeeth, gearCounts));
+            result.push(getGears(domain, gearCounts));
         }
         gearCounts[0] += 1;
         let position = 0;
@@ -1823,8 +2081,24 @@ function findGears(target, availableGears, gearFactors) {
         }
     }
 }
+function* findGearSequences(searchRatio, availableGears, availableGearsPrimary, availableGearsSecondary, gearFactors) {
+    const availableFactors = getGearFactorsSet(availableGears, gearFactors);
+    const hammingIterator = getHammingSequence(Array.from(availableFactors));
+    while (true) {
+        const currentRatio = searchRatio.extend(hammingIterator.next().value);
+        const solutionsPrimary = findGears(currentRatio.a, availableGearsPrimary, gearFactors);
+        if (solutionsPrimary.length == 0) {
+            continue;
+        }
+        for (const solutionPrimary of solutionsPrimary) {
+            const solutionsSecondary = findGears(currentRatio.b, availableGearsSecondary.filter(gear => !solutionPrimary.includes(gear)), gearFactors);
+            for (const solutionSecondary of solutionsSecondary) {
+                yield [solutionPrimary, solutionSecondary];
+            }
+        }
+    }
+}
 function* findSolutionsExact(parameters) {
-    const availableFactors = getGearFactorsSet(parameters.gears, parameters.gearFactors);
     if (parameters.excludePairsWithFixedGears) {
         var availableGearsPrimary = parameters.gears.filter(gear => !parameters.fixedSecondary.includes(gear));
         var availableGearsSecondary = parameters.gears.filter(gear => !parameters.fixedPrimary.includes(gear));
@@ -1833,19 +2107,9 @@ function* findSolutionsExact(parameters) {
         var availableGearsPrimary = parameters.gears;
         var availableGearsSecondary = parameters.gears;
     }
-    const hammingIterator = getHammingSequence(availableFactors);
+    const iterator = findGearSequences(parameters.searchRatio, parameters.gears, availableGearsPrimary, availableGearsSecondary, parameters.gearFactors);
     while (true) {
-        const currentRatio = parameters.searchRatio.extend(hammingIterator.next().value);
-        const solutionsPrimary = findGears(currentRatio.a, availableGearsPrimary, parameters.gearFactors);
-        if (solutionsPrimary.length == 0) {
-            continue;
-        }
-        for (const solutionPrimary of solutionsPrimary) {
-            const solutionsSecondary = findGears(currentRatio.b, availableGearsSecondary.filter(gear => !solutionPrimary.includes(gear)), parameters.gearFactors);
-            for (const solutionSecondary of solutionsSecondary) {
-                yield [solutionPrimary, solutionSecondary];
-            }
-        }
+        yield iterator.next().value;
     }
 }
 function* findSolutionsApproximate(parameters) {
@@ -1881,11 +2145,12 @@ function* findSolutionsApproximate(parameters) {
         }
     }
 }
-function prepareResult(gearsPrimary, gearsSecondary, parameters) {
+function prepareResult(unorderedGears, parameters) {
     // gearsPrimary and gearsSecondary contain gears decided by the algorithm.
     // In addition to that, the result will contain the fixed start and end gear sequences set by the user.
     // There are three types of gear pairs: fixed and fixed, fixed and decided (at the end/beginning of an odd sized fixed sequence)
     // and pairs completely decided by the algorithm. Only th completely decided pairs can be reordered.
+    var [gearsPrimary, gearsSecondary] = unorderedGears;
     if ((!parameters.gears.includes(1) && gearsPrimary.length + parameters.fixedPrimary.length != gearsSecondary.length + parameters.fixedSecondary.length)
         || (parameters.excludePairsWithFixedGears && parameters.fixedPrimary.includes(1) && gearsPrimary.length + parameters.fixedPrimary.length > gearsSecondary.length + parameters.fixedSecondary.length)
         || (parameters.excludePairsWithFixedGears && parameters.fixedSecondary.includes(1) && gearsPrimary.length + parameters.fixedPrimary.length < gearsSecondary.length + parameters.fixedSecondary.length)) {
@@ -1949,300 +2214,370 @@ function prepareResult(gearsPrimary, gearsSecondary, parameters) {
     return sequenceStart.concat(sequenceReorderable, sequenceEnd);
 }
 self.onmessage = function (event) {
-    const parameters = event.data;
-    parameters.targetRatio = new Fraction(parameters.targetRatio.a, parameters.targetRatio.b);
-    parameters.searchRatio = new Fraction(parameters.searchRatio.a, parameters.searchRatio.b);
-    let iterator = parameters.exact ? findSolutionsExact(parameters) : findSolutionsApproximate(parameters);
-    while (true) {
-        const [primaryGears, secondaryGears] = iterator.next().value;
-        const result = prepareResult(primaryGears, secondaryGears, parameters);
-        if (result != null) {
-            const workerGlobalContext = self;
-            workerGlobalContext.postMessage({
-                id: parameters.id,
-                sequence: result
-            });
+    const task = event.data;
+    task.targetRatio = new Fraction(task.targetRatio.a, task.targetRatio.b);
+    task.searchRatio = new Fraction(task.searchRatio.a, task.searchRatio.b);
+    let useDifferentials = false;
+    if (task.exact) {
+        const availableFactors = getGearFactorsSet(task.gears, task.gearFactors);
+        useDifferentials = !canBeMadeWithFactors(task.searchRatio.a, availableFactors) || !canBeMadeWithFactors(task.searchRatio.b, availableFactors);
+    }
+    if (useDifferentials) {
+        let iterator = findSolutionsWithDifferential(task);
+        while (true) {
+            const unorderedGears = iterator.next().value;
+            const orderedGears = prepareResultWithDifferential(unorderedGears, task);
+            if (orderedGears != null) {
+                const workerGlobalContext = self;
+                workerGlobalContext.postMessage({
+                    id: task.id,
+                    sequence: orderedGears,
+                    usesDifferential: true
+                });
+            }
+        }
+    }
+    else {
+        let iterator = task.exact ? findSolutionsExact(task) : findSolutionsApproximate(task);
+        while (true) {
+            const unorderedGears = iterator.next().value;
+            const orderedGears = prepareResult(unorderedGears, task);
+            if (orderedGears != null) {
+                const workerGlobalContext = self;
+                workerGlobalContext.postMessage({
+                    id: task.id,
+                    sequence: orderedGears,
+                    usesDifferential: false
+                });
+            }
         }
     }
 };
-var State;
-(function (State) {
-    State[State["None"] = 0] = "None";
-    State[State["Starred"] = 1] = "Starred";
-    State[State["Primed"] = 2] = "Primed";
-})(State || (State = {}));
-// Munkres Algorithm aka Hungarian Algorithm based on https://brc2.com/the-algorithm-workshop/
-class MunkresAlgorithm {
-    constructor(costMatrix) {
-        this.matrix = [];
-        for (const row of costMatrix) {
-            this.matrix.push(row.slice());
-        }
-        this.size = this.matrix.length;
-        this.rowsCovered = [];
-        this.columnsCovered = [];
-        for (let i = 0; i < this.size; i++) {
-            this.rowsCovered.push(false);
-            this.columnsCovered.push(false);
-        }
-        this.path = [];
-        for (let i = 0; i < this.size * 2; i++) {
-            this.path.push([0, 0]);
-        }
-        this.zero0 = [0, 0];
-        this.state = new Array(this.size);
-        for (let i = 0; i < this.size; i++) {
-            this.state[i] = new Array(this.size);
-            for (let j = 0; j < this.size; j++) {
-                this.state[i][j] = State.None;
-            }
+///<reference path="./worker.ts" />
+function findGearsCached(target, availableGears, gearFactors, cache) {
+    if (target in cache) {
+        return cache[target];
+    }
+    cache[target] = findGears(target, availableGears, gearFactors);
+    return cache[target];
+}
+function canBeMadeWithFactors(target, availableFactors) {
+    const requiredFactors = factorize(target);
+    for (var i = 0; i < requiredFactors.length; i++) {
+        if (requiredFactors[i] > 0 && !availableFactors.has(i + 2)) {
+            return false;
         }
     }
-    ;
-    run() {
-        let nextStep = 1;
-        const stepImplementations = [
-            this.step1,
-            this.step2,
-            this.step3,
-            this.step4,
-            this.step5,
-            this.step6
-        ];
-        while (nextStep != -1) {
-            nextStep = stepImplementations[nextStep - 1].apply(this);
-        }
-        const selectedIndices = [];
-        for (let i = 0; i < this.size; i++) {
-            for (let j = 0; j < this.size; j++) {
-                if (this.state[i][j] == State.Starred) {
-                    selectedIndices.push([i, j]);
+    return true;
+}
+function* getCombinations(count1, count2, count3, count4) {
+    for (var index1 = 0; index1 < count1; index1++) {
+        for (var index2 = 0; index2 < count2; index2++) {
+            for (var index3 = 0; index3 < count3; index3++) {
+                for (var index4 = 0; index4 < count4; index4++) {
+                    yield [index1, index2, index3, index4];
                 }
             }
         }
-        return selectedIndices;
     }
-    step1() {
-        for (let i = 0; i < this.size; i++) {
-            const rowMinimum = Math.min.apply(Math, this.matrix[i]);
-            for (let j = 0; j < this.size; j++) {
-                this.matrix[i][j] -= rowMinimum;
+}
+function* findSolutionsWithDifferential(task) {
+    var primaryTarget = task.searchRatio.a;
+    var secondaryTarget = task.searchRatio.b;
+    const availableFactors = getGearFactorsSet(task.gears, task.gearFactors);
+    const hammingIterator = getHammingSequence(Array.from(availableFactors));
+    const wormGearAvailable = task.gears.includes(1);
+    const usePrimaryDifferential = !canBeMadeWithFactors(primaryTarget, availableFactors);
+    const useSecondaryDifferential = !canBeMadeWithFactors(secondaryTarget, availableFactors);
+    const findGearsCache = {};
+    while (true) {
+        const extension = hammingIterator.next().value;
+        var offsets = [];
+        for (var totalOffset = 0; totalOffset < Math.max(primaryTarget, secondaryTarget) * extension; totalOffset++) {
+            if (!usePrimaryDifferential) {
+                offsets.push([0, totalOffset]);
             }
-        }
-        return 2;
-    }
-    ;
-    step2() {
-        for (let i = 0; i < this.size; i++) {
-            for (let j = 0; j < this.size; j++) {
-                if (this.matrix[i][j] == 0 && !this.rowsCovered[i] && !this.columnsCovered[j]) {
-                    this.state[i][j] = State.Starred;
-                    this.rowsCovered[i] = true;
-                    this.columnsCovered[j] = true;
-                    break;
+            else if (!useSecondaryDifferential) {
+                offsets.push([totalOffset, 0]);
+            }
+            else {
+                for (var primaryOffset = 0; primaryOffset <= totalOffset; primaryOffset++) {
+                    offsets.push([primaryOffset, totalOffset - primaryOffset]);
                 }
             }
         }
-        this.resetCovered();
-        return 3;
-    }
-    ;
-    step3() {
-        let count = 0;
-        for (let i = 0; i < this.size; i++) {
-            for (let j = 0; j < this.size; j++) {
-                if (this.state[i][j] == State.Starred && this.columnsCovered[j] == false) {
-                    this.columnsCovered[j] = true;
-                    count++;
+        for (let [primaryOffset, secondaryOffset] of offsets) {
+            const left1 = Math.abs(primaryTarget * extension - primaryOffset);
+            const left2 = primaryTarget * extension + primaryOffset;
+            const right1 = Math.abs(secondaryTarget * extension - secondaryOffset);
+            const right2 = secondaryTarget * extension + secondaryOffset;
+            if (left1 <= 0 || right1 <= 0) {
+                // The = 0 case isn't needed, the differential would act as a * 1/2 step
+                // The < 0 case can be useful, but needs special handling (TODO)
+                continue;
+            }
+            if (!canBeMadeWithFactors(left1, availableFactors)
+                || !canBeMadeWithFactors(left2, availableFactors)
+                || !canBeMadeWithFactors(right1, availableFactors)
+                || !canBeMadeWithFactors(right2, availableFactors)) {
+                continue;
+            }
+            const gearsLeft1 = findGearsCached(left1, task.gears, task.gearFactors, findGearsCache);
+            if (gearsLeft1.length == 0) {
+                continue;
+            }
+            const gearsLeft2 = findGearsCached(left2, task.gears, task.gearFactors, findGearsCache);
+            if (gearsLeft2.length == 0) {
+                continue;
+            }
+            const gearsRight1 = findGearsCached(right1, task.gears, task.gearFactors, findGearsCache);
+            if (gearsRight1.length == 0) {
+                continue;
+            }
+            const gearsRight2 = findGearsCached(right2, task.gears, task.gearFactors, findGearsCache);
+            if (gearsRight2.length == 0) {
+                continue;
+            }
+            const combinationsIterator = getCombinations(gearsLeft1.length, gearsLeft2.length, gearsRight1.length, gearsRight2.length);
+            for (let [indexLeft1, indexLeft2, indexRight1, indexRight2] of combinationsIterator) {
+                if ((primaryOffset == 0 && indexLeft1 != indexLeft2) || (secondaryOffset == 0 && indexRight1 != indexRight2)) {
+                    // Prevent adding a differential when we could do without one
+                    continue;
                 }
+                var maxGearCount = Math.max(gearsLeft1[indexLeft1].length, gearsLeft2[indexLeft2].length, gearsRight1[indexRight1].length, gearsRight2[indexRight2].length);
+                if ((gearsLeft1[indexLeft1].length < maxGearCount || gearsLeft2[indexLeft2].length < maxGearCount)
+                    && (gearsRight1[indexRight1].length < maxGearCount || gearsRight2[indexRight2].length < maxGearCount)) {
+                    // This solution will require primary and secondary worm gears, not feasible!
+                    continue;
+                }
+                if (!wormGearAvailable && (gearsLeft1[indexLeft1].length < maxGearCount || gearsLeft2[indexLeft2].length < maxGearCount || gearsRight1[indexRight1].length < maxGearCount || gearsRight2[indexRight2].length < maxGearCount)) {
+                    // If the worm gear isn't available, all sequences must be of the same length, we can't fill the up with worm gears. 
+                    continue;
+                }
+                // TODO skip if a gear is in all four lists
+                yield {
+                    left1: gearsLeft1[indexLeft1],
+                    left2: gearsLeft2[indexLeft2],
+                    right1: gearsRight1[indexRight1],
+                    right2: gearsRight2[indexRight2]
+                };
             }
         }
-        if (count >= this.size) {
-            return -1;
+    }
+}
+function getMostCommonGear(value) {
+    var candidates = new Set(value.left1.concat(value.left2, value.right1, value.right2));
+    var bestGear = 0;
+    var bestOccurances = 0;
+    for (const candidate of candidates) {
+        let occurances = (value.left1.includes(candidate) ? 1 : 0)
+            + (value.left2.includes(candidate) ? 1 : 0)
+            + (value.right1.includes(candidate) ? 1 : 0)
+            + (value.right2.includes(candidate) ? 1 : 0);
+        if (occurances > bestOccurances) {
+            bestOccurances = occurances;
+            bestGear = candidate;
+        }
+    }
+    return bestGear;
+}
+function removeFromArray(array, itemToRemove) {
+    if (array.includes(itemToRemove)) {
+        array.splice(array.indexOf(itemToRemove), 1);
+    }
+}
+function removeOne(gear, value) {
+    removeFromArray(value.left1, gear);
+    removeFromArray(value.left2, gear);
+    removeFromArray(value.right1, gear);
+    removeFromArray(value.right2, gear);
+}
+function removeEqualPairs(sequence) {
+    for (var i = 0; i < sequence[0].length;) {
+        if (sequence[1].includes(sequence[0][i])) {
+            removeFromArray(sequence[1], sequence[0][i]);
+            sequence[0].splice(i, 1);
         }
         else {
-            return 4;
+            i++;
         }
     }
-    ;
-    step4() {
-        while (true) {
-            let [row, column] = this.findAZero();
-            if (row < 0) {
-                return 6;
-            }
-            this.state[row][column] = State.Primed;
-            const starredColumn = this.findStarInRow(row);
-            if (starredColumn >= 0) {
-                column = starredColumn;
-                this.rowsCovered[row] = true;
-                this.columnsCovered[column] = false;
-            }
-            else {
-                this.zero0 = [row, column];
-                return 5;
-            }
+}
+function getSharedGears(list1, list2) {
+    var result = [];
+    list2 = list2.slice();
+    for (var item of list1) {
+        if (list2.includes(item)) {
+            result.push(item);
+            list2.splice(list2.indexOf(item), 1);
         }
     }
-    ;
-    step5() {
-        let count = 0;
-        this.path[count][0] = this.zero0[0];
-        this.path[count][1] = this.zero0[1];
-        let done = false;
-        while (!done) {
-            const row = this.findStarInColumn(this.path[count][1]);
-            if (row >= 0) {
-                count++;
-                this.path[count][0] = row;
-                this.path[count][1] = this.path[count - 1][1];
-            }
-            else {
-                done = true;
-            }
-            if (!done) {
-                const column = this.findPrimeInRow(this.path[count][0]);
-                count++;
-                this.path[count][0] = this.path[count - 1][0];
-                this.path[count][1] = column;
-            }
-        }
-        this.convertPath(count);
-        this.resetCovered();
-        this.resetPrimes();
-        return 3;
+    return result;
+}
+function moveSharedPairs(primarySequence, secondarySequence, sharedSequence) {
+    // Pairs of gears that appear in both "arms" of the differential gear will be moved to the shared sequence so that they appear only once.
+    var sharedPrimaryGears = getSharedGears(primarySequence[0], secondarySequence[0]);
+    var sharedSecondaryGears = getSharedGears(primarySequence[1], secondarySequence[1]);
+    // TODO pick gears that fit well together
+    for (var i = 0; i < Math.min(sharedPrimaryGears.length, sharedSecondaryGears.length); i++) {
+        removeFromArray(primarySequence[0], sharedPrimaryGears[i]);
+        removeFromArray(secondarySequence[0], sharedPrimaryGears[i]);
+        removeFromArray(primarySequence[1], sharedSecondaryGears[i]);
+        removeFromArray(secondarySequence[1], sharedSecondaryGears[i]);
+        sharedSequence[0].push(sharedPrimaryGears[i]);
+        sharedSequence[1].push(sharedSecondaryGears[i]);
     }
-    ;
-    step6() {
-        const smallestUncovered = this.findSmallestUncovered();
-        for (let i = 0; i < this.size; i++) {
-            for (let j = 0; j < this.size; j++) {
-                if (this.rowsCovered[i]) {
-                    this.matrix[i][j] += smallestUncovered;
-                }
-                if (!this.columnsCovered[j]) {
-                    this.matrix[i][j] -= smallestUncovered;
-                }
-            }
-        }
-        return 4;
-    }
-    ;
-    findSmallestUncovered() {
-        let result = ASSIGNMENT_COST_FORBIDDEN;
-        for (let i = 0; i < this.size; i++) {
-            for (let j = 0; j < this.size; j++) {
-                if (!this.rowsCovered[i] && !this.columnsCovered[j] && result > this.matrix[i][j]) {
-                    result = this.matrix[i][j];
-                }
-            }
-        }
-        return result;
-    }
-    ;
-    findAZero() {
-        for (let i = 0; i < this.size; i++) {
-            for (let j = 0; j < this.size; j++) {
-                if (this.matrix[i][j] == 0 && !this.rowsCovered[i] && !this.columnsCovered[j]) {
-                    return [i, j];
-                }
-            }
-        }
-        return [-1, -1];
-    }
-    ;
-    findStarInRow(row) {
-        for (let j = 0; j < this.size; j++) {
-            if (this.state[row][j] == State.Starred) {
-                return j;
-            }
-        }
-        return -1;
-    }
-    ;
-    findStarInColumn(column) {
-        for (let i = 0; i < this.size; i++) {
-            if (this.state[i][column] == State.Starred) {
-                return i;
-            }
-        }
-        return -1;
-    }
-    ;
-    findPrimeInRow(row) {
-        for (let j = 0; j < this.size; j++) {
-            if (this.state[row][j] == State.Primed) {
-                return j;
-            }
-        }
-        return -1;
-    }
-    ;
-    convertPath(count) {
-        for (let i = 0; i <= count; i++) {
-            const [x, y] = this.path[i];
-            this.state[x][y] = (this.state[x][y] == State.Starred) ? State.None : State.Starred;
+    if (primarySequence[0].length > primarySequence[1].length && secondarySequence[0].length > secondarySequence[1].length && sharedPrimaryGears.length > sharedSecondaryGears.length) {
+        for (var i = sharedSecondaryGears.length; i < sharedPrimaryGears.length; i++) {
+            removeFromArray(primarySequence[0], sharedPrimaryGears[i]);
+            removeFromArray(secondarySequence[0], sharedPrimaryGears[i]);
+            sharedSequence[0].push(sharedPrimaryGears[i]);
         }
     }
-    ;
-    resetCovered() {
-        for (let i = 0; i < this.size; i++) {
-            this.rowsCovered[i] = false;
-            this.columnsCovered[i] = false;
+    if (primarySequence[0].length < primarySequence[1].length && secondarySequence[0].length < secondarySequence[1].length && sharedPrimaryGears.length < sharedSecondaryGears.length) {
+        for (var i = sharedPrimaryGears.length; i < sharedSecondaryGears.length; i++) {
+            removeFromArray(primarySequence[1], sharedSecondaryGears[i]);
+            removeFromArray(secondarySequence[1], sharedSecondaryGears[i]);
+            sharedSequence[1].push(sharedSecondaryGears[i]);
         }
     }
-    ;
-    resetPrimes() {
-        for (let i = 0; i < this.size; i++) {
-            for (let j = 0; j < this.size; j++) {
-                if (this.state[i][j] == State.Primed) {
-                    this.state[i][j] = State.None;
-                }
-            }
-        }
+}
+function prepareResultWithDifferential(unorderedGears, task) {
+    // create a copy to modify
+    var remaining = {
+        left1: unorderedGears.left1.slice(),
+        left2: unorderedGears.left2.slice(),
+        right1: unorderedGears.right1.slice(),
+        right2: unorderedGears.right2.slice()
+    };
+    const gearsRequired = Math.max(unorderedGears.left1.length, unorderedGears.left2.length, unorderedGears.right1.length, unorderedGears.right2.length);
+    const gearsToAdd = [];
+    for (var i = 0; i < gearsRequired; i++) {
+        const gear = getMostCommonGear(remaining);
+        gearsToAdd.push(gear);
+        removeOne(gear, remaining);
     }
-    ;
+    var primaryLeft = [unorderedGears.left1.slice(), gearsToAdd.slice()];
+    var secondaryLeft = [unorderedGears.left2.slice(), gearsToAdd.slice()];
+    var primaryRight = [gearsToAdd.slice(), unorderedGears.right1.slice()];
+    var secondaryRight = [gearsToAdd.slice(), unorderedGears.right2.slice()];
+    var sharedSequence = [[], []];
+    removeEqualPairs(primaryLeft);
+    removeEqualPairs(secondaryLeft);
+    moveSharedPairs(primaryLeft, secondaryLeft, sharedSequence);
+    var orderedPrimaryLeft = prepareResult(primaryLeft, task);
+    if (orderedPrimaryLeft == null) {
+        return null;
+    }
+    var orderedSecondaryLeft = prepareResult(secondaryLeft, task);
+    if (orderedSecondaryLeft == null) {
+        return null;
+    }
+    removeEqualPairs(primaryRight);
+    removeEqualPairs(secondaryRight);
+    moveSharedPairs(primaryRight, secondaryRight, sharedSequence);
+    var orderedPrimaryRight = prepareResult(primaryRight, task);
+    if (orderedPrimaryRight == null) {
+        return null;
+    }
+    var orderedSecondaryRight = prepareResult(secondaryRight, task);
+    if (orderedSecondaryRight == null) {
+        return null;
+    }
+    var orderedShared = prepareResult(sharedSequence, task);
+    if (orderedShared == null) {
+        return null;
+    }
+    return {
+        primaryLeft: orderedPrimaryLeft,
+        secondaryLeft: orderedSecondaryLeft,
+        sharedSequence: orderedShared,
+        primaryRight: orderedPrimaryRight,
+        secondaryRight: orderedSecondaryRight
+    };
+}
+function getRandomInt(min, max) {
+    return Math.floor(Math.random() * (max - min)) + min;
+}
+function greatestCommonDenominator(a, b) {
+    if (b == 0) {
+        return a;
+    }
+    else {
+        return greatestCommonDenominator(b, a % b);
+    }
+}
+function getOnCircle(angle, radius) {
+    return [Math.cos(angle) * radius, Math.sin(angle) * radius];
+}
+function isApproximatelyInteger(number) {
+    return Math.abs(number - Math.round(number)) < 1e-8;
+}
+function factorize(number) {
+    const result = [];
+    for (let i = 2; i <= number; i++) {
+        let value = 0;
+        while (number % i == 0) {
+            value += 1;
+            number /= i;
+        }
+        result.push(value);
+    }
+    return result;
 }
 class Solution {
-    constructor(sequence, task) {
-        this.error = null;
+    constructor() {
+        this.error = 0;
+        this.connections = [];
         this.domObject = null;
-        this.connections = sequence;
-        this.task = task;
-        let currentFraction = new Fraction(1);
-        this.fractions = [currentFraction];
-        for (const connection of this.connections) {
-            currentFraction = currentFraction.multiply(connection.fraction);
-            this.fractions.push(currentFraction);
+    }
+    updateAnimation(rotationsPerSecond) {
+        for (let connection of this.connections) {
+            connection.updateAnimation(rotationsPerSecond);
         }
-        this.ratio = currentFraction;
+    }
+}
+class SequenceSolution extends Solution {
+    constructor(sequence, task) {
+        super();
+        this.task = task;
+        this.sequence = sequence;
+        this.numberOfGears = sequence.length * 2;
         if (!this.task.exact) {
-            this.error = Math.abs(this.ratio.getDecimal() / this.task.targetRatio.getDecimal() - 1);
+            this.error = Math.abs(getRatio(sequence).getDecimal() / this.task.targetRatio.getDecimal() - 1);
         }
     }
     createDiv() {
+        const solutionDiv = document.createElement("div");
+        solutionDiv.classList.add("solution");
         const div = document.createElement("div");
         div.classList.add("sequence");
-        div.appendChild(this.fractions[0].createDiv());
-        for (let i = 0; i < this.connections.length; i++) {
-            div.appendChild(this.connections[i].createDiv(searchTab.animationSettings.enabled, searchTab.animationSettings.duration / this.fractions[i].getDecimal(), i % 2 == 1));
-            div.appendChild(this.fractions[i + 1].createDiv());
+        var ratio = new Fraction(1);
+        div.appendChild(ratio.createDiv());
+        for (let i = 0; i < this.sequence.length; i++) {
+            var connection = new Connection(this.sequence[i][0], this.sequence[i][1]);
+            connection.rotationSpeed = ratio.getDecimal() * (i % 2 == 0 ? 1 : -1);
+            this.connections.push(connection);
+            div.appendChild(connection.createDiv());
+            ratio = ratio.multiply(connection.fraction);
+            div.appendChild(ratio.createDiv());
             if (i * 2 < this.task.startSequence.length) {
-                this.connections[i].svg1.classList.add("fixed");
+                connection.svg1.classList.add("fixed");
             }
             if (i * 2 + 1 < this.task.startSequence.length) {
-                this.connections[i].svg2.classList.add("fixed");
+                connection.svg2.classList.add("fixed");
             }
             if (i * 2 >= this.connections.length * 2 - this.task.endSequence.length) {
-                this.connections[i].svg1.classList.add("fixed");
+                connection.svg1.classList.add("fixed");
             }
             if (i * 2 + 1 >= this.connections.length * 2 - this.task.endSequence.length) {
-                this.connections[i].svg2.classList.add("fixed");
+                connection.svg2.classList.add("fixed");
             }
         }
+        solutionDiv.appendChild(div);
         let infoDiv = document.createElement("div");
         infoDiv.classList.add("info");
-        div.appendChild(infoDiv);
+        solutionDiv.appendChild(infoDiv);
         if (!this.task.exact) {
             const errorSpan = document.createElement('span');
             errorSpan.innerText = 'Error: ' + this.error.toPrecision(3) + ' ';
@@ -2253,13 +2588,8 @@ class Solution {
         permalink.title = 'Permanent link to this solution';
         permalink.href = this.getPermalink();
         infoDiv.appendChild(permalink);
-        this.domObject = div;
-        return div;
-    }
-    updateAnimation() {
-        for (let i = 0; i < this.connections.length; i++) {
-            this.connections[i].updateAnimation(searchTab.animationSettings.enabled, searchTab.animationSettings.duration / this.fractions[i].getDecimal());
-        }
+        this.domObject = solutionDiv;
+        return solutionDiv;
     }
     getPermalink() {
         const gears = [];
@@ -2268,6 +2598,110 @@ class Solution {
             gears.push(connection.gear2);
         }
         return '?seq=' + gears.join(',');
+    }
+}
+function getRatio(gears) {
+    let a = 1;
+    let b = 1;
+    for (let [gear1, gear2] of gears) {
+        a *= gear1;
+        b *= gear2;
+    }
+    return new Fraction(a, b);
+}
+class DifferentialSolution extends Solution {
+    constructor(data, task) {
+        super();
+        this.data = data;
+        this.task = task;
+        this.numberOfGears = (data.primaryLeft.length + data.secondaryLeft.length + data.primaryRight.length + data.secondaryRight.length + data.sharedSequence.length) * 2;
+        if (data.primaryLeft.length != 0 || data.secondaryLeft.length != 0) {
+            this.numberOfGears += 4;
+        }
+        if (data.primaryRight.length != 0 || data.secondaryRight.length != 0) {
+            this.numberOfGears += 4;
+        }
+    }
+    addSequence(gears, target, ratio) {
+        let index = 0;
+        for (let [gear1, gear2] of gears) {
+            const connection = new Connection(gear1, gear2);
+            connection.rotationSpeed = ratio.getDecimal() * (index % 2 == 0 ? 1 : -1);
+            index++;
+            this.connections.push(connection);
+            target.appendChild(connection.createDiv());
+            ratio = ratio.multiply(connection.fraction);
+            target.appendChild(ratio.createDiv());
+        }
+    }
+    createDifferentialCasing() {
+        var differentialDiv = document.createElement("div");
+        differentialDiv.classList.add("connection");
+        differentialDiv.appendChild(DifferentialCasingSVGGenerator.createDifferentialCasing());
+        var descriptionDiv = document.createElement("div");
+        descriptionDiv.classList.add("distance");
+        descriptionDiv.innerText = "Differential Casing";
+        differentialDiv.appendChild(descriptionDiv);
+        return differentialDiv;
+    }
+    createDiv() {
+        const solutionDiv = document.createElement("div");
+        solutionDiv.classList.add("solution");
+        const div = document.createElement("div");
+        div.classList.add("sequence");
+        var ratio = new Fraction(1);
+        if (this.data.primaryLeft.length != 0 || this.data.secondaryLeft.length != 0) {
+            var doubleSequenceDiv = document.createElement("div");
+            doubleSequenceDiv.classList.add("double-sequence");
+            doubleSequenceDiv.classList.add("left");
+            var primarySequenceDiv = document.createElement("div");
+            primarySequenceDiv.appendChild(ratio.createDiv());
+            this.addSequence(this.data.primaryLeft, primarySequenceDiv, ratio);
+            doubleSequenceDiv.appendChild(primarySequenceDiv);
+            var separator = document.createElement("div");
+            separator.classList.add("separator");
+            doubleSequenceDiv.appendChild(separator);
+            var secondarySequenceDiv = document.createElement("div");
+            secondarySequenceDiv.appendChild(ratio.createDiv());
+            this.addSequence(this.data.secondaryLeft, secondarySequenceDiv, ratio);
+            doubleSequenceDiv.appendChild(secondarySequenceDiv);
+            div.appendChild(doubleSequenceDiv);
+            div.appendChild(this.createDifferentialCasing());
+            ratio = ratio.multiply(getRatio(this.data.primaryLeft).add(getRatio(this.data.secondaryLeft)).divideByFactor(2));
+            div.appendChild(ratio.createDiv());
+        }
+        else {
+            div.appendChild(ratio.createDiv());
+        }
+        if (this.data.sharedSequence.length != 0) {
+            this.addSequence(this.data.sharedSequence, div, ratio);
+            ratio = ratio.multiply(getRatio(this.data.sharedSequence));
+        }
+        if (this.data.primaryRight.length != 0 || this.data.secondaryRight.length != 0) {
+            div.appendChild(this.createDifferentialCasing());
+            var primarySequenceRatio = getRatio(this.data.primaryRight);
+            var secondarySequenceRatio = getRatio(this.data.secondaryRight);
+            var offset = ratio.multiply(primarySequenceRatio).subtract(ratio.multiply(secondarySequenceRatio)).divide(primarySequenceRatio.add(secondarySequenceRatio));
+            var ratio1 = ratio.subtract(offset);
+            var ratio2 = ratio.add(offset);
+            var doubleSequenceDiv = document.createElement("div");
+            doubleSequenceDiv.classList.add("double-sequence");
+            var primarySequenceDiv = document.createElement("div");
+            primarySequenceDiv.appendChild(ratio1.createDiv());
+            this.addSequence(this.data.primaryRight, primarySequenceDiv, ratio1);
+            doubleSequenceDiv.appendChild(primarySequenceDiv);
+            var separator = document.createElement("div");
+            separator.classList.add("separator");
+            doubleSequenceDiv.appendChild(separator);
+            var secondarySequenceDiv = document.createElement("div");
+            secondarySequenceDiv.appendChild(ratio2.createDiv());
+            this.addSequence(this.data.secondaryRight, secondarySequenceDiv, ratio2);
+            doubleSequenceDiv.appendChild(secondarySequenceDiv);
+            div.appendChild(doubleSequenceDiv);
+        }
+        solutionDiv.appendChild(div);
+        this.domObject = solutionDiv;
+        return solutionDiv;
     }
 }
 //# sourceMappingURL=app.js.map
