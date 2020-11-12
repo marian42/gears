@@ -1,39 +1,26 @@
-function getTeethProduct(gearTeeth: number[], gearCounts: number[]) {
+type UnorderedGears = [number[], number[]]; // Can have different number of primary and secondary gears, matching undecided
+type OrderedGears = Array<[number, number]>; // Same number of primary and secondary gears, matching decided
+
+function getGearProduct(domain: number[], gearCounts: number[]) {
     let result = 1;
-    for (let i = 0; i < gearTeeth.length; i++) {
-        result *= Math.pow(gearTeeth[i], gearCounts[i]);
+    for (let i = 0; i < domain.length; i++) {
+        result *= Math.pow(domain[i], gearCounts[i]);
     }
     return result;
 }
 
-function getResult(gearTeeth: number[], gearCounts: number[]): number[] {
+// Converts the domain + counts representation to a list of actual gears (that includes duplicates)
+function getGears(domain: number[], gearCounts: number[]): number[] {
     const result = [];
-    for (let i = 0; i < gearTeeth.length; i++) {
+    for (let i = 0; i < domain.length; i++) {
         for (let j = 0; j < gearCounts[i]; j++) {
-            result.push(gearTeeth[i]);
+            result.push(domain[i]);
         }
     }
     return result;
 }
 
-function getMissingPrimeFactors(targetRatio: Fraction, availableFactors: number[]) {
-    const result = [];
-    const numeratorFactors = factorize(targetRatio.a);
-    for (let i = 0; i < numeratorFactors.length; i++) {
-        if (numeratorFactors[i] > 0 && !availableFactors.includes(i + 2)) {
-            result.push(i + 2);
-        }
-    }
-    const denominatorFactors = factorize(targetRatio.b);
-    for (let i = 0; i < denominatorFactors.length; i++) {
-        if (denominatorFactors[i] > 0 && !availableFactors.includes(i + 2)) {
-            result.push(i + 2);
-        }
-    }
-    return result;
-}
-
-function getGearFactorsSet(gears: number[], gearFactors: GearFactorsDict) {
+function getGearFactorsSet(gears: number[], gearFactors: GearFactorsDict): Set<number> {
     const gearFactorsSet: Set<number> = new Set();
     for (const gear of gears) {
         for (let i = 0; i < gearFactors[gear].length; i++) {
@@ -42,7 +29,7 @@ function getGearFactorsSet(gears: number[], gearFactors: GearFactorsDict) {
             }
         }
     }
-    return Array.from(gearFactorsSet.values());
+    return gearFactorsSet;
 }
 
 // Returns an iterator over all numbers that can be made with the given factors
@@ -78,13 +65,23 @@ function* getHammingSequence(bases: number[]) {
     }
 }
 
+// Returns a list of gear multisets that can be made with availableGears and have a teeth product equal to target
 function findGears(target: number, availableGears: number[], gearFactors: GearFactorsDict): number[][] {
+    if (target == 1) {
+        return [[]];
+    }
+
     const targetFactors = factorize(target);
 
-    const gearTeeth: number[] = [];
+    const domain: number[] = []; // Gears used, will be a subset of availableGears, indices will refer to the order in this array.
     const gearMaxCounts: number[] = [];
     const availableFactors: Set<number> = new Set();
 
+    // Use prime factors to determine an upper bound of usage count for each gear.
+    // Example: If the target contains the prime factor 2 four times (ie is divisible by 2^4),
+    // a gear that contains the prime factor 2 only twice (ie. is divisible by 2^2, but not by 2^3),
+    // can be used at most twice. Similarly, if a gear has a prime factor that isn't present
+    // in the target, it can't be used at all.
     for (const gear of availableGears) {
         const factors = gearFactors[gear];
         if (factors.length > targetFactors.length) {
@@ -104,7 +101,7 @@ function findGears(target: number, availableGears: number[], gearFactors: GearFa
             }
         }
         if (maxOccurances! > 0) {
-            gearTeeth.push(gear);
+            domain.push(gear);
             gearMaxCounts.push(maxOccurances!);
             for (let i = 0; i < factors.length; i++) {
                 if (factors[i] != 0) {
@@ -121,13 +118,13 @@ function findGears(target: number, availableGears: number[], gearFactors: GearFa
         }
     }
 
-    const gearCounts = Array(gearTeeth.length).fill(0);
+    const gearCounts = Array(domain.length).fill(0);
     const result = [];
 
     while (true) {
-        const teethProduct = getTeethProduct(gearTeeth, gearCounts);
+        const teethProduct = getGearProduct(domain, gearCounts);
         if (teethProduct == target) {
-            result.push(getResult(gearTeeth, gearCounts));
+            result.push(getGears(domain, gearCounts));
         }
 
         gearCounts[0] += 1;
@@ -146,28 +143,21 @@ function findGears(target: number, availableGears: number[], gearFactors: GearFa
     }
 }
 
-function* findSolutionsExact(parameters: Task): Generator<[number[], number[]], void, null> {    
-    const availableFactors = getGearFactorsSet(parameters.gears, parameters.gearFactors!);
 
-    if (parameters.excludePairsWithFixedGears) {
-        var availableGearsPrimary = parameters.gears.filter(gear => !parameters.fixedSecondary!.includes(gear));
-        var availableGearsSecondary = parameters.gears.filter(gear => !parameters.fixedPrimary!.includes(gear));
-    } else {
-        var availableGearsPrimary = parameters.gears;
-        var availableGearsSecondary = parameters.gears;    
-    }
+function* findGearSequences(searchRatio: Fraction, availableGears: number[], availableGearsPrimary: number[], availableGearsSecondary: number[], gearFactors: GearFactorsDict): Generator<UnorderedGears, void, null> {
+    const availableFactors = getGearFactorsSet(availableGears, gearFactors);
+    const hammingIterator = getHammingSequence(Array.from(availableFactors));
 
-    const hammingIterator = getHammingSequence(availableFactors);
     while (true) {
-        const currentRatio = parameters.searchRatio!.extend(hammingIterator.next().value as number);
+        const currentRatio = searchRatio.extend(hammingIterator.next().value as number);
 
-        const solutionsPrimary = findGears(currentRatio.a, availableGearsPrimary, parameters.gearFactors!);
+        const solutionsPrimary = findGears(currentRatio.a, availableGearsPrimary, gearFactors);
 
         if (solutionsPrimary.length == 0) {
             continue;
         }
         for (const solutionPrimary of solutionsPrimary) {
-            const solutionsSecondary = findGears(currentRatio.b, availableGearsSecondary.filter(gear => !solutionPrimary.includes(gear)), parameters.gearFactors!);
+            const solutionsSecondary = findGears(currentRatio.b, availableGearsSecondary.filter(gear => !solutionPrimary.includes(gear)), gearFactors);
             for (const solutionSecondary of solutionsSecondary) {
                 yield [solutionPrimary, solutionSecondary];
             }
@@ -175,7 +165,23 @@ function* findSolutionsExact(parameters: Task): Generator<[number[], number[]], 
     }
 }
 
-function* findSolutionsApproximate(parameters: Task): Generator<[number[], number[]], void, null> {
+function* findSolutionsExact(parameters: Task): Generator<UnorderedGears, void, null> {
+    if (parameters.excludePairsWithFixedGears) {
+        var availableGearsPrimary = parameters.gears.filter(gear => !parameters.fixedSecondary!.includes(gear));
+        var availableGearsSecondary = parameters.gears.filter(gear => !parameters.fixedPrimary!.includes(gear));
+    } else {
+        var availableGearsPrimary = parameters.gears;
+        var availableGearsSecondary = parameters.gears;
+    }
+
+    const iterator = findGearSequences(parameters.searchRatio!, parameters.gears, availableGearsPrimary, availableGearsSecondary, parameters.gearFactors);
+
+    while (true) {
+        yield iterator.next().value as UnorderedGears;
+    }
+}
+
+function* findSolutionsApproximate(parameters: Task): Generator<UnorderedGears, void, null> {
     const targetRatio = parameters.searchRatio!.getDecimal();
     
     if (parameters.excludePairsWithFixedGears) {
@@ -215,12 +221,14 @@ function* findSolutionsApproximate(parameters: Task): Generator<[number[], numbe
     }
 }
 
-function prepareResult(gearsPrimary: number[], gearsSecondary: number[], parameters: Task): Array<[number, number]> | null {
+function prepareResult(unorderedGears: UnorderedGears, parameters: Task): OrderedGears | null {
     // gearsPrimary and gearsSecondary contain gears decided by the algorithm.
     // In addition to that, the result will contain the fixed start and end gear sequences set by the user.
     // There are three types of gear pairs: fixed and fixed, fixed and decided (at the end/beginning of an odd sized fixed sequence)
     // and pairs completely decided by the algorithm. Only th completely decided pairs can be reordered.
     
+    var [gearsPrimary, gearsSecondary] = unorderedGears;
+
     if ((!parameters.gears.includes(1) && gearsPrimary.length + parameters.fixedPrimary!.length != gearsSecondary.length + parameters.fixedSecondary!.length)
     || (parameters.excludePairsWithFixedGears && parameters.fixedPrimary!.includes(1) && gearsPrimary.length + parameters.fixedPrimary!.length > gearsSecondary.length + parameters.fixedSecondary!.length)
     || (parameters.excludePairsWithFixedGears && parameters.fixedSecondary!.includes(1) && gearsPrimary.length + parameters.fixedPrimary!.length < gearsSecondary.length + parameters.fixedSecondary!.length)) {
@@ -262,9 +270,9 @@ function prepareResult(gearsPrimary: number[], gearsSecondary: number[], paramet
     const assignments = munkres.run();
     
     // Assemble sequence
-    const sequenceStart: Array<[number, number]> = [];
-    const sequenceReorderable: Array<[number, number]> = [];
-    const sequenceEnd: Array<[number, number]> = [];
+    const sequenceStart: OrderedGears = [];
+    const sequenceReorderable: OrderedGears = [];
+    const sequenceEnd: OrderedGears = [];
 
     for (let i = 0; i < parameters.startSequence.length - 1; i += 2) {
         sequenceStart.push([parameters.startSequence[i], parameters.startSequence[i + 1]]);
@@ -294,23 +302,47 @@ function prepareResult(gearsPrimary: number[], gearsSecondary: number[], paramet
 }
 
 self.onmessage = function(event: MessageEvent) {
-    const parameters = event.data as Task;
-    parameters.targetRatio = new Fraction(parameters.targetRatio!.a, parameters.targetRatio!.b);
-    parameters.searchRatio = new Fraction(parameters.searchRatio!.a, parameters.searchRatio!.b);
+    const task = event.data as Task;
+    task.targetRatio = new Fraction(task.targetRatio!.a, task.targetRatio!.b);
+    task.searchRatio = new Fraction(task.searchRatio!.a, task.searchRatio!.b);
     
-    let iterator = parameters.exact ? findSolutionsExact(parameters) : findSolutionsApproximate(parameters);
+    let useDifferentials = false;
+    if (task.exact) {
+        const availableFactors = getGearFactorsSet(task.gears, task.gearFactors!);
+        useDifferentials = !canBeMadeWithFactors(task.searchRatio.a, availableFactors) || !canBeMadeWithFactors(task.searchRatio.b, availableFactors);
+    }
+    
+    if (useDifferentials) {
+        let iterator = findSolutionsWithDifferential(task);
 
-    while (true) {
-        const [primaryGears, secondaryGears] = iterator.next().value as [number[], number[]];
-        
-        const result = prepareResult(primaryGears, secondaryGears, parameters);
-        
-        if (result != null) {
-            const workerGlobalContext: Worker = self as any;
-            workerGlobalContext.postMessage({
-                id: parameters.id,
-                sequence: result
-            });
+        while (true) {
+            const unorderedGears = iterator.next().value as UnorderedGearsWithDifferentials;            
+            const orderedGears = prepareResultWithDifferential(unorderedGears, task);
+            
+            if (orderedGears != null) {
+                const workerGlobalContext: Worker = self as any;
+                workerGlobalContext.postMessage({
+                    id: task.id,
+                    sequence: orderedGears,
+                    usesDifferential: true
+                });
+            }
+        }
+    } else {
+        let iterator = task.exact ? findSolutionsExact(task) : findSolutionsApproximate(task);
+    
+        while (true) {
+            const unorderedGears = iterator.next().value as UnorderedGears;            
+            const orderedGears = prepareResult(unorderedGears, task);
+            
+            if (orderedGears != null) {
+                const workerGlobalContext: Worker = self as any;
+                workerGlobalContext.postMessage({
+                    id: task.id,
+                    sequence: orderedGears,
+                    usesDifferential: false
+                });
+            }
         }
     }
 }

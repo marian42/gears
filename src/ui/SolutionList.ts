@@ -13,11 +13,11 @@ class SolutionList {
     }
 
     public add(solution: Solution) {
-        const count = solution.connections.length;
+        const count = solution.numberOfGears;
         if (!(count in this.solutions)) {
             const sizeContainer = document.createElement('div');
             const headline = document.createElement('h2');
-            headline.innerText = 'Solutions with ' + count + (count > 1 ? ' connections' : ' connection');
+            headline.innerText = 'Solutions with ' + count + " gears";
             sizeContainer.appendChild(headline);
 
             let done = false;
@@ -62,10 +62,10 @@ class SolutionList {
         }
     }
 
-    updateAnimation() {
+    updateAnimation(rotationsPerSecond: number) {
         for (const count in this.solutions) {
             for (const solution of this.solutions[count]) {
-                solution.updateAnimation();
+                solution.updateAnimation(rotationsPerSecond);
             }
         }
     }

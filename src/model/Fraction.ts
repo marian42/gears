@@ -38,7 +38,31 @@ class Fraction {
         return new Fraction(this.a * fraction.a, this.b * fraction.b);
     }
 
-    private toString() {
+    public divide(fraction: Fraction) {
+        return new Fraction(this.a * fraction.b, this.b * fraction.a);
+    }
+
+    public divideByFactor(value: number) {
+        return new Fraction(this.a, this.b * value);
+    }
+
+    public multiplyByFactor(value: number) {
+        return new Fraction(this.a * value, this.b);
+    }
+
+    public add(fraction: Fraction) {
+        return new Fraction(this.a * fraction.b + fraction.a * this.b, this.b * fraction.b);
+    }
+
+    public subtract(fraction: Fraction) {
+        return new Fraction(this.a * fraction.b - fraction.a * this.b, this.b * fraction.b);
+    }
+
+    public inverse() {
+        return new Fraction(this.b, this.a);
+    }
+
+    public toString() {
         return this.a + " / " + this.b;
     }
 

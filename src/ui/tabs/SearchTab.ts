@@ -145,15 +145,16 @@ class SearchTab {
 
     private onReceiveWorkerMessage(event: MessageEvent) {
         if (event.data.id == this.currentTaskId) {
-            const connections = [];
-            for (const [gear1, gear2] of event.data.sequence) {
-                connections.push(new Connection(gear1, gear2));
+            if (event.data.usesDifferential) {
+                this.currentTask!.solutionList!.add(new DifferentialSolution(event.data.sequence as OrderedGearsWithDifferentials, this.currentTask!));
+            } else {
+                this.currentTask!.solutionList!.add(new SequenceSolution(event.data.sequence as OrderedGears, this.currentTask!));
+                
             }
-            this.currentTask!.solutionList!.add(new Solution(connections, this.currentTask!));
-
             if (this.currentTask!.solutionList!.totalSolutions >= this.currentTask!.maxNumberOfResults) {
                 this.stopSearch();
             }
+            this.updateAnimation();
         }
     }
 
@@ -287,18 +288,6 @@ class SearchTab {
         }.bind(this), parseInt((document.getElementById('limitTime') as HTMLInputElement).value) * 1000);
     }
 
-    private checkForMissingFactors(task: Task) {
-        const availableFactors = getGearFactorsSet(task.gears, task.gearFactors!);
-        const missingFactors = getMissingPrimeFactors(task.searchRatio!, availableFactors);
-        if (missingFactors.length != 0) {
-            this.resultDiv.innerText = '\nNo exact solution is available because these gears are missing:\n\n'
-                + missingFactors.join('\n')
-                + '\n\nConsider searching for approximate results.';
-            return true;
-        }
-        return false;
-    }
-
     private startSearch() {
         const approximateSettings = this.searchParameters.error.getFromDOM() as CheckableValue<number>;        
         this.currentTaskId++;
@@ -340,11 +329,7 @@ class SearchTab {
         if (this.currentWorker != null) {
             this.currentWorker.terminate();
         }
-
-        if (this.checkForMissingFactors(this.currentTask)) {
-            return;
-        }
-
+        
         this.currentWorker = new Worker("app.js");
         this.currentWorker.onmessage = this.onReceiveWorkerMessage.bind(this);
         this.currentWorker.postMessage(this.currentTask);
@@ -396,11 +381,10 @@ class SearchTab {
     }
 
     updateAnimation() {
-        this.animationSettings.enabled = this.animateCheckbox.checked;
-        this.animationSettings.duration = 60 / parseFloat(this.rpmTextbox.value);
-
         if (this.currentTask != null) {
-            this.currentTask.solutionList!.updateAnimation();
+            const animationRotationsPerSecond = this.animateCheckbox.checked ? parseFloat(this.rpmTextbox.value) / 60 : 0;
+            console.log(animationRotationsPerSecond);
+            this.currentTask.solutionList!.updateAnimation(animationRotationsPerSecond);
         }
     }
 }
