@@ -313,6 +313,13 @@ self.onmessage = function(event: MessageEvent) {
     }
     
     if (useDifferentials) {
+        // Ignore fixed sequences if using differentials
+        // Ideally, findSolutionsWithDifferential should be updated to work with fixed sequences. 
+        task.startSequence = [];
+        task.endSequence = [];
+        task.fixedPrimary = [];
+        task.fixedSecondary = [];
+
         let iterator = findSolutionsWithDifferential(task);
 
         while (true) {
