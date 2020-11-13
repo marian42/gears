@@ -126,7 +126,7 @@ class FitGears {
 
         if (gearsFitPerpendicularly(this.gear1, this.gear2)) {
             const resultElement = document.createElement('div');
-            resultElement.classList.add('sequence');
+            resultElement.classList.add('solution');
             resultElement.innerText = "These gears can be connected using perpendicular axles.";
             this.resultsContainer.appendChild(resultElement);
             foundAnything = true;
@@ -214,7 +214,7 @@ class FitGears {
         }
 
         const resultElement = document.createElement('div');
-        resultElement.classList.add('sequence');
+        resultElement.classList.add('solution');
 
         const fitBox = document.createElement('div');
         fitBox.classList.add('fit-box');
