@@ -3,17 +3,17 @@
 This is a free online app to find gear sequences for a given transmission ratio.
 
 Features
-- Specify list of available gears
+- Specify a list of available gears
 - Exact and approximate search
 - Exclude connections that can't be easily built with real parts
 - Supply fixed gear sequences at the start and end of the generated sequence
-- Visual representation of the generated gear sequence with animation
+- Visual representation of the generated gear sequence with animations
 - If the target ratio contains prime factors that are not present in the avaialbe gears, the app will show solutions that include differential gears.
 Otherwise, no exact solution would be possible
 - Sequence editor to calculate transmission ratios for user defined gear sequences
 - Fit gears tool that shows possible ways to connect a given pair of gears
 
-[Click here to go to the web app.](https://marian42.de/gears).
+[Click here to go to the web app](https://marian42.de/gears).
 
 # Local setup and development
 

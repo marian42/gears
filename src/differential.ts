@@ -136,7 +136,16 @@ function* findSolutionsWithDifferential(task: Task): Generator<UnorderedGearsWit
                     continue;
                 }
 
-                // TODO skip if a gear is in all four lists
+                let containsRedundantGear = false;
+                for (let gear of gearsLeft1[indexLeft1]) {
+                    if (gearsLeft2[indexLeft2].includes(gear) && gearsRight1[indexRight1].includes(gear) && gearsRight2[indexRight2].includes(gear)) {
+                        containsRedundantGear = true;
+                        break;
+                    }
+                }
+                if (containsRedundantGear) {
+                    continue;
+                }
                 
                 yield {
                     left1: gearsLeft1[indexLeft1],
