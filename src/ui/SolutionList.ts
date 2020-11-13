@@ -36,24 +36,21 @@ class SolutionList {
             this.solutions[count] = [];
         }
 
-        if (this.task.exact) {
-            this.sizeContainers[count].appendChild(solution.createDiv());
-            this.solutions[count].push(solution);
-        } else {
-            let inserted = false;
-            for (let i = 0; i < this.solutions[count].length; i++) {
-                if (this.solutions[count][i].error! > solution.error!) {
-                    this.sizeContainers[count].insertBefore(solution.createDiv(), this.solutions[count][i].domObject);
-                    this.solutions[count].splice(i, 0, solution);
-                    inserted = true;
-                    break;
-                }
-            }
-            if (!inserted) {
-                this.sizeContainers[count].appendChild(solution.createDiv());
-                this.solutions[count].push(solution);
+        const solutionDiv = solution.createDiv();
+        let inserted = false;
+        for (let i = 0; i < this.solutions[count].length; i++) {
+            if (solution.isBetterThan(this.solutions[count][i])) {
+                this.sizeContainers[count].insertBefore(solutionDiv, this.solutions[count][i].domObject);
+                this.solutions[count].splice(i, 0, solution);
+                inserted = true;
+                break;
             }
         }
+        if (!inserted) {
+            this.sizeContainers[count].appendChild(solutionDiv);
+            this.solutions[count].push(solution);
+        }
+
         this.totalSolutions++;
         document.getElementById('resultcount')!.innerText = this.totalSolutions.toString();
         if (!this.task.exact &&(this.smallestError === null || solution.error! < this.smallestError)) {

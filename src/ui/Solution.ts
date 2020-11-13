@@ -1,5 +1,6 @@
 abstract class Solution {
     public error: number = 0;
+    public orderedConnectionCosts: number[] = [];
     public connections: Connection[] = [];
     public domObject: HTMLDivElement | null = null;
     protected abstract task: Task;
@@ -11,6 +12,30 @@ abstract class Solution {
         for (let connection of this.connections) {
             connection.updateAnimation(rotationsPerSecond);
         }
+    }
+
+    protected prepareConnectionCosts() {
+        for (var connection of this.connections) {
+            this.orderedConnectionCosts.push(this.task.gearAssignmentCosts[connection.gear1][connection.gear2]);
+        }
+        this.orderedConnectionCosts.sort((a, b) => b - a);
+    }
+
+    public isBetterThan(solution: Solution): boolean {
+        if (solution.error < this.error) {
+            return false;
+        } else if (solution.error > this.error) {
+            return true;
+        }
+
+        for (var i = 0; i < Math.min(this.orderedConnectionCosts.length, solution.orderedConnectionCosts.length); i++) {
+            if (solution.orderedConnectionCosts[i] < this.orderedConnectionCosts[i]) {
+                return false;
+            } else if (solution.orderedConnectionCosts[i] > this.orderedConnectionCosts[i]) {
+                return true;
+            }
+        }
+        return false;
     }
 }
 
@@ -62,6 +87,7 @@ class SequenceSolution extends Solution {
             }
         }
         solutionDiv.appendChild(div);
+        this.prepareConnectionCosts();
 
         let infoDiv = document.createElement("div");
         infoDiv.classList.add("info");
@@ -208,6 +234,7 @@ class DifferentialSolution extends Solution {
         
         solutionDiv.appendChild(div);
         this.domObject = solutionDiv;
+        this.prepareConnectionCosts();
         return solutionDiv;
     }
 }
