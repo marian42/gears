@@ -268,24 +268,19 @@ class SolutionList {
             this.sizeContainers[count] = sizeContainer;
             this.solutions[count] = [];
         }
-        if (this.task.exact) {
-            this.sizeContainers[count].appendChild(solution.createDiv());
-            this.solutions[count].push(solution);
+        const solutionDiv = solution.createDiv();
+        let inserted = false;
+        for (let i = 0; i < this.solutions[count].length; i++) {
+            if (solution.isBetterThan(this.solutions[count][i])) {
+                this.sizeContainers[count].insertBefore(solutionDiv, this.solutions[count][i].domObject);
+                this.solutions[count].splice(i, 0, solution);
+                inserted = true;
+                break;
+            }
         }
-        else {
-            let inserted = false;
-            for (let i = 0; i < this.solutions[count].length; i++) {
-                if (this.solutions[count][i].error > solution.error) {
-                    this.sizeContainers[count].insertBefore(solution.createDiv(), this.solutions[count][i].domObject);
-                    this.solutions[count].splice(i, 0, solution);
-                    inserted = true;
-                    break;
-                }
-            }
-            if (!inserted) {
-                this.sizeContainers[count].appendChild(solution.createDiv());
-                this.solutions[count].push(solution);
-            }
+        if (!inserted) {
+            this.sizeContainers[count].appendChild(solutionDiv);
+            this.solutions[count].push(solution);
         }
         this.totalSolutions++;
         document.getElementById('resultcount').innerText = this.totalSolutions.toString();
@@ -824,10 +819,10 @@ const DEFAULT_GEARS_CUSTOM = '10,11,13,14,15,17,18,19,21,22,23,25,26,27,29,30,31
 const DEFAULT_FIT_ERROR = 0.4; // mm
 const SVG_NAMESPACE = "http://www.w3.org/2000/svg";
 const ASSIGNMENT_COST_FORBIDDEN = 1000;
-const ASSIGNMENT_COST_FULL_1D = -13;
-const ASSIGNMENT_COST_HALF_1D = -9;
-const ASSIGNMENT_COST_FULL_2D = -12;
-const ASSIGNMENT_COST_HALF_2D = -7;
+const ASSIGNMENT_COST_FULL_1D = -24;
+const ASSIGNMENT_COST_HALF_1D = -11;
+const ASSIGNMENT_COST_FULL_2D = -20;
+const ASSIGNMENT_COST_HALF_2D = -5;
 const ASSIGNMENT_COST_HALF_FULL_2D = -8;
 const ASSIGNMENT_COST_PERPENDICULAR = -2;
 class SVGGenerator {
@@ -1236,7 +1231,7 @@ class FitGears {
         this.resultElements = [];
         if (gearsFitPerpendicularly(this.gear1, this.gear2)) {
             const resultElement = document.createElement('div');
-            resultElement.classList.add('sequence');
+            resultElement.classList.add('solution');
             resultElement.innerText = "These gears can be connected using perpendicular axles.";
             this.resultsContainer.appendChild(resultElement);
             foundAnything = true;
@@ -1309,7 +1304,7 @@ class FitGears {
             return;
         }
         const resultElement = document.createElement('div');
-        resultElement.classList.add('sequence');
+        resultElement.classList.add('solution');
         const fitBox = document.createElement('div');
         fitBox.classList.add('fit-box');
         const margin = 1.5 * 8 * PIXELS_PER_MM;
@@ -2223,6 +2218,12 @@ self.onmessage = function (event) {
         useDifferentials = !canBeMadeWithFactors(task.searchRatio.a, availableFactors) || !canBeMadeWithFactors(task.searchRatio.b, availableFactors);
     }
     if (useDifferentials) {
+        // Ignore fixed sequences if using differentials
+        // Ideally, findSolutionsWithDifferential should be updated to work with fixed sequences. 
+        task.startSequence = [];
+        task.endSequence = [];
+        task.fixedPrimary = [];
+        task.fixedSecondary = [];
         let iterator = findSolutionsWithDifferential(task);
         while (true) {
             const unorderedGears = iterator.next().value;
@@ -2354,7 +2355,16 @@ function* findSolutionsWithDifferential(task) {
                     // If the worm gear isn't available, all sequences must be of the same length, we can't fill the up with worm gears. 
                     continue;
                 }
-                // TODO skip if a gear is in all four lists
+                let containsRedundantGear = false;
+                for (let gear of gearsLeft1[indexLeft1]) {
+                    if (gearsLeft2[indexLeft2].includes(gear) && gearsRight1[indexRight1].includes(gear) && gearsRight2[indexRight2].includes(gear)) {
+                        containsRedundantGear = true;
+                        break;
+                    }
+                }
+                if (containsRedundantGear) {
+                    continue;
+                }
                 yield {
                     left1: gearsLeft1[indexLeft1],
                     left2: gearsLeft2[indexLeft2],
@@ -2528,6 +2538,7 @@ function factorize(number) {
 class Solution {
     constructor() {
         this.error = 0;
+        this.orderedConnectionCosts = [];
         this.connections = [];
         this.domObject = null;
     }
@@ -2535,6 +2546,29 @@ class Solution {
         for (let connection of this.connections) {
             connection.updateAnimation(rotationsPerSecond);
         }
+    }
+    prepareConnectionCosts() {
+        for (var connection of this.connections) {
+            this.orderedConnectionCosts.push(this.task.gearAssignmentCosts[connection.gear1][connection.gear2]);
+        }
+        this.orderedConnectionCosts.sort((a, b) => b - a);
+    }
+    isBetterThan(solution) {
+        if (solution.error < this.error) {
+            return false;
+        }
+        else if (solution.error > this.error) {
+            return true;
+        }
+        for (var i = 0; i < Math.min(this.orderedConnectionCosts.length, solution.orderedConnectionCosts.length); i++) {
+            if (solution.orderedConnectionCosts[i] < this.orderedConnectionCosts[i]) {
+                return false;
+            }
+            else if (solution.orderedConnectionCosts[i] > this.orderedConnectionCosts[i]) {
+                return true;
+            }
+        }
+        return false;
     }
 }
 class SequenceSolution extends Solution {
@@ -2575,6 +2609,7 @@ class SequenceSolution extends Solution {
             }
         }
         solutionDiv.appendChild(div);
+        this.prepareConnectionCosts();
         let infoDiv = document.createElement("div");
         infoDiv.classList.add("info");
         solutionDiv.appendChild(infoDiv);
@@ -2701,6 +2736,7 @@ class DifferentialSolution extends Solution {
         }
         solutionDiv.appendChild(div);
         this.domObject = solutionDiv;
+        this.prepareConnectionCosts();
         return solutionDiv;
     }
 }
