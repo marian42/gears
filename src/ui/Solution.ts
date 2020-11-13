@@ -79,10 +79,10 @@ class SequenceSolution extends Solution {
             if (i * 2 + 1 < this.task.startSequence.length) {
                 connection.svg2!.classList.add("fixed");
             }
-            if (i * 2 >= this.connections.length * 2 - this.task.endSequence.length) {
+            if (i * 2 >= this.sequence.length * 2 - this.task.endSequence.length) {
                 connection.svg1!.classList.add("fixed");
             }
-            if (i * 2 + 1 >= this.connections.length * 2 - this.task.endSequence.length) {
+            if (i * 2 + 1 >= this.sequence.length * 2 - this.task.endSequence.length) {
                 connection.svg2!.classList.add("fixed");
             }
         }
