@@ -2117,21 +2117,33 @@ function* findSolutionsApproximate(parameters) {
         var availableGearsPrimary = parameters.gears.filter(gear => gear != 1);
         var availableGearsSecondary = availableGearsPrimary;
     }
-    const hammingIterator = getHammingSequence(availableGearsPrimary);
+    const primaryHammingIterator = getHammingSequence(availableGearsPrimary);
+    const secondaryHammingIterator = getHammingSequence(availableGearsPrimary);
+    const secondaryValues = [secondaryHammingIterator.next().value];
     while (true) {
-        const primaryValue = hammingIterator.next().value;
-        const solutionsPrimary = findGears(primaryValue, availableGearsPrimary, parameters.gearFactors);
-        if (solutionsPrimary.length == 0) {
-            continue;
-        }
+        const primaryValue = primaryHammingIterator.next().value;
         const denominatorMin = Math.ceil(primaryValue / targetRatio * (1.0 - parameters.error));
         const denominatorMax = Math.floor(primaryValue / targetRatio * (1.0 + parameters.error));
         if (denominatorMin > denominatorMax) {
             continue;
         }
+        while (secondaryValues[secondaryValues.length - 1] <= denominatorMax) {
+            secondaryValues.push(secondaryHammingIterator.next().value);
+        }
+        while (secondaryValues[0] < denominatorMin) {
+            secondaryValues.splice(0, 1);
+        }
+        if (secondaryValues.length <= 1) {
+            continue;
+        }
+        const solutionsPrimary = findGears(primaryValue, availableGearsPrimary, parameters.gearFactors);
+        if (solutionsPrimary.length == 0) {
+            continue;
+        }
         for (const solutionPrimary of solutionsPrimary) {
             const remainingGears = availableGearsSecondary.filter(gear => !solutionPrimary.includes(gear));
-            for (let secondaryValue = denominatorMin; secondaryValue <= denominatorMax; secondaryValue++) {
+            for (var i = 0; i < secondaryValues.length - 1; i++) {
+                const secondaryValue = secondaryValues[i];
                 const solutionsSecondary = findGears(secondaryValue, remainingGears, parameters.gearFactors);
                 for (const solutionSecondary of solutionsSecondary) {
                     yield [solutionPrimary, solutionSecondary];
@@ -2601,10 +2613,10 @@ class SequenceSolution extends Solution {
             if (i * 2 + 1 < this.task.startSequence.length) {
                 connection.svg2.classList.add("fixed");
             }
-            if (i * 2 >= this.connections.length * 2 - this.task.endSequence.length) {
+            if (i * 2 >= this.sequence.length * 2 - this.task.endSequence.length) {
                 connection.svg1.classList.add("fixed");
             }
-            if (i * 2 + 1 >= this.connections.length * 2 - this.task.endSequence.length) {
+            if (i * 2 + 1 >= this.sequence.length * 2 - this.task.endSequence.length) {
                 connection.svg2.classList.add("fixed");
             }
         }
