@@ -239,6 +239,8 @@ function prepareResult(unorderedGears: UnorderedGears, parameters: Task): Ordere
     // and pairs completely decided by the algorithm. Only th completely decided pairs can be reordered.
     
     var [gearsPrimary, gearsSecondary] = unorderedGears;
+    gearsPrimary = gearsPrimary.slice();
+    gearsSecondary = gearsSecondary.slice();
 
     if ((!parameters.gears.includes(1) && gearsPrimary.length + parameters.fixedPrimary!.length != gearsSecondary.length + parameters.fixedSecondary!.length)
     || (parameters.excludePairsWithFixedGears && parameters.fixedPrimary!.includes(1) && gearsPrimary.length + parameters.fixedPrimary!.length > gearsSecondary.length + parameters.fixedSecondary!.length)
