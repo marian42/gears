@@ -316,22 +316,11 @@ function prepareResult(unorderedGears: UnorderedGears, parameters: Task): Ordere
 
 self.onmessage = function(event: MessageEvent) {
     const task = event.data as Task;
+
     task.targetRatio = new Fraction(task.targetRatio!.a, task.targetRatio!.b);
     task.searchRatio = new Fraction(task.searchRatio!.a, task.searchRatio!.b);
-    
-    let useDifferentials = false;
-    if (task.exact) {
-        const availableFactors = getGearFactorsSet(task.gears, task.gearFactors!);
-        useDifferentials = !canBeMadeWithFactors(task.searchRatio.a, availableFactors) || !canBeMadeWithFactors(task.searchRatio.b, availableFactors);
-    }
-    
-    if (useDifferentials) {
-        // Ignore fixed sequences if using differentials
-        // Ideally, findSolutionsWithDifferential should be updated to work with fixed sequences. 
-        task.startSequence = [];
-        task.endSequence = [];
-        task.fixedPrimary = [];
-        task.fixedSecondary = [];
+        
+    if (task.usesDifferentials) {
 
         let iterator = findSolutionsWithDifferential(task);
 
@@ -349,7 +338,7 @@ self.onmessage = function(event: MessageEvent) {
             }
         }
     } else {
-        let iterator = task.exact ? findSolutionsExact(task) : findSolutionsApproximate(task);
+        let iterator = task.isExact ? findSolutionsExact(task) : findSolutionsApproximate(task);
     
         while (true) {
             const unorderedGears = iterator.next().value as UnorderedGears;            

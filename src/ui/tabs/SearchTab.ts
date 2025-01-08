@@ -7,7 +7,7 @@ type Task = {
     error: number;
     startSequence: number[];
     endSequence: number[];
-    exact: boolean;
+    isExact: boolean;
     gears: number[];
     gearAssignmentCosts: GearAssignmentCostTable;
     distanceConstraint: number | null;
@@ -18,8 +18,7 @@ type Task = {
     fixedPrimary: number[] | null;
     fixedSecondary: number[] | null;
     solutionList: SolutionList | null;
-    fixedPrimaryFactor: number | null;
-    fixedSecondaryFactor: number | null;
+    usesDifferentials: boolean;
 };
 
 type AnimationSettings = {
@@ -164,28 +163,28 @@ class SearchTab {
 
         currentTask.fixedPrimary = [];
         currentTask.fixedSecondary = [];
-        currentTask.fixedPrimaryFactor = 1;
-        currentTask.fixedSecondaryFactor = 1;
+        let fixedPrimaryFactor = 1;
+        let fixedSecondaryFactor = 1;
         for (let i = 0; i < currentTask.startSequence.length; i++) {
             if (i % 2 == 0) {
                 currentTask.fixedPrimary.push(currentTask.startSequence[i]);
-                currentTask.fixedPrimaryFactor *= currentTask.startSequence[i];
+                fixedPrimaryFactor *= currentTask.startSequence[i];
             } else {
                 currentTask.fixedSecondary.push(currentTask.startSequence[i]);
-                currentTask.fixedSecondaryFactor *= currentTask.startSequence[i];
+                fixedSecondaryFactor *= currentTask.startSequence[i];
             }
         }
         for (let i = 0; i < currentTask.endSequence.length; i++) {
             if ((currentTask.endSequence.length - 1 - i) % 2 == 1) {
                 currentTask.fixedPrimary.push(currentTask.endSequence[i]);
-                currentTask.fixedPrimaryFactor *= currentTask.endSequence[i];
+                fixedPrimaryFactor *= currentTask.endSequence[i];
             } else {
                 currentTask.fixedSecondary.push(currentTask.endSequence[i]);
-                currentTask.fixedSecondaryFactor *= currentTask.endSequence[i];
+                fixedSecondaryFactor *= currentTask.endSequence[i];
             }
         }
 
-        currentTask.searchRatio = currentTask.targetRatio.multiply(new Fraction(currentTask.fixedSecondaryFactor, currentTask.fixedPrimaryFactor));
+        currentTask.searchRatio = currentTask.targetRatio.multiply(new Fraction(fixedSecondaryFactor, fixedPrimaryFactor));
     }
 
     private get2DFitCost(gear1: number, gear2: number): number {
@@ -292,8 +291,8 @@ class SearchTab {
         const approximateSettings = this.searchParameters.error.getFromDOM() as CheckableValue<number>;        
         this.currentTaskId++;
 
-        this.currentTask = {
-            exact: !approximateSettings.checked,
+        var task: Task = {
+            isExact: !approximateSettings.checked,
             error: approximateSettings.value,
             targetRatio: Fraction.parse(this.searchParameters.targetRatio.getFromDOM()),
             gears: this.getAvailableGears(),
@@ -309,21 +308,37 @@ class SearchTab {
             fixedPrimary: null,
             fixedSecondary: null,
             solutionList: null,
-            fixedPrimaryFactor: null,
-            fixedSecondaryFactor: null
+            usesDifferentials: false
         };
+        this.currentTask = task;
         
-        for (const gear of this.currentTask.gears) {
-            this.currentTask.gearFactors[gear] = factorize(gear);
+        for (const gear of task.gears) {
+            task.gearFactors[gear] = factorize(gear);
         }
 
-        this.readFixedSequenceGears(this.currentTask);
+        this.readFixedSequenceGears(task);
 
-        this.currentTask.gearAssignmentCosts = this.getGearAssignmentCosts(this.currentTask, this.searchParameters.include2DConnections.getFromDOM());
+        task.gearAssignmentCosts = this.getGearAssignmentCosts(task, this.searchParameters.include2DConnections.getFromDOM());
         
+
+        if (task.isExact) {
+            const availableFactors = getGearFactorsSet(task.gears, task.gearFactors!);
+            task.usesDifferentials = !canBeMadeWithFactors(task.searchRatio!.a, availableFactors) || !canBeMadeWithFactors(task.searchRatio!.b, availableFactors);
+        
+            if (task.usesDifferentials) {
+                // Ignore fixed sequences if using differentials
+                // Ideally, findSolutionsWithDifferential should be updated to work with fixed sequences. 
+                task.startSequence = [];
+                task.endSequence = [];
+                task.fixedPrimary = [];
+                task.fixedSecondary = [];
+                task.searchRatio = task.targetRatio;
+            }
+        }
+
         document.getElementById('resultcount')!.innerText = "0";
         document.getElementById('result-meta')!.style.display = 'block';
-        document.getElementById('smallest-error-container')!.style.display = this.currentTask.exact ? 'none' : 'inline';
+        document.getElementById('smallest-error-container')!.style.display = task.isExact ? 'none' : 'inline';
         document.getElementById('smallest-error')!.innerText = '';
 
         if (this.currentWorker != null) {
@@ -335,7 +350,7 @@ class SearchTab {
         this.currentWorker.postMessage(this.currentTask);
 
         this.searchingSpan.style.display = "inline";
-        this.currentTask.solutionList = new SolutionList(this.resultDiv, this.currentTask);
+        task.solutionList = new SolutionList(this.resultDiv, task);
         this.handleTaskTimeout();
     }
 

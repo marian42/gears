@@ -51,7 +51,7 @@ class SequenceSolution extends Solution {
         this.sequence = sequence;
         this.numberOfGears = sequence.length * 2;
 
-        if (!this.task.exact) {
+        if (!this.task.isExact) {
             this.error = Math.abs(getRatio(sequence).getDecimal() / this.task.targetRatio.getDecimal() - 1);
         }
     }
@@ -92,7 +92,7 @@ class SequenceSolution extends Solution {
         let infoDiv = document.createElement("div");
         infoDiv.classList.add("info");
         solutionDiv.appendChild(infoDiv);
-        if (!this.task.exact) {
+        if (!this.task.isExact) {
             const errorSpan = document.createElement('span');
             errorSpan.innerText = 'Error: ' + this.error.toPrecision(3) + ' ';
             infoDiv.appendChild(errorSpan);

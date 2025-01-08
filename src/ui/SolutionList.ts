@@ -53,7 +53,7 @@ class SolutionList {
 
         this.totalSolutions++;
         document.getElementById('resultcount')!.innerText = this.totalSolutions.toString();
-        if (!this.task.exact &&(this.smallestError === null || solution.error! < this.smallestError)) {
+        if (!this.task.isExact &&(this.smallestError === null || solution.error! < this.smallestError)) {
             this.smallestError = solution.error!;
             document.getElementById('smallest-error')!.innerText = this.smallestError!.toPrecision(3);
         }
