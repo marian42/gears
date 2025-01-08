@@ -284,7 +284,7 @@ class SolutionList {
         }
         this.totalSolutions++;
         document.getElementById('resultcount').innerText = this.totalSolutions.toString();
-        if (!this.task.exact && (this.smallestError === null || solution.error < this.smallestError)) {
+        if (!this.task.isExact && (this.smallestError === null || solution.error < this.smallestError)) {
             this.smallestError = solution.error;
             document.getElementById('smallest-error').innerText = this.smallestError.toPrecision(3);
         }
@@ -620,29 +620,29 @@ class SearchTab {
         currentTask.endSequence = this.searchParameters.endGears.getFromDOM();
         currentTask.fixedPrimary = [];
         currentTask.fixedSecondary = [];
-        currentTask.fixedPrimaryFactor = 1;
-        currentTask.fixedSecondaryFactor = 1;
+        let fixedPrimaryFactor = 1;
+        let fixedSecondaryFactor = 1;
         for (let i = 0; i < currentTask.startSequence.length; i++) {
             if (i % 2 == 0) {
                 currentTask.fixedPrimary.push(currentTask.startSequence[i]);
-                currentTask.fixedPrimaryFactor *= currentTask.startSequence[i];
+                fixedPrimaryFactor *= currentTask.startSequence[i];
             }
             else {
                 currentTask.fixedSecondary.push(currentTask.startSequence[i]);
-                currentTask.fixedSecondaryFactor *= currentTask.startSequence[i];
+                fixedSecondaryFactor *= currentTask.startSequence[i];
             }
         }
         for (let i = 0; i < currentTask.endSequence.length; i++) {
             if ((currentTask.endSequence.length - 1 - i) % 2 == 1) {
                 currentTask.fixedPrimary.push(currentTask.endSequence[i]);
-                currentTask.fixedPrimaryFactor *= currentTask.endSequence[i];
+                fixedPrimaryFactor *= currentTask.endSequence[i];
             }
             else {
                 currentTask.fixedSecondary.push(currentTask.endSequence[i]);
-                currentTask.fixedSecondaryFactor *= currentTask.endSequence[i];
+                fixedSecondaryFactor *= currentTask.endSequence[i];
             }
         }
-        currentTask.searchRatio = currentTask.targetRatio.multiply(new Fraction(currentTask.fixedSecondaryFactor, currentTask.fixedPrimaryFactor));
+        currentTask.searchRatio = currentTask.targetRatio.multiply(new Fraction(fixedSecondaryFactor, fixedPrimaryFactor));
     }
     get2DFitCost(gear1, gear2) {
         let targetDistance = (gear1 + gear2) / 16;
@@ -734,8 +734,8 @@ class SearchTab {
     startSearch() {
         const approximateSettings = this.searchParameters.error.getFromDOM();
         this.currentTaskId++;
-        this.currentTask = {
-            exact: !approximateSettings.checked,
+        var task = {
+            isExact: !approximateSettings.checked,
             error: approximateSettings.value,
             targetRatio: Fraction.parse(this.searchParameters.targetRatio.getFromDOM()),
             gears: this.getAvailableGears(),
@@ -751,17 +751,30 @@ class SearchTab {
             fixedPrimary: null,
             fixedSecondary: null,
             solutionList: null,
-            fixedPrimaryFactor: null,
-            fixedSecondaryFactor: null
+            usesDifferentials: false
         };
-        for (const gear of this.currentTask.gears) {
-            this.currentTask.gearFactors[gear] = factorize(gear);
+        this.currentTask = task;
+        for (const gear of task.gears) {
+            task.gearFactors[gear] = factorize(gear);
         }
-        this.readFixedSequenceGears(this.currentTask);
-        this.currentTask.gearAssignmentCosts = this.getGearAssignmentCosts(this.currentTask, this.searchParameters.include2DConnections.getFromDOM());
+        this.readFixedSequenceGears(task);
+        task.gearAssignmentCosts = this.getGearAssignmentCosts(task, this.searchParameters.include2DConnections.getFromDOM());
+        if (task.isExact) {
+            const availableFactors = getGearFactorsSet(task.gears, task.gearFactors);
+            task.usesDifferentials = !canBeMadeWithFactors(task.searchRatio.a, availableFactors) || !canBeMadeWithFactors(task.searchRatio.b, availableFactors);
+            if (task.usesDifferentials) {
+                // Ignore fixed sequences if using differentials
+                // Ideally, findSolutionsWithDifferential should be updated to work with fixed sequences. 
+                task.startSequence = [];
+                task.endSequence = [];
+                task.fixedPrimary = [];
+                task.fixedSecondary = [];
+                task.searchRatio = task.targetRatio;
+            }
+        }
         document.getElementById('resultcount').innerText = "0";
         document.getElementById('result-meta').style.display = 'block';
-        document.getElementById('smallest-error-container').style.display = this.currentTask.exact ? 'none' : 'inline';
+        document.getElementById('smallest-error-container').style.display = task.isExact ? 'none' : 'inline';
         document.getElementById('smallest-error').innerText = '';
         if (this.currentWorker != null) {
             this.currentWorker.terminate();
@@ -770,7 +783,7 @@ class SearchTab {
         this.currentWorker.onmessage = this.onReceiveWorkerMessage.bind(this);
         this.currentWorker.postMessage(this.currentTask);
         this.searchingSpan.style.display = "inline";
-        this.currentTask.solutionList = new SolutionList(this.resultDiv, this.currentTask);
+        task.solutionList = new SolutionList(this.resultDiv, task);
         this.handleTaskTimeout();
     }
     stopSearch() {
@@ -2226,18 +2239,7 @@ self.onmessage = function (event) {
     const task = event.data;
     task.targetRatio = new Fraction(task.targetRatio.a, task.targetRatio.b);
     task.searchRatio = new Fraction(task.searchRatio.a, task.searchRatio.b);
-    let useDifferentials = false;
-    if (task.exact) {
-        const availableFactors = getGearFactorsSet(task.gears, task.gearFactors);
-        useDifferentials = !canBeMadeWithFactors(task.searchRatio.a, availableFactors) || !canBeMadeWithFactors(task.searchRatio.b, availableFactors);
-    }
-    if (useDifferentials) {
-        // Ignore fixed sequences if using differentials
-        // Ideally, findSolutionsWithDifferential should be updated to work with fixed sequences. 
-        task.startSequence = [];
-        task.endSequence = [];
-        task.fixedPrimary = [];
-        task.fixedSecondary = [];
+    if (task.usesDifferentials) {
         let iterator = findSolutionsWithDifferential(task);
         while (true) {
             const unorderedGears = iterator.next().value;
@@ -2253,7 +2255,7 @@ self.onmessage = function (event) {
         }
     }
     else {
-        let iterator = task.exact ? findSolutionsExact(task) : findSolutionsApproximate(task);
+        let iterator = task.isExact ? findSolutionsExact(task) : findSolutionsApproximate(task);
         while (true) {
             const unorderedGears = iterator.next().value;
             const orderedGears = prepareResult(unorderedGears, task);
@@ -2591,7 +2593,7 @@ class SequenceSolution extends Solution {
         this.task = task;
         this.sequence = sequence;
         this.numberOfGears = sequence.length * 2;
-        if (!this.task.exact) {
+        if (!this.task.isExact) {
             this.error = Math.abs(getRatio(sequence).getDecimal() / this.task.targetRatio.getDecimal() - 1);
         }
     }
@@ -2627,7 +2629,7 @@ class SequenceSolution extends Solution {
         let infoDiv = document.createElement("div");
         infoDiv.classList.add("info");
         solutionDiv.appendChild(infoDiv);
-        if (!this.task.exact) {
+        if (!this.task.isExact) {
             const errorSpan = document.createElement('span');
             errorSpan.innerText = 'Error: ' + this.error.toPrecision(3) + ' ';
             infoDiv.appendChild(errorSpan);
